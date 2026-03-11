@@ -767,7 +767,7 @@ The `(1 | school_id)` syntax says: "Let each school have its own intercept, but 
 #| echo: true
 
 # Extract school intercepts from FE and RE
-fe_intercepts <- fixef(fe_model)  # These are the fixed effects for each school
+fe_intercepts <- fixef(fe_model)$school_id  # Extract school-level fixed effects
 re_intercepts <- ranef(re_model)$school_id$`(Intercept)`
 
 # Get school sizes for the plot
@@ -780,8 +780,8 @@ school_sizes <- students %>%
 compare_df <- tibble(
   school = 1:n_schools,
   n_students = school_sizes$n,
-  FE = fe_intercepts[1:n_schools],
-  RE = re_intercepts[1:n_schools]
+  FE = as.numeric(fe_intercepts[1:n_schools]),
+  RE = as.numeric(re_intercepts[1:n_schools])
 ) %>%
   pivot_longer(cols = c(FE, RE), names_to = "Model", values_to = "Intercept")
 

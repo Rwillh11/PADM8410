@@ -7,7 +7,7 @@ editor: visual
 
 In a qmd file, we can work as if we are in a normal word processor simply by typing outside of a code block. There are a few advantages to .qmd files; some we won't really make use of, like the ability to type set very complicated equations with mathematical symobls. For our purposes, the ability to include codeblocks and run data analyses within the document is the draw!
 
-To open a codeblock, either type \`\`\`{r} and hit enter, or use the keyobard shortcut ctrl command i (thanks, Lauren, for finding this)!
+To open a codeblock, either type three backticks followed by `{r}` and hit enter, or use the keyboard shortcut ctrl command i (thanks, Lauren, for finding this)!
 
 Often, we want to work with packages beyond the base R package, in which case we can install them using the packages tab in the bottom right, and then opening a code block and calling the package from the library, as below.
 
@@ -85,5 +85,6 @@ class(a)
 Data types can be important, for example if we try add a character and a numeric value together, we will get an error message. It's good to get used to seeing error messages, and if they don't make sense, copy and pasting them into google. You will not be the first person to have triggered this error!
 
 ```{r}
+#| error: true
 8 + "cat"
 ```

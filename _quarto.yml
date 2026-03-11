@@ -11,6 +11,7 @@ project:
     - "!PADM8410Lecture4.qmd"
     - "!PADM8410Lecture5.qmd"
     - "!PADM8410Lecture6.qmd"
+    - "!Lecture_03/Old Slides/"
     - Lecture_01/*.qmd
     - Lecture_02/*.qmd
     - Lecture_03/PADM8410_DataViz_Probability.qmd

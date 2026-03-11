@@ -389,10 +389,10 @@ ggplot(df_power, aes(x = x, y = density, color = group)) +
   geom_vline(xintercept = z_alpha, linetype = "dashed", color = "goldenrod", size = 1) +
   geom_vline(xintercept = mu0, color = "#E74C3C", size = 0.5) +
   geom_vline(xintercept = mu1, color = "#1ABC9C", size = 0.5) +
-  annotate("text", x = mu0 - 0.2, y = 0.35, label = expression(H[0]), color = "#E74C3C", size = 5) +
-  annotate("text", x = mu1 + 0.2, y = 0.35, label = expression(H[1]), color = "#1ABC9C", size = 5) +
+  annotate("text", x = mu0 - 0.2, y = 0.35, label = "H[0]", parse = TRUE, color = "#E74C3C", size = 5) +
+  annotate("text", x = mu1 + 0.2, y = 0.35, label = "H[1]", parse = TRUE, color = "#1ABC9C", size = 5) +
   annotate("text", x = mu0, y = -0.01, label = "0") +
-  annotate("text", x = mu1, y = -0.01, label = expression(beta)) +
+  annotate("text", x = mu1, y = -0.01, label = "beta", parse = TRUE) +
   geom_area(data = subset(df_power, group == "H1" & x > z_alpha),
             aes(x = x, y = density), fill = "darkseagreen1", alpha = 0.6, inherit.aes = FALSE) +
   theme_minimal() +

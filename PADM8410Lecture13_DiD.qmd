@@ -29,6 +29,7 @@ execute:
 ```{r}
 #| echo: false
 
+library(tidyverse)
 library(dagitty)
 library(ggdag)
 
