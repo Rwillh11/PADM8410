@@ -1,0 +1,26 @@
+---
+title: "Resources"
+toc: true
+---
+
+## Textbooks
+
+All course textbooks are freely available online:
+
+- [R for Data Science (2e)](https://r4ds.hadley.nz/) -- Wickham, Cetinkaya-Rundel & Grolemund
+- [Probability!](https://bookdown.org/probability/beta/) -- Dos-Santos Disorbo & Blitzstein
+- [Regression and Other Stories](https://avehtari.github.io/ROS-Examples/) -- Gelman, Hill & Vehtari
+- [The Effect](https://theeffectbook.net/) -- Huntington-Klein
+- [Causal Inference: The Mixtape](https://mixtape.scunning.com/) -- Cunningham
+
+## Getting Started with R
+
+- [Download R](https://cran.r-project.org/)
+- [Download RStudio](https://posit.co/download/rstudio-desktop/)
+- [RStudio Primers](https://posit.cloud/learn/primers) -- interactive tutorials
+
+## Getting Help
+
+- **Office hours:** [Schedule a meeting](https://calendly.com/app/scheduling/meeting_types/user/me)
+- **Email:** [rwhorne@clemson.edu](mailto:rwhorne@clemson.edu) (allow one business day for response)
+- **Math refresher:** [Khan Academy](https://www.khanacademy.org/) for algebra and calculus fundamentals

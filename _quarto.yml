@@ -1,0 +1,43 @@
+project:
+  type: website
+  output-dir: _site
+  render:
+    - index.qmd
+    - schedule.qmd
+    - assignments.qmd
+    - resources.qmd
+    - PADM8410Lecture*.qmd
+    - "!*_beamer.qmd"
+    - "!PADM8410Lecture4.qmd"
+    - "!PADM8410Lecture5.qmd"
+    - "!PADM8410Lecture6.qmd"
+    - Lecture_01/*.qmd
+    - Lecture_02/*.qmd
+    - Lecture_03/PADM8410_DataViz_Probability.qmd
+    - Lecture_03/PADM8410_Distributions.qmd
+
+website:
+  title: "PADM 8410: Public Data Analysis"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: schedule.qmd
+        text: Schedule & Materials
+      - href: assignments.qmd
+        text: Assignments
+      - href: resources.qmd
+        text: Resources
+    right:
+      - icon: github
+        href: https://github.com/rwhorne/PADM8410
+  page-footer:
+    center: "PADM 8410 | Spring 2026 | Clemson University"
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+
+execute:
+  freeze: auto

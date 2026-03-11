@@ -1,0 +1,182 @@
+---
+title: "PADM 8410 Midterm Exam"
+author: "Will Horne"
+date: "Spring 2026"
+format:
+  pdf:
+    toc: false
+    geometry: margin=1in
+editor: visual
+---
+
+## Exam Instructions
+
+-   **This is a take-home exam.** You may use your notes, slides, and textbook.
+-   **You may NOT collaborate** with other students or use AI tools (ChatGPT, Claude, etc.).
+-   **No R or coding is required.** All questions can be answered with reasoning, formulas, and a calculator (or mental math).
+-   **Show your work.** Partial credit is available for correct reasoning even if the final answer is wrong. Wrong answer and no work shown = no points!
+-   **If you are spending much more than 3 hours on this exam, that is a sign you may want to go back and review the lecture material more carefully.** The questions are designed to be answerable relatively quickly if you understand the underlying concepts.
+
+**Total Points: 100**
+
+------------------------------------------------------------------------
+
+# Part 1: Probability and Counting (21 points)
+
+### Question 1.1 (7 points)
+
+A state legislature has 46 members. The governor needs to appoint a 5-person bipartisan commission to investigate infrastructure spending.
+
+**(a)** (3 points) How many different 5-person commissions could be formed from the 46 legislators? Write out the formula and compute the answer.
+
+**(b)** (4 points) Suppose 26 of the 46 legislators are Republicans and 20 are Democrats. The governor wants the commission to have exactly 3 Republicans and 2 Democrats. How many ways can this be done?
+
+### Question 1.2 (7 points)
+
+A city's public health department is testing residents for a rare disease. The disease affects 2% of the population. The test is not perfect:
+
+-   If a person **has** the disease, the test correctly returns positive 95% of the time (sensitivity).
+-   If a person **does not have** the disease, the test correctly returns negative 90% of the time (specificity).
+
+A randomly selected resident tests positive.
+
+**(a)** (2 points) Before doing any math, do you think the probability that this person actually has the disease is closer to 10%, 50%, or 90%? Explain your intuition in a few sentences.
+
+**(b)** (5 points) Now calculate the probability. What is P(Disease \| Positive Test)?
+
+*Hint: Think about what happens if you test 1,000 people. How many truly have the disease? Of those, how many test positive? How many healthy people also test positive?*
+
+### Question 1.3 (7 points)
+
+The City of Greenville is evaluating complaints about a local restaurant's health inspections. Over the past year, the restaurant was inspected 12 times. Each inspection is independent, and based on the restaurant's track record, there is a 30% chance of a violation on any given inspection.
+
+**(a)** (2 points) What type of distribution describes the number of violations found across the 12 inspections? State the distribution and its parameters.
+
+**(b)** (3 points) What is the expected number of violations over the 12 inspections? What is the variance?
+
+**(c)** (2 points) The city provides an A+ rating to a restaurant if it has **zero** violations in a year. What is the probability the restaurant has zero violations in 12 inspections?
+
+------------------------------------------------------------------------
+
+# Part 2: Distributions and Their Properties (21 points)
+
+### Question 2.1 (8 points)
+
+A county social services agency tracks the time (in minutes) that clients wait before being seen by a caseworker. Suppose wait times follow a Normal distribution with a mean of 40 minutes and a standard deviation of 8 minutes.
+
+**(a)** (4 points) Using the Empirical Rule, what range of wait times covers approximately 95% of all clients?
+
+**(b)** (4 points) The agency director proposes a policy: any client who waits more than 64 minutes gets a formal apology letter. Approximately what percentage of clients would receive a letter?
+
+### Question 2.2 (6 points)
+
+A transit authority knows that a shuttle bus arrives at a stop every 15 minutes on a fixed schedule. A commuter arrives at the stop at a random time.
+
+**(a)** (2 points) What distribution describes the commuter's wait time? State the distribution and its parameters.
+
+**(b)** (2 points) What is the expected wait time? What is the variance of the wait time?
+
+**(c)** (2 points) What is the probability the commuter waits between 3 and 9 minutes?
+
+### Question 2.3 (7 points)
+
+Consider two random variables X and Y. You are given:
+
+-   E\[X\] = 10, Var\[X\] = 4
+-   E\[Y\] = 6, Var\[Y\] = 9
+
+**(a)** (2 points) What is E\[X + Y\]?
+
+**(b)** (2 points) If X and Y are **independent**, what is Var\[X + Y\]?
+
+**(c)** (3 points) Now define a new variable W = 3X + 5. What are E\[W\] and Var\[W\]?
+
+------------------------------------------------------------------------
+
+# Part 3: Sampling, Estimation, and Uncertainty (23 points)
+
+### Question 3.1 (8 points)
+
+A nonprofit wants to estimate the average annual income of households in a rural county. They survey 400 randomly selected households and find a sample mean income of \$38,500, with a sample standard deviation of \$12,000.
+
+**(a)** (4 points) Calculate the standard error of the sample mean.
+
+**(b)** (4 points) Construct an approximate 95% confidence interval for the true average household income. Interpret the interval in plain language that a county commissioner could understand.
+
+### Question 3.2 (8 points)
+
+A state agency evaluates a new job training program. 200 participants are randomly assigned to two groups:
+
+-   **Treatment group** (100 people): Receives the job training
+-   **Control group** (100 people): Does not receive training
+
+After 6 months, 62 out of 100 in the treatment group are employed, compared to 48 out of 100 in the control group.
+
+**(a)** (2 points) State the null and alternative hypotheses for testing whether the training program affects employment rates.
+
+**(b)** (3 points) The researchers run a t-test and obtain a p-value of 0.04. In plain language, explain what this p-value means. Be precise and avoid common misconceptions.
+
+**(c)** (3 points) A skeptical legislator says: "A p-value of 0.04 means there's only a 4% chance the program doesn't work. We should fund it statewide!" Identify **two** things wrong with this statement and explain each.
+
+### Question 3.3 (7 points)
+
+For each of the following scenarios, identify the most likely source of **bias** and explain how it would affect the estimate. (roughly 2 points each)
+
+**(a)** A city government surveys residents about satisfaction with public parks by posting the survey on the city's official website.
+
+**(b)** A health department estimates vaccination rates by surveying patients at a hospital.
+
+**(c)** A school district measures the effect of a tutoring program by comparing test scores of students who chose to participate with those who did not.
+
+**(d)** A police department estimates average response times using only data from calls where officers filed complete reports.
+
+------------------------------------------------------------------------
+
+# Part 4: Hypothesis Testing, Confidence Intervals, Regression (27 points)
+
+### Question 4.1 (9 points)
+
+A researcher is planning a study to test whether a community policing initiative reduces reported crime. She considers two study designs:
+
+-   **Design A:** 50 neighborhoods, significance level $\alpha$ = 0.05
+-   **Design B:** 200 neighborhoods, significance level $\alpha$ = 0.05
+
+**(a)** (3 points) Which design will have higher statistical power? Explain why in 2-3 sentences.
+
+**(b)** (3 points) Now suppose the researcher sticks with Design A (50 neighborhoods) but lowers her significance level to $\alpha$ = 0.01 to be "more rigorous." How does this change affect the following? Explain each briefly.
+
+-   The probability of a Type I error
+-   The probability of a Type II error
+-   Statistical power
+
+**(c)** (3 points) The study is completed with Design A. The researcher finds a p-value of 0.08 and concludes: "The community policing initiative has no effect on crime." Is this conclusion appropriate? Why or why not?
+
+### Question 4.2 (8 points)
+
+A policy analyst runs a simple regression of graduation rates on per-pupil spending across 150 school districts and gets the following result:
+
+$$\widehat{\text{Graduation Rate}} = 52.3 + 1.8 \times \text{Spending}$$
+
+where Spending is measured in thousands of dollars. The R-squared is 0.35 and the p-value on the spending coefficient is 0.001.
+
+**(a)** (2 points) Interpret the slope coefficient (1.8) in a complete sentence that a school board member would understand.
+
+**(b)** (3 points) Interpret the R-squared value (0.35) in plain language. Does a "low" R-squared mean the model is useless? Why or why not?
+
+**(c)** (3 points) A school board member says: "Great, so if we increase spending by \$3,000 per pupil, graduation rates will go up by 5.4 percentage points." What is the member assuming, and why should we be cautious about this interpretation?
+
+### Question 4.3 (9 points)
+
+The analyst adds poverty rate as a control variable and now estimates:
+
+$$\widehat{\text{Graduation Rate}} = 58.1 + 1.2 \times \text{Spending} - 0.5 \times \text{Poverty Rate}$$
+
+**(a)** (3 points) Interpret the coefficient on Spending (1.2) in this multiple regression model. How is this interpretation different from the simple regression in 5.1?
+
+**(b)** (3 points) The coefficient on Spending dropped from 1.8 to 1.2 when we added Poverty Rate. What does this tell us about the relationship between spending, poverty, and graduation rates?
+
+**(c)** (3 points) Even after controlling for poverty, can we say that increasing spending *causes* higher graduation rates? Why or why not? Name one specific omitted variable that could still be confounding the relationship.
+
+### 
+
+**End of Exam. Good luck!**

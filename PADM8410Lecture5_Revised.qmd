@@ -1,0 +1,817 @@
+---
+title: "Conditional Expectation & Sampling"
+author: "Will Horne"
+format: beamer
+editor: visual
+---
+
+## Where We Are
+
+We've learned about:
+
+-   How policy variables move together -- education spending and graduation rates, poverty and life expectancy (joint distributions, covariance, correlation)
+
+. . .
+
+**Today:** Two concepts behind every policy analysis:
+
+1.  **Conditional Expectation** -- The foundation of regression and program evaluation
+2.  **Sampling** -- How we learn about populations from data we can actually collect
+
+## What Is Conditional Expectation?
+
+Remember conditional probability? Conditional expectation is similar:
+
+. . .
+
+::: callout-tip
+## The Key Idea
+
+**Conditional expectation** E\[Y\|X\] answers: "What's the average value of Y for a given value of X?"
+:::
+
+. . .
+
+**Example:** A city manager wants to know: do residents in different neighborhoods wait different amounts of time at the DMV?
+
+-   E\[Wait Time \| Neighborhood = Downtown\] vs. E\[Wait Time \| Neighborhood = Suburbs\]
+
+## A Concrete Example: Wait Times
+
+```{r}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 5
+library(tidyverse)
+
+set.seed(123)
+x1 <- rnorm(500, mean = 10, sd = 5)
+x2 <- rnorm(500, mean = 35, sd = 15)
+
+data <- tibble(
+  wait_time = c(x1, x2),
+  group = factor(rep(c("Suburban", "Urban"), each = 500))
+)
+
+mu1 <- mean(x1)
+mu2 <- mean(x2)
+
+ggplot(data, aes(x = wait_time, fill = group, color = group)) +
+  geom_density(alpha = 0.3, linewidth = 1.2) +
+  scale_color_manual(values = c("Suburban" = "#F66733", "Urban" = "#522D80")) +
+  scale_fill_manual(values = c("Suburban" = "#F66733", "Urban" = "#522D80")) +
+  geom_vline(xintercept = mu1, color = "#F66733", linewidth = 1.2, linetype = "dashed") +
+  geom_vline(xintercept = mu2, color = "#522D80", linewidth = 1.2, linetype = "dashed") +
+  annotate("text", x = mu1 -5 , y = 0.05, label = paste0("E[Wait|Suburban] = ", round(mu1, 1)),
+           color = "#F66733", size = 5, fontface = "bold") +
+  annotate("text", x = mu2 + 15, y = 0.05, label = paste0("E[Wait|Urban] = ", round(mu2, 1)),
+           color = "#522D80", size = 5, fontface = "bold") +
+  labs(x = "Voting Wait Time (minutes)", y = "Density",
+       title = "Conditional Expectation: Average Wait Time by Location") +
+  theme_minimal(base_size = 16) +
+  theme(legend.position = "right", plot.title = element_text(face = "bold", hjust = 0.5))
+```
+
+E\[Wait \| Suburban\] ≈ 10 min, E\[Wait \| Urban\] ≈ 35 min
+
+## Conditional Expectations are Group Means
+
+For **binary or categorical X**, the conditional expectation is simply the mean within each group:
+
+. . .
+
+$$E[Y | X = \text{suburban}] = \text{mean wait time for suburban voters}$$
+
+$$E[Y | X = \text{urban}] = \text{mean wait time for urban voters}$$
+
+. . .
+
+**In R, this is just:**
+
+```{r}
+#| echo: true
+#| eval: false
+
+data |>
+  group_by(location) |>
+  summarize(avg_wait = mean(wait_time))
+```
+
+You've been calculating conditional expectations all along!
+
+## Why Is This So Important? {.smaller}
+
+::: incremental
+-   **Comparing groups** -- Did the job training program improve employment rates?
+-   **Regression analysis** -- Predicting recidivism rates from program participation
+-   **Causal inference** -- Does Head Start improve school readiness?
+:::
+
+. . .
+
+When we ask "Does a policy work?", we're really asking:
+
+$$E[Y | \text{Treatment}] - E[Y | \text{Control}] \neq 0 \text{ ?}$$
+
+This is the **average treatment effect** -- the most common quantity in program evaluation.
+
+## Multiple Categories
+
+What if X has more than two categories?
+
+```{r}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 5
+
+set.seed(123)
+x1 <- rnorm(500, mean = 15, sd = 5)
+x2 <- rnorm(500, mean = 45, sd = 15)
+x3 <- rnorm(500, mean = 8, sd = 5)
+x4 <- rnorm(500, mean = 22, sd = 9)
+
+data_race <- tibble(
+  wait_time = c(x1, x2, x3, x4),
+  group = factor(rep(c("White", "Black", "Asian", "Latino"), each = 500))
+)
+
+means <- data_race |> group_by(group) |> summarize(mu = mean(wait_time))
+
+ggplot(data_race, aes(x = wait_time, fill = group)) +
+  geom_density(alpha = 0.4) +
+  geom_vline(data = means, aes(xintercept = mu, color = group), linewidth = 1.2, linetype = "dashed") +
+  scale_fill_manual(values = c("White" = "#F66733", "Black" = "#522D80",
+                               "Asian" = "#008080", "Latino" = "#2E8B57")) +
+  scale_color_manual(values = c("White" = "#F66733", "Black" = "#522D80",
+                                "Asian" = "#008080", "Latino" = "#2E8B57")) +
+  labs(x = "Voting Wait Time (minutes)", y = "Density",
+       title = "Wait Times by Race: Each Vertical Line is E[Wait | Race]") +
+  theme_minimal(base_size = 16) +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5))
+```
+
+Same idea—just more groups to compare!
+
+## Conditioning on Multiple Variables
+
+We can condition on more than one variable:
+
+. . .
+
+$$E[Y | X = \text{white}, Z = \text{woman}]$$
+
+"Average wait time for white women"
+
+. . .
+
+This lets us make **more nuanced comparisons**, like:
+
+"What's the difference in wait times between white and Black voters, *among women*?"
+
+$$E[Y | \text{Black, woman}] - E[Y | \text{white, woman}]$$
+
+## The Conditional Expectation Function (CEF)
+
+Everything we've been computing — E\[Wait \| Urban\], E\[Wait \| White, Woman\] — is part of a single object:
+
+. . .
+
+::: callout-tip
+## The CEF
+
+The **Conditional Expectation Function (CEF)** is the function that maps every value of X to the average value of Y for that group:
+
+$$\text{CEF: } \quad \mu(x) = E[Y | X = x]$$
+:::
+
+. . .
+
+With categorical X, the CEF is just a table of group means. Later, when X is continuous (like income or spending), the CEF becomes a curve — and **regression** is how we estimate it.
+
+## The CEF in R
+
+```{r}
+#| echo: true
+#| eval: false
+
+# This is what program evaluators do all day
+data |>
+  group_by(race, gender) |>
+  summarize(
+    avg_wait = mean(wait_time),
+    n = n()
+  )
+```
+
+. . .
+
+This is what regression does under the hood. There is just some extra machinery for continuous X and inference!
+
+## Quick Check: Why Conditioning Matters
+
+**Question:** Fred is 30 years old. If average life expectancy is 80, should Fred expect to live 50 more years?
+
+. . .
+
+**Answer:** He should expect *more* than 50 years! Why?
+
+. . .
+
+$$E[T] < E[T | T \geq 30]$$
+
+By conditioning on "Fred is already 30," we exclude everyone who died before 30. The conditional expectation is higher than the unconditional one.
+
+. . .
+
+**Moral:** The right comparison depends on what you're conditioning on!
+
+## A Useful Property: Averaging Over Groups {.smaller}
+
+Consider Dream Act support by gender:
+
+| Gender | Support (Y=1) | Oppose (Y=0) | Marginal |
+|--------|:-------------:|:------------:|:--------:|
+| Male   |     0.24      |     0.24     |   0.48   |
+| Female |     0.34      |     0.18     |   0.52   |
+
+. . .
+
+E\[Support \| Male\] = 0.50,   E\[Support \| Female\] = 0.65
+
+. . .
+
+The **overall** average is the **weighted** average of group means:
+
+$$E[Y] = E[Y|\text{Male}] \times P(\text{Male}) + E[Y|\text{Female}] \times P(\text{Female})$$ $$= 0.50 \times 0.48 + 0.65 \times 0.52 = 0.58$$
+
+::: callout-warning
+## Don't Just Average the Averages
+
+You can't simply average 0.50 and 0.65 to get 0.575 -- you need to **weight by group size**. This matters whenever groups are different sizes (e.g., more urban than rural voters, more white than minority respondents).
+:::
+
+## Prediction Isn't Perfect: CEF Error
+
+Even knowing someone's income doesn't tell you *exactly* how long they waited to vote.
+
+. . .
+
+The **CEF error** is the gap between the actual outcome and the prediction:
+
+$$\epsilon = Y - E[Y|X]$$
+
+. . .
+
+Two key properties:
+
+-   $E[\epsilon | X] = 0$ -- the CEF doesn't systematically over- or under-predict for any group
+-   $E[\epsilon] = 0$ -- prediction errors average to zero overall
+
+. . .
+
+This is why regression "works" as a prediction tool -- and the error $\epsilon$ is exactly what we'll later call the **residual**.
+
+# Continuous X: The CEF as a Function
+
+## When X Is Continuous
+
+With categorical X, we just calculate group means.
+
+But what if X is continuous (like income)?
+
+. . .
+
+```{r}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 5
+
+set.seed(123)
+n <- 1000
+income <- rnorm(n, mean = 50000, sd = 25000)
+income <- pmax(income, 0)
+wait_times <- 60 - (0.0004 * income) + rnorm(n, mean = 0, sd = 8)
+
+data_cont <- tibble(Income = income, Wait_Time = wait_times)
+
+ggplot(data_cont, aes(x = Income, y = Wait_Time)) +
+  geom_point(alpha = 0.3, color = "#522D80") +
+  geom_smooth(method = "lm", color = "#F66733", linewidth = 1.5, se = FALSE) +
+  scale_x_continuous(labels = scales::dollar_format(scale = 1e-3, suffix = "k")) +
+  labs(x = "Income", y = "Wait Time (minutes)",
+       title = "Wait Time vs Income: The Line Is the CEF") +
+  theme_minimal(base_size = 16) +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5))
+```
+
+The **line** represents E\[Wait \| Income = x\] for every value of x.
+
+## The CEF as a Line
+
+When X is continuous, we model the CEF as a function:
+
+$$E[Y | X = x] = \beta_0 + \beta_1 x$$
+
+. . .
+
+This is **linear regression**!
+
+-   **β₀** = Expected Y when X = 0
+-   **β₁** = How much E\[Y\] changes for a 1-unit increase in X
+
+. . .
+
+::: callout-note
+The regression line is our **best linear approximation** to the true conditional expectation function.
+:::
+
+## Extracting the CEF at Specific Points
+
+```{r}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 6
+
+library(patchwork)
+
+set.seed(30317)
+n <- 1000
+income <- pmax(rnorm(n, mean = 50000, sd = 25000), 0)
+wait_times <- 60 - (0.0004 * income) + rnorm(n, 0, 5)
+data <- tibble(Income = income, Wait_Times = wait_times)
+
+col_25k <- "#3B528BFF"
+col_50k <- "#5DC863FF"
+col_100k <- "#FDE725FF"
+
+p1 <- ggplot(data, aes(Income, Wait_Times)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "lm", color = "#F66733", se = FALSE, linewidth = 1.2) +
+  geom_vline(xintercept = c(25000, 50000, 100000),
+             color = c(col_25k, col_50k, col_100k), linewidth = 1.2) +
+  scale_x_continuous(labels = scales::dollar_format(scale = 1e-3, suffix = "k")) +
+  labs(x = "Income", y = "Wait Time (minutes)", title = "Slicing the CEF at Different Income Levels") +
+  theme_minimal(base_size = 14)
+
+wt_25k <- data$Wait_Times[data$Income > 20000 & data$Income < 30000]
+wt_50k <- data$Wait_Times[data$Income > 45000 & data$Income < 55000]
+wt_100k <- data$Wait_Times[data$Income > 90000 & data$Income < 110000]
+
+p2 <- ggplot() +
+  geom_density(aes(x = wt_25k), color = col_25k, linewidth = 1.3, fill = col_25k, alpha = 0.2) +
+  geom_density(aes(x = wt_50k), color = col_50k, linewidth = 1.3, fill = col_50k, alpha = 0.2) +
+  geom_density(aes(x = wt_100k), color = col_100k, linewidth = 1.3, fill = col_100k, alpha = 0.2) +
+  geom_vline(xintercept = mean(wt_25k), color = col_25k, linewidth = 1) +
+  geom_vline(xintercept = mean(wt_50k), color = col_50k, linewidth = 1) +
+  geom_vline(xintercept = mean(wt_100k), color = col_100k, linewidth = 1) +
+  annotate("text", x = mean(wt_25k) - 2, y = 0.12, label = "$25k", color = col_25k, fontface = "bold") +
+  annotate("text", x = mean(wt_50k) - 2, y = 0.12, label = "$50k", color = col_50k, fontface = "bold") +
+  annotate("text", x = mean(wt_100k) - 2, y = 0.12, label = "$100k", color = col_100k, fontface = "bold") +
+  labs(x = "Wait Time (minutes)", y = "Density", title = "Distribution of Wait Times at Each Income Level") +
+  theme_minimal(base_size = 14)
+
+p1 / p2
+```
+
+At each income level, there's a distribution of wait times. The CEF gives us the *mean* at each level.
+
+## The CEF Is the Best Predictor
+
+Here's a key result:
+
+::: callout-important
+## Why the CEF Matters
+
+The conditional expectation E\[Y\|X\] is the **best predictor** of Y given X, in the sense that it minimizes the mean squared prediction error.
+:::
+
+. . .
+
+If a city planner needs to predict wait times and can only use one piece of information (income), the conditional expectation is the single best prediction they can make. No other function of income will, on average, produce smaller prediction errors.
+
+. . .
+
+This is why regression "works" -- it's finding the function that minimizes how wrong our predictions are, on average.
+
+# Conditional Variance
+
+## Variance Matters Too
+
+The CEF tells us about **averages**. But what about **spread**?
+
+. . .
+
+::: callout-note
+## Conditional Variance
+
+$$Var[Y | X = x] = E[(Y - E[Y|X])^2 | X = x]$$
+
+"How spread out is Y around its mean, for a given value of X?"
+:::
+
+. . .
+
+**Key question:** Does the variance of Y depend on X?
+
+## Homoskedasticity vs Heteroskedasticity
+
+-   **Homoskedastic:** Spread is the same everywhere (standardized government pay scales)
+-   **Heteroskedastic:** Spread changes with X (small cities cluster tightly, large cities vary enormously)
+-   This matters because if the spread is larger with certain values of X, then our estimates our less precise
+
+## Homoskedasticity vs Heteroskedasticity
+
+```{r}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 5
+
+library(patchwork)
+
+set.seed(42)
+n <- 400
+
+# Homoskedastic: Government salaries by experience
+experience <- runif(n, 0, 30)
+salary <- 35 + 1.5 * experience + rnorm(n, 0, 5)
+
+# Heteroskedastic: 911 calls by city population
+city_pop <- runif(n, 5, 500)
+calls_911 <- 2 + 0.8 * city_pop + rnorm(n, 0, city_pop * 0.15)
+
+p1 <- ggplot(tibble(x = experience, y = salary), aes(x, y)) +
+  geom_point(alpha = 0.5, color = "#522D80") +
+  geom_smooth(method = "lm", se = FALSE, color = "#F66733", linewidth = 1.2) +
+  labs(title = "Homoskedastic",
+       subtitle = "Government salaries: similar spread at all levels",
+       x = "Years of Experience", y = "Annual Salary ($1000s)") +
+  theme_minimal(base_size = 14)
+
+p2 <- ggplot(tibble(x = city_pop, y = calls_911), aes(x, y)) +
+  geom_point(alpha = 0.5, color = "#522D80") +
+  geom_smooth(method = "lm", se = FALSE, color = "#F66733", linewidth = 1.2) +
+  labs(title = "Heteroskedastic",
+       subtitle = "911 calls: variation grows with city size",
+       x = "City Population (thousands)", y = "Annual 911 Calls (thousands)") +
+  theme_minimal(base_size = 14)
+
+p1 + p2
+```
+
+## Where Does Variation Come From?
+
+Total variation in voting wait times has two sources:
+
+. . .
+
+-   **Within-group variation:** Even among urban voters, wait times differ -- some precincts are better-run than others
+-   **Between-group variation:** The *average* wait time differs across groups (urban vs. suburban)
+
+. . .
+
+$$Var(Y) = \underbrace{E[Var(Y|X)]}_{\text{within-group}} + \underbrace{Var[E(Y|X)]}_{\text{between-group}}$$
+
+. . .
+
+If you've encountered **ANOVA** before, this is exactly what it does -- decomposing total variation into within- and between-group components.
+
+## Why Does This Matter?
+
+::: incremental
+-   If you're comparing response times across police precincts and some precincts have wildly inconsistent times while others are steady, your standard errors need to account for that
+-   Standard regression assumes homoskedasticity -- but in practice, you should use **robust standard errors**
+-   R makes this trivial (I'll show you how soon)
+:::
+
+.
+
+# From Population to Sample
+
+## The Big Picture
+
+So far we've talked as if we *know* the CEF -- as if we can observe every voter in the country, every resident's DMV experience, every student's test score.
+
+. . .
+
+**But we can't.** We almost never see the full population.
+
+. . .
+
+So how do we learn about E\[Wait \| Urban\] when we can only survey 1,000 voters instead of 150 million? How does a state agency assess satisfaction when it can only hear from a fraction of its clients?
+
+. . .
+
+**Solution:** We take a **sample** and use it to **estimate** population quantities.
+
+## Key Terminology
+
+Imagine you want to know average satisfaction with DMV services across South Carolina.
+
+::: incremental
+-   **Population (N):** All SC residents who visited the DMV last year (\~2 million)
+-   **Sample (n):** The 800 people you actually surveyed
+-   **Parameter:** The true average satisfaction across all 2 million residents (μ -- you'll never know this exactly)
+-   **Statistic/Estimator:** The average satisfaction in your 800-person sample (x̄ -- your best guess)
+:::
+
+. . .
+
+The sample mean x̄ is our **estimate** of the population mean μ.
+
+## A Motivating Example: Social Pressure and Voting
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: "80%"
+
+# Create a simple visualization of the Gerber et al experiment concept
+library(tidyverse)
+
+tibble(
+  Treatment = c("Control", "Civic Duty", "Hawthorne", "Self", "Neighbors"),
+  Turnout = c(29.7, 31.5, 32.2, 34.5, 37.8)
+) |>
+  mutate(Treatment = fct_reorder(Treatment, Turnout)) |>
+  ggplot(aes(x = Treatment, y = Turnout, fill = Treatment == "Neighbors")) +
+  geom_col(show.legend = FALSE) +
+  geom_text(aes(label = paste0(Turnout, "%")), vjust = -0.5, size = 5) +
+  scale_fill_manual(values = c("gray60", "#F66733")) +
+  labs(title = "Gerber, Green & Larimer (2008): Social Pressure Experiment",
+       subtitle = "Turnout rates by treatment condition",
+       x = "", y = "Turnout (%)") +
+  ylim(0, 45) +
+  theme_minimal(base_size = 16) +
+  theme(plot.title = element_text(face = "bold"))
+```
+
+**Question:** How confident should we be that these differences are "real" and not just random noise?
+
+## The Three Distributions
+
+Using the Gerber et al. experiment as a concrete example:
+
+::: incremental
+1.  **Population Distribution:** The true turnout rate for ALL Michigan voters if they received the "Neighbors" mailer
+
+2.  **Sample Distribution:** The actual turnout rates Gerber et al. observed in their 180,000-household experiment
+
+3.  **Sampling Distribution:** What turnout rates we'd get if we ran this experiment 10,000 times with different random assignments
+:::
+
+. . .
+
+The **sampling distribution** is key to understanding uncertainty!
+
+## Sampling Variation: An Intuition
+
+Imagine polling 30 students about their class year, multiple times:
+
+```{r}
+#| echo: true
+
+set.seed(30317)
+population <- rbinom(10000, size = 1, prob = 0.4)
+
+# Three different samples of size 30
+c(mean(sample(population, 30)),
+  mean(sample(population, 30)),
+  mean(sample(population, 30)))
+```
+
+. . .
+
+Each sample gives a **different estimate**—that's sampling variation!
+
+## The Sampling Distribution
+
+```{r}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 5
+
+set.seed(123)
+population <- rbinom(10000, size = 1, prob = 0.4)
+sample_means <- replicate(10000, mean(sample(population, 100)))
+
+ggplot(tibble(means = sample_means), aes(x = means)) +
+  geom_histogram(bins = 40, fill = "#522D80", color = "white", alpha = 0.8) +
+  geom_vline(xintercept = 0.4, color = "#F66733", linewidth = 1.5, linetype = "dashed") +
+  annotate("text", x = 0.42, y = 800, label = "True population mean = 0.4",
+           color = "#F66733", fontface = "bold", size = 5) +
+  labs(title = "Sampling Distribution of the Sample Mean (10,000 samples, n = 100 each)",
+       x = "Sample Mean", y = "Frequency") +
+  theme_minimal(base_size = 16) +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5))
+```
+
+This is what the sample mean "looks like" across many repeated samples.
+
+## Bias and Variance: The Two Types of Error
+
+```{r}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 5
+
+library(gridExtra)
+
+set.seed(123)
+
+simulate_points <- function(bias_x, bias_y, var, n_points = 25) {
+  tibble(
+    x = rnorm(n_points, mean = bias_x, sd = var),
+    y = rnorm(n_points, mean = bias_y, sd = var)
+  )
+}
+
+create_plot <- function(data, title, subtitle) {
+  ggplot(data, aes(x, y)) +
+    geom_point(color = "#522D80", size = 3, alpha = 0.7) +
+    geom_point(aes(x = 0, y = 0), color = "#F66733", size = 6, shape = 4, stroke = 2) +
+    xlim(-4, 4) + ylim(-4, 4) +
+    labs(title = title, subtitle = subtitle) +
+    theme_minimal(base_size = 12) +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold"),
+      plot.subtitle = element_text(hjust = 0.5),
+      axis.text = element_blank(),
+      axis.title = element_blank()
+    )
+}
+
+p1 <- create_plot(simulate_points(0, 0, 0.4), "Low Bias, Low Variance", "Ideal!")
+p2 <- create_plot(simulate_points(0, 0, 1.5), "Low Bias, High Variance", "Need more data")
+p3 <- create_plot(simulate_points(2, 2, 0.4), "High Bias, Low Variance", "Systematic error")
+p4 <- create_plot(simulate_points(2, 2, 1.5), "High Bias, High Variance", "Worst case")
+
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+```
+
+**Target = true population value. Points = estimates from different samples.**
+
+## Bias: Systematic Error
+
+::: callout-warning
+## Bias
+
+$$\text{Bias}[\hat{\theta}] = E[\hat{\theta}] - \theta$$
+
+The estimator systematically misses the target in one direction.
+:::
+
+. . .
+
+**Common sources of bias in policy research:**
+
+-   **Selection bias:** You email a DMV satisfaction survey -- but miss everyone without internet access, who may have very different experiences
+-   **Non-response bias:** Only 20% of residents respond. The 80% who didn't might be too frustrated to bother -- or too satisfied to care
+-   **Measurement bias:** Your survey asks "How would you rate your EXCELLENT DMV experience?" -- the leading question inflates scores
+
+## Selection Bias in Action
+
+Imagine you're a TA who wants to estimate the average class year of 300 students. Instead of surveying randomly, you ask the 20 students in the front two rows.
+
+. . .
+
+**Problem:** Front-row students aren't random. Maybe freshmen sit up front because they're more eager. Your sample over-represents freshmen, and your estimate is biased downward.
+
+. . .
+
+This is *exactly* what happens when agencies use **convenience samples**:
+
+-   Surveying attendees at a community meeting (who shows up?)
+-   Using data only from people who filed complaints (who complains?)
+-   Studying program effects only among people who completed the program (who drops out?)
+
+. . .
+
+**The fix:** Random sampling gives every unit an equal chance of selection -- removing the systematic bias.
+
+## Variance: Random Error
+
+::: callout-note
+## Sampling Variance
+
+$$Var[\hat{\theta}]$$
+
+How much does the estimate jump around across different samples?
+:::
+
+. . .
+
+**Key insight:** Variance decreases with sample size!
+
+$$Var[\bar{X}] = \frac{\sigma^2}{n}$$
+
+**Bigger sample → Lower variance → More precise estimates**
+
+## The Standard Error
+
+::: callout-tip
+## Standard Error
+
+$$SE(\bar{X}) = \frac{\sigma}{\sqrt{n}}$$
+
+The standard error is the standard deviation of the sampling distribution.
+:::
+
+. . .
+
+**In practice:** We estimate σ from our sample, giving us:
+
+$$\widehat{SE}(\bar{X}) = \frac{s}{\sqrt{n}}$$
+
+This tells us how much uncertainty there is in our estimate!
+
+. . .
+
+When a news outlet reports "margin of error: ±3 points," they're reporting roughly 2 standard errors.
+
+## Why Does Sample Size Matter?
+
+```{r}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 5
+
+set.seed(42)
+pop <- rnorm(100000, mean = 50, sd = 10)
+
+sample_sizes <- c(10, 50, 200, 1000)
+results <- map_dfr(sample_sizes, function(n) {
+  means <- replicate(5000, mean(sample(pop, n)))
+  tibble(n = paste0("n = ", n), mean = means)
+})
+
+results$n <- factor(results$n, levels = paste0("n = ", sample_sizes))
+
+ggplot(results, aes(x = mean, fill = n)) +
+  geom_histogram(bins = 40, alpha = 0.7, color = "white") +
+  facet_wrap(~n, scales = "free_y") +
+  geom_vline(xintercept = 50, color = "#F66733", linewidth = 1, linetype = "dashed") +
+  scale_fill_manual(values = c("#522D80", "#6B3FA0", "#8B5FBF", "#AB7FDF")) +
+  labs(title = "Larger Samples = Tighter Sampling Distributions",
+       x = "Sample Mean", y = "Frequency") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none",
+        plot.title = element_text(face = "bold", hjust = 0.5))
+```
+
+As n increases, the sampling distribution gets narrower → more precision!
+
+## Putting It All Together {.smaller}
+
+| Concept | Policy Translation | We Want It To Be... |
+|------------------|--------------------------|----------------------------|
+| Bias | Are we systematically missing the target? (e.g., only surveying English speakers about immigration) | Zero (unbiased) |
+| Variance | How much does our answer jump around if we repeat the study? | Small |
+| Standard Error | How much uncertainty should we report? | Small |
+
+. . .
+
+**The good news:** The sample mean is **unbiased** for the population mean, and its variance shrinks as n grows. This is the single most important result in applied statistics.
+
+## The Total Error: Bias-Variance Tradeoff {.smaller}
+
+The **mean squared error** combines both types of error:
+
+$$MSE = \text{Bias}[\hat{\theta}]^2 + Var[\hat{\theta}]$$
+
+. . .
+
+Look back at the dartboard: the top-left panel (low bias, low variance) has the smallest total error. High bias OR high variance makes estimates worse.
+
+. . .
+
+**A practical insight:** Sometimes we accept a *little* bias for large reductions in variance, producing a better overall estimate. This is the idea behind:
+
+-   **Regularization** in machine learning (intentionally shrinking estimates toward zero)
+-   **Controlling for covariates** in regression (we'll see this soon)
+-   **Weighting** survey responses to correct for known biases
+
+## Summary: Key Takeaways
+
+::: incremental
+1.  **Conditional expectation** E\[Y\|X\] = average of Y for a given X -- this is what every program evaluation compares
+
+2.  **The CEF is the best predictor** of Y given X -- no other function does better on average
+
+3.  **Samples vary** -- run the study again, you'd get a different answer
+
+4.  **Standard error** measures that uncertainty -- it's the "margin of error"
+
+5.  **Bigger samples** = less variance = estimates you can trust more
+:::
+
+## Looking Ahead
+
+**Next time:** We'll formalize the tools for asking "Is this difference *real* or just noise?"
+
+-   Test whether the Neighbors mailer *really* increased turnout, or if we just got lucky
+-   Build confidence intervals: "We're 95% sure the true effect is between X and Y"
+-   Understand the **Central Limit Theorem** -- why the sampling distribution is always approximately normal
+
+. . .
+
+The **sampling distribution** is the key that connects what we observe in our sample to what's true in the population!

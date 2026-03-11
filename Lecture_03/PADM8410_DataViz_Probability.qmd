@@ -1,0 +1,1009 @@
+---
+title: "Data Viz and Probability"
+author: "Will Horne"
+format: revealjs
+editor: visual
+code-fold: True 
+---
+
+## Administrative Stuff
+
+::: incremental
+-   **Problem Set 1:**
+    -   Nearly done grading, happy with how they turned out
+
+        -   This will almost certainly be the hardest assignment; getting the basics down is the hard part!
+
+    -   Solutions + grades will be posted in the next few days
+-   **Problem Set 2 (Due 2/8):**
+    -   Thinking of this as a "mini" problem set; adds data visualization and reinforces some basics
+
+    -   problem sets will slow down but I want to make sure foundation is solid
+:::
+
+## GGplot and the Grammar of Graphics
+
+::: incremental
+-   While it is possible to plot in base R (without loading a package), nearly everyone uses ggplot2 instead
+
+-   Designed by Hadley Wickham, who introduces a "Grammar of Graphics"
+
+-   A plot is composed of **three core elements** (and other options)
+
+    -   **The Data**
+
+    -   **The Aesthetic Mapping** of variables to visual cues
+
+    -   The **Geometry** used to encode observations (the *type* of plot)
+:::
+
+## The ggplot Template
+
+Every ggplot follows this basic pattern:
+
+```{r, eval = F, echo = T}
+ggplot(data = <YOUR_DATA>,
+      aes(<YOUR_MAPPINGS>)) +
+  <GEOM_FUNCTION>()
+```
+
+::: incremental
+-   **data =** your dataframe (what you're plotting)
+-   **aes()** = "aesthetic mappings" (which variables go where)
+    -   `x =` what goes on the x-axis
+    -   `y =` what goes on the y-axis
+    -   `color/fill =` what determines point/line color
+    -   other options, like `shape` etc
+-   **geom\_** = the geometry (type of plot: points, bars, lines, etc.)
+:::
+
+## Scatter Plots
+
+-   Useful for understanding the bivariate relationship (or joint distribution) between two variables
+
+-   We often add a *line of fit* (linear or smoothed) to make the relationship more explicit
+
+-   in ggplot, geom_point() tells R to make a scatter plot
+
+## A simple example
+
+```{r, eval = F, echo = T}
+library(ggplot2)
+library(palmerpenguins)
+
+ggplot(data = penguins,
+      aes(x = bill_length_mm,
+          y = bill_depth_mm,
+          color = species)) +
+    geom_point()
+```
+
+## A simple example
+
+```{r, echo = F}
+library(ggplot2)
+library(palmerpenguins)
+ggplot(data = penguins,
+       mapping = aes(x = bill_length_mm,
+                     y = bill_depth_mm,
+                     color = species)) +
+    geom_point()
+```
+
+## Step 2: Add titles and labels
+
+Just add two lines to make it readable:
+
+```{r, echo = T, eval = F}
+ggplot(data = penguins,
+       mapping = aes(x = bill_length_mm,
+                     y = bill_depth_mm,
+                     color = species)) +
+    geom_point() +
+    ggtitle("Penguin Bill Dimensions by Species") +
+    labs(x = "Bill Length (mm)", y = "Bill Depth (mm)")
+```
+
+## Step 2: Add titles and labels
+
+```{r, echo = F}
+ggplot(data = penguins,
+       mapping = aes(x = bill_length_mm,
+                     y = bill_depth_mm,
+                     color = species)) +
+    geom_point() +
+    ggtitle("Penguin Bill Dimensions by Species") +
+    labs(x = "Bill Length (mm)", y = "Bill Depth (mm)")
+```
+
+## Step 3: Make it publication-ready
+
+Now we can add more polish:
+
+```{r, echo = T, eval = F}
+ggplot(data = penguins,
+       mapping = aes(x = bill_length_mm,
+                     y = bill_depth_mm,
+                     color = species)) +
+    geom_point() +
+    geom_smooth(method = "lm", se = TRUE) +
+    ggtitle("Characteristics of Penguins by Species") +
+    labs(x = "Bill Length (mm)", y = "Bill Depth (mm)") +
+    theme_minimal() +
+    theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14),
+          plot.title = element_text(size = 16, hjust = 0.5))
+```
+
+## Step 3: Make it publication-ready
+
+```{r, echo = F, message = F}
+ggplot(data = penguins,
+       mapping = aes(x = bill_length_mm,
+                     y = bill_depth_mm,
+                     color = species)) +
+    geom_point() +
+    geom_smooth(method = "lm", se = TRUE) +
+    ggtitle("Characteristics of Penguins by Species") +
+    labs(x = "Bill Length (mm)", y = "Bill Depth (mm)") +
+    theme_minimal() +
+    theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14),
+          plot.title = element_text(size = 16, hjust = 0.5))
+```
+
+## What is the Goal?
+
+We want to convey information to the reader
+
+::: incremental
+-   clearly
+
+-   efficiently
+
+-   as simply as possible
+:::
+
+## Some Basic Rules
+
+::: incremental
+-   For most plots, we want the *outcome* or *dependent* variable on the **Y axis**
+
+-   Similarly, the key *independent variable* should be on the **X axis**
+
+-   Think carefully about axes. Use a single scale, with sensible values!
+
+-   Clearly label plots. Rename variables so reader can understand
+:::
+
+## More Rules
+
+::: incremental
+-   Use colorblind friendly color schemes
+
+    -   In R, the default scheme has improved.
+
+    -   The [palette.colors](https://journal.r-project.org/articles/RJ-2023-071/) function returns even better color schemes
+
+-   As a general rule (there may be exceptions)
+
+    -   Don't use pie graphs, they are hard to interpret
+
+    -   Similarly, 3D graphics rarely add anything to plots
+
+-   If you want to track trends across different groups/subjects, consider *faceting.*
+:::
+
+## Load the ANES data
+
+For the following examples, we'll use the American National Election Study (ANES) data.
+
+```{r, echo = T, message = F}
+library(tidyverse)
+
+# Load the ANES data (make sure this file is in your working directory)
+anes <- read_csv("anes.csv")
+
+# For now, we'll work with a subset to keep plots readable
+anes_first200 <- anes[1:200,]  # take the first 200 rows
+```
+
+Let's also drop respondents who didn't vote:
+
+```{r, echo = T}
+anes_first200 <- anes_first200 |>
+  filter(is.na(votechoice) == FALSE)
+```
+
+## You Try!
+
+Using the `anes_first200` data, create a scatter plot:
+
+-   Put feeling towards Biden (`ft_biden`) on the **x-axis**
+-   Put feeling towards Trump (`ft_trump`) on the **y-axis**
+-   Use **color** to show who the voter voted for (`votechoice`)
+
+**Take 2 minutes to try this!**
+
+*Hint: Start with the template...*
+
+```{r, eval = F, echo = T}
+ggplot(data = ______,
+       mapping = aes(x = ______, y = ______, color = ______)) +
+    geom_point()
+```
+
+## Solution
+
+```{r, echo = T, eval = F}
+ggplot(data = anes_first200,
+       mapping = aes(x = ft_biden,
+                     y = ft_trump,
+                     color = votechoice)) +
+    geom_point()
+```
+
+## Solution
+
+```{r, echo = F}
+ggplot(data = anes_first200,
+       mapping = aes(x = ft_biden,
+                     y = ft_trump,
+                     color = votechoice)) +
+    geom_point()
+```
+
+## Now make it nicer
+
+Add a title and meaningful axis labels:
+
+```{r, echo = F}
+ggplot(data = anes_first200,
+       mapping = aes(x = ft_biden,
+                     y = ft_trump,
+                     color = votechoice)) +
+    geom_point() +
+  ggtitle("Biden and Trump Affect grouped by Vote Choice") +
+    labs(x = "Feeling Towards Biden", y = "Feeling Towards Trump") +
+    theme_minimal() +
+    theme(axis.text = element_text(size = 12),
+          axis.title = element_text(size = 14),
+          plot.title = element_text(size = 16, hjust = 0.5))
+```
+
+## Mutate
+
+Maybe we want to know how much a voter prefers Joe Biden to Donald Trump.
+
+An easy way to do that is to create a new column `biden_minus_trump` that is calculated by subtracting a voter's feeling thermometer score for Donald Trump from their score for Joe Biden.
+
+We can do this using `mutate`:
+
+```{r, echo = T}
+anes_first200 <- anes_first200 |>
+  mutate(biden_minus_trump = ft_biden - ft_trump)
+```
+
+## One Way to Plot This
+
+```{r, echo = T, eval = F}
+## Basic Histogram of Biden - Trump affect
+anes_first200 |>
+  ggplot(aes(x = biden_minus_trump)) +
+  geom_histogram(binwidth = 10, fill = "blue") +
+  labs(
+    title = "Biden minus Trump Thermometer Ratings",
+    x = "Feeling Thermometer Difference (Biden - Trump)",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+## One Way to Plot This
+
+```{r, echo = F}
+## Basic Histogram of Biden - Trump affect
+anes_first200 |>
+  ggplot(aes(x = biden_minus_trump)) +
+  geom_histogram(binwidth = 10, fill = "blue")+
+  labs(
+    title = "Biden minus Trump Thermometer Ratings",
+    x = "Feeling Thermometer Difference (Biden - Trump)",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+## Another way to plot it
+
+```{r, echo = T}
+## create party names labels, drop NAs
+anes_first200 <- anes_first200 |>
+  mutate(party_name = ifelse(party == 1, "Democrats",
+                             ifelse(party == 2, "Republicans", "Other/Independent"))) |>
+  filter(is.na(party_name) == FALSE)
+```
+
+```{r, echo = T, eval = F}
+## Create a violin style plot displaying Biden - Trump affect
+anes_first200 |>
+  ggplot(aes(x = as.factor(party_name), y = biden_minus_trump)) +
+  geom_violin(fill = "blue", alpha = 0.3) +
+  geom_boxplot(width = 0.2, fill = "white", color = "black") +
+  labs(
+    title = "Biden-Trump Difference by Party ID",
+    x = "Party ID",
+    y = "Biden - Trump"
+  ) +
+  theme_minimal()
+```
+
+## Another way to plot it
+
+```{r, echo = F}
+## Create a violin style plot displaying Biden - Trump affect
+anes_first200 |>
+  ggplot(aes(x = as.factor(party_name), y = biden_minus_trump)) +
+  geom_violin(fill = "#4C72B0", alpha = 0.3, color = NA) +
+  geom_boxplot(width = 0.2, outlier.shape = NA, fill = "white", color = "black") +
+  labs(
+    title = "Biden-Trump Difference by Party ID",
+    x = "Party ID",
+    y = "Biden - Trump"
+  ) +
+  theme_minimal()
+```
+
+## When Should You Use Bar Plots?
+
+Bar plots are best for **categorical data**—when you want to compare counts or summary statistics across groups.
+
+::: incremental
+-   **Counts:** How many observations in each category?
+    -   "How many respondents identify as Democrat, Republican, Independent?"
+-   **Summaries:** What's the average/total for each group?
+    -   "What's the average income by education level?"
+-   **Comparisons:** How do groups differ?
+    -   "Which department has the highest budget?"
+:::
+
+## Bar Plots vs. Histograms
+
+| Bar Plot                                | Histogram                         |
+|-----------------------------------------|-----------------------------------|
+| **Categorical** X-axis (groups, labels) | **Continuous** X-axis (numbers)   |
+| Bars don't touch (discrete categories)  | Bars touch (continuous range)     |
+| Compare across groups                   | Show distribution of one variable |
+
+. . .
+
+**Rule of thumb:**
+
+-   If X is categories/labels → Bar plot
+-   If X is a continuous number → Histogram
+
+## Which Bar Geom Should I Use?
+
+| Function | Use When... | Y-axis shows... |
+|----|----|----|
+| `geom_bar()` | You want R to **count** categories | Count (automatic) |
+| `geom_col()` | You already **calculated** a summary stat | Your pre-computed value |
+| `geom_histogram()` | You have **continuous** data | Count in bins |
+
+## Which Bar Geom should I use?
+
+::: incremental
+-   `geom_bar()`= "Count how many of each category"
+-   `geom_col()` = "I already did the math, just plot it"
+-   `geom_histogram()` = "Show me the distribution"
+:::
+
+## Example: geom_bar() counts for you
+
+```{r, echo = T, eval = F }
+library(palmerpenguins)
+
+ggplot(data = penguins, aes(x = species)) +
+  geom_bar() +
+  ggtitle("Count of Penguins by Species") +
+  labs(x = "Species", y = "Count") +
+  theme_minimal()
+```
+
+## Example: geom_bar() counts for you
+
+```{r, echo = F}
+library(palmerpenguins)
+
+ggplot(data = penguins, aes(x = species)) +
+  geom_bar() +
+  ggtitle("Count of Penguins by Species") +
+  labs(x = "Species", y = "Count") +
+  theme_minimal()
+```
+
+## Example: geom_col() uses your values
+
+```{r, echo = T, eval = F}
+# STEP 1: Calculate the summary statistic yourself
+penguin_summary <- penguins |>
+  group_by(species) |>
+  summarize(mean_bill_length = mean(bill_length_mm, na.rm = TRUE))
+
+# STEP 2: Plot it with geom_col()
+ggplot(data = penguin_summary, aes(x = species, y = mean_bill_length)) +
+  geom_col() +
+  ggtitle("Average Bill Length by Species") +
+  labs(x = "Species", y = "Average Bill Length (mm)") +
+  theme_minimal()
+```
+
+## Example: geom_col() uses your values
+
+```{r, echo = F}
+library(dplyr)
+
+# Pre-compute the mean bill length for each species
+penguin_summary <- penguins |>
+  group_by(species) |>
+  summarize(mean_bill_length = mean(bill_length_mm, na.rm = TRUE))
+
+ggplot(data = penguin_summary, aes(x = species, y = mean_bill_length)) +
+  geom_col() +
+  ggtitle("Average Bill Length by Species") +
+  labs(x = "Species", y = "Average Bill Length (mm)") +
+  theme_minimal()
+```
+
+## Examples of Bad Graphics
+
+![](images/Bad%20Happiness%20Chart.jpeg){fig-align="center"}
+
+## Examples of Bad Graphics
+
+![](images/Bad%20Pie%20Chart.png){fig-align="center"}
+
+## Examples of Bad Graphics
+
+![](images/Crazy%20Scaling%20Example.jpeg){fig-align="center"}
+
+## Examples of Bad Graphics
+
+![](images/Weed.png)
+
+## Examples of Bad Graphics
+
+![](images/Expenditure.png){fig-align="center"}
+
+## A Better Graphic
+
+![](images/Good%20Fig.png){fig-align="center"}
+
+## Another Decent(?) Graphic
+
+![](images/My%20Fig.png){fig-align="center"}
+
+## Quick Reference: Common ggplot additions
+
+| What you want       | Code to add                       |
+|---------------------|-----------------------------------|
+| Add points          | `+ geom_point()`                  |
+| Add a trend line    | `+ geom_smooth(method = "lm")`    |
+| Add a title         | `+ ggtitle("Your Title")`         |
+| Label axes          | `+ labs(x = "...", y = "...")`    |
+| Clean theme         | `+ theme_minimal()`               |
+| Color by a variable | Inside `aes()`: `color = varname` |
+| Same color for all  | Inside `geom_`: `color = "blue"`  |
+
+## ggplot2 Cheatsheet
+
+For a comprehensive reference, download the official ggplot2 cheatsheet:
+
+[**ggplot2 Cheatsheet (PDF)**](https://rstudio.github.io/cheatsheets/data-visualization.pdf)
+
+::: incremental
+-   Published by Posit (formerly RStudio)
+-   Two pages covering all major geoms, scales, themes, and more
+-   Print it out and keep it next to your computer!
+-   Also available in RStudio: **Help → Cheat Sheets → Data Visualization with ggplot2**
+:::
+
+## Rendering Your Document to HTML
+
+When you're done writing code, you need to **render** your .qmd file to create a shareable output.
+
+::: incremental
+-   Click the **Render** button (or press `Ctrl/Cmd + Shift + K`)
+-   This runs all your code chunks and creates an HTML file
+-   The HTML file will appear in the same folder as your .qmd file
+-   Open it in any web browser to see your polished document!
+:::
+
+## Common Rendering issues:
+
+-   If rendering fails, check for errors in your code chunks
+    -   If you can't get a block to run, comment it out with `##`
+-   Make sure all packages are loaded at the top
+-   Make sure your data file is in the right location
+
+# Back to Probability
+
+## Two Ways to Sample
+
+When we select items from a group, there are two approaches:
+
+::: incremental
+-   **With replacement:** After each pick, put the item back. You *can* pick the same item again.
+    -   Example: Rolling a die multiple times—you can get the same number twice
+-   **W/o replacement:** Once you pick an item, *can't* pick it again.
+    -   Example: Dealing cards—once the Ace of Spades is dealt, it can't come up again
+:::
+
+. . .
+
+**Why does this matter?** It changes how many possible outcomes exist!
+
+## Sampling With Replacement
+
+**Example:** You're creating a 4-digit PIN using digits 0-9.
+
+::: incremental
+-   Can you repeat digits? **Yes!** (1234 and 1111 are both valid PINs)
+-   For each digit, you have 10 choices (0-9)
+-   The choices are **independent**—picking 3 first doesn't affect your next pick
+:::
+
+. . .
+
+**Formula:** If you have **n** options and make **k** choices with replacement:
+
+$$\text{Number of outcomes} = n^k$$
+
+**PIN example:** $10^4 = 10{,}000$ possible PINs
+
+## Permutations and Factorial
+
+::: incremental
+-   How many different ways can we arrange the letters ABC?
+
+    -   Let each ordering of the letters be a **permutation** (ABC is one permutation, BCA is another)
+
+-   This is a pretty easy problem: ABC, ABC, BAC, BCA, CAB, CBA.
+
+    -   With more elements, it would get complicated!
+
+-   3 ways to pick the first letter, 2 ways to pick the second once the first is picked, and one way to pick the final letter. 3\*2\*1
+
+    -   For shorthand, we write this as 3! (3 factorial).
+
+-   Given a set of n objects, there are n! ways to arrange them
+:::
+
+## Sampling Without Replacement
+
+**Example:** You're picking 3 students from a class of 30 to present (in order: 1st, 2nd, 3rd).
+
+::: incremental
+-   **First pick:** 30 options
+-   **Second pick:** 29 options (one student already chosen)
+-   **Third pick:** 28 options
+:::
+
+. . .
+
+**Formula:** If you have **n** items and choose **k** (order matters, no replacement):
+
+$$\text{Number of outcomes} = n \times (n-1) \times (n-2) \times \cdots \times (n-k+1)$$
+
+. . .
+
+**Our example:** $30 \times 29 \times 28 = 24{,}360$ ways to pick 3 presenters in order
+
+## With vs. Without: A Comparison
+
+|                 | With Replacement      | Without Replacement            |
+|-----------------|-----------------------|--------------------------------|
+| **Can repeat?** | Yes                   | No                             |
+| **Formula**     | $n^k$                 | $n \times (n-1) \times \cdots$ |
+| **Example**     | PIN codes, dice rolls | Dealing cards, picking teams   |
+
+. . .
+
+**Key insight:** Without replacement always gives *fewer* possible outcomes (assuming k \> 1), because your options shrink with each pick.
+
+## Let's work through an example
+
+![](images/Birthday.png){fig-align="center"}
+
+What is the probability that two people in this class share a birthday?
+
+## Plotting the Birthday Problem
+
+```{r}
+# Load necessary package
+library(tidyverse)
+
+# Function to calculate the probability
+birthday_prob <- function(n) {
+  if (n > 365) return(1)
+  prob <- 1
+  for (i in 0:(n-1)) {
+    prob <- prob * (365 - i) / 365
+  }
+  return(1 - prob)
+}
+
+# Number of people in the group
+n <- 1:100
+
+# Calculate probabilities
+probabilities <- sapply(n, birthday_prob)
+
+# Create a data frame for plotting
+birthday_data <- data.frame(GroupSize = n, Probability = probabilities)
+
+# Plotting the birthday problem
+ggplot(birthday_data, aes(x = GroupSize, y = Probability)) +
+  geom_line(color = "blue", size = 1.5) +
+  geom_point(color = "red", size = 2) +
+  labs(title = "Birthday Problem: Probability of Shared Birthdays",
+       x = "Number of People in the Group",
+       y = "Probability of At Least One Shared Birthday") +
+  theme_minimal()
+
+```
+
+## Adjusting for over counting
+
+How many ways are there to chose a three person committee from five people?
+
+. . .
+
+List them all out (123)(124)(125)(134)(135)(145)(234)(235)(245)(345). So, there are **10** ways to form this committee.
+
+. . .
+
+or, we can use the multiplication rule. There are 5 ways to chose spot 1, 4 ways to chose spot 2, 2 ways to chose spot 3....but this *over counts because order does not matter.* A committee of Tom, Jane and Raul is the same as a committee of Rual, Jane and Tom.
+
+## Binomial Coefficients
+
+This leads to a more general concept - the *Binomial Coefficient* $n\choose k$ or "n choose k". This is the number of subsets of size k for a set of size n.
+
+. . .
+
+$$
+ \frac{(n)(n-1)(n-2)....(n-k+1)}{k!}
+$$
+
+if k \< n
+
+. . .
+
+Equivalently
+
+$$\frac{n!}{(n-k)!k!}$$
+
+## Example
+
+Suppose we need to pick 4 members of the 15 person City Council to form a select committee. How many possible different committee combinations exist?
+
+. . .
+
+n = 15, k = 4. (we could say, 15 choose 4) . . . So this can be written as
+
+$$
+\frac{15!}{11!*4!}
+$$
+
+## Counting Rules Summary
+
+|                         |  **Order Matters**   | **Order Doesn't Matter** |
+|-------------------------|:--------------------:|:------------------------:|
+| **With Replacement**    |        $n^k$         |  $\binom{n + k - 1}{k}$  |
+| **Without Replacement** | $\dfrac{n!}{(n-k)!}$ |      $\binom{n}{k}$      |
+
+## The Basic Rules of Probability
+
+Every probability must follow three simple rules:
+
+::: incremental
+1.  **Probabilities are between 0 and 1**
+    -   P(A) = 0 means "impossible"
+    -   P(A) = 1 means "certain"
+2.  **Something has to happen**
+    -   The probabilities of all possible outcomes add up to 1
+3.  **"Or" means add (for mutually exclusive events)**
+    -   If A and B can't both happen: P(A or B) = P(A) + P(B)
+    -   Example: P(roll a 1 OR roll a 2) = 1/6 + 1/6 = 2/6
+:::
+
+## Two More Useful Rules
+
+**Complement Rule:** P(not A) = 1 - P(A)
+
+-   If there's a 30% chance of rain, there's a 70% chance of no rain
+
+. . .
+
+**General Addition Rule:** P(A or B) = P(A) + P(B) - P(A and B)
+
+-   We subtract P(A and B) to avoid double-counting when events can overlap
+
+. . .
+
+**Example:** In a class, 60% like coffee, 50% like tea, 30% like both.
+
+P(coffee OR tea) = 0.6 + 0.5 - 0.3 = 0.8 (80% like at least one)
+
+# Conditional Probability
+
+## Conditioning
+
+Conditional probability is the heart of modern statistics and social science. Getting a firm grasp on conditional probability is incredibly important if you will be making decisions based on data!
+
+. . .
+
+**Unconditional Probability:** What is the probability that A occurs?
+
+. . .
+
+**Conditional Probability:** If we know B has occurred, what is the probability that A occurs (not necessarily sequential)?
+
+. . .
+
+We *condition* our estimate of A on B having occurred.
+
+. . .
+
+Could spend a whole semester on conditional probability and fun examples.
+
+## Conditioning is the whole game!
+
+::: incremental
+-   What is the probability that a child goes to college conditional on being *treated* by some policy intervention?
+
+-   What is the difference in probability of being hospitalized for COVID among vaccinated and unvaccinated populations?
+
+-   Are citizens more likely to vote if they are reminded that their decision to vote, or not vote, is visible to everyone?
+
+-   Nearly all of social science is comparing probabilities (or means or other values) between different conditions!
+:::
+
+## Drawing Cards
+
+:::::: columns
+::: {.column width="50%"}
+![](images/Cards.jpg){fig-align="center"}
+:::
+
+:::: {.column width="50%"}
+::: incremental
+-   Consider a standard 52 card deck. Let A be the event of drawing a Spade and B be the event of drawing a red card.
+
+-   What is P(A)?
+
+-   What is P(B)?
+
+-   What is P(A\|B)?
+
+-   What is P(B\|A)?
+:::
+::::
+::::::
+
+## Definition
+
+If $P(B)$ \> 0, then we define the conditional probability of A given B as:
+
+$$
+P(A|B) = \frac{P(A \cap B)}{P(B)} 
+$$
+
+. . .
+
+How often A *and* B jointly occur, divided by how often *B* occurs. Why do we need to divide by B?
+
+## Example
+
+What do we think $P(\text{Policy Nerd} | \text{Political Science PhD})$ is?
+
+. . .
+
+What about $P(\text{Political Science PhD}|\text{Policy Nerd})$?
+
+. . .
+
+Often assumed that $P(\text{MPA Political Science PhD|Policy Nerd})$ should also be high. This is referred to as the *base rate fallacy**.*** Most people, even policy nerds, don't get advanced degrees. And even of those who do, many get their degrees in some other, related, field like Economics. Or maybe they get a POST PhD instead.
+
+## Weather
+
+Let A = Presence of clouds and B = Rain
+
+. . .
+
+What is $P(A|B)$? (Don't over-think it - we don't need math here!)
+
+. . .
+
+Does that mean $P(B|A)$ is 1 too?
+
+. . .
+
+What about $P(B|A^{c})$?
+
+## Senate example
+
+$$
+\begin{array}{|c|c|c|c|c|}
+\hline
+ & \textbf{Democrats} & \textbf{Republicans} & \textbf{Independents} & \textbf{Total} \\
+\hline
+\textbf{Men} & 33 & 40 & 2 & 75 \\
+\hline
+\textbf{Women} & 15 & 9 & 1 & 25 \\
+\hline
+\textbf{Total} & 48 & 49 & 3 & 100 \\
+\hline
+\end{array}
+$$
+
+Choose one senator at random from this population. What is the probability a randomly selected Democrat is a woman?
+
+. . .
+
+What is the probability that a randomly selected woman is a Republican?
+
+## Independence and Sampling
+
+Suppose that the current prevalence of the Influenza in South Carolina is 1.5%.
+
+. . .
+
+If we sample 20 random people, what is the likelihood that at least one has Influenza?
+
+. . .
+
+What if the first person we sample has Influenza - what is the probability at least one of the remaining people has Influenza?
+
+. . .
+
+Note - sampling *without* replacement is independent. Sampling *with* replacement adds dependency. If N is very large, dependency is very slight.
+
+## Conditional Independence
+
+Two things can be **independent overall** but **related once you condition on something else**.
+
+. . .
+
+**Example:** Height and vocabulary are independent in the adult population.
+
+But among 5-year-olds to 18-year-olds? Taller kids tend to have bigger vocabularies!
+
+. . .
+
+**Why?** Once we condition on "being a school-age child," both height and vocabulary are related to a third variable: **age**.
+
+. . .
+
+This concept becomes very important in regression—sometimes controlling for a variable *creates* a relationship that wasn't there before!
+
+## Conditioning Can Create Spurious Relationships
+
+**The College Admissions Example:**
+
+In the general population, GPA and athletic ability are probably independent—smart kids aren't systematically better or worse at sports.
+
+. . .
+
+But what about **among admitted students** at a selective public university (in SC?) that values both academics and athletics?
+
+. . .
+
+Among admitted students, we might see a *negative* correlation
+
+. . .
+
+**Why?** To get admitted, you need to be strong in *something*. Conditioning on admission creates a spurious negative relationship.
+
+## Random Variables
+
+::: incremental
+-   A **random variable** is just a number whose value depends on some random process
+
+-   We don't know what value it will take until the process happens
+
+-   Examples: the number of heads in 4 coin flips, a candidate's vote share, next month's unemployment rate
+
+-   We use random variables to describe uncertainty quantitatively
+:::
+
+## An Example - Polling
+
+::: incremental
+-   Each poll is an event where **X**(poll) is % approval for President Trump.
+
+-   Imagine polls coming from a *distribution* centered around the true support.
+
+-   In practice, we don't know the true level of support. **X** is then the sample mean of Trump approval in each poll.
+
+    -   This is the core of what FiveThirtyEight (RIP) and similar are doing for their election forecasts.
+
+        -   What true level of support is *most likely* given the observed polling data (plus some other factors).
+:::
+
+## Types of Random Variables
+
+::: incremental
+-   **Discrete**: Can only take specific, countable values
+    -   Number of students absent, vote counts, survey responses (1-5)
+-   **Continuous**: Can take any value in a range
+    -   Income, temperature, time, test scores
+-   This distinction matters for choosing the right statistical method later
+:::
+
+## Distributions: Describing Uncertainty
+
+::: incremental
+-   A **distribution** tells us how likely each possible value is
+
+-   Example: If X = number of days a student was absent
+
+    -   What's the chance a student missed more than 10 days?
+    -   What's the chance they had perfect attendance?
+
+-   The distribution answers these questions by showing the probability of each outcome
+:::
+
+## Simple Example
+
+Consider flipping 4 fair coins, where **X** is the number of heads.
+
+. . .
+
+What is P(X = 1)?
+
+. . .
+
+What about P(X = 2 or 3)?
+
+. . .
+
+What about P(X \> 4)?
+
+## Distribution of X
+
+```{r}
+# Load necessary library
+library(ggplot2)
+
+# Parameters
+n <- 4  # Number of coin flips
+p <- 0.5  # Probability of heads
+
+# Create a data frame with the number of heads and corresponding probabilities
+x <- 0:n
+pmf_values <- dbinom(x, n, p)
+df <- data.frame(Heads = x, Probability = pmf_values)
+
+# Plot the PMF
+ggplot(df, aes(x = factor(Heads), y = Probability)) +
+  geom_col(fill = "skyblue") +
+  geom_text(aes(label = round(Probability, 3)), vjust = -0.5) +
+  labs(title = "Distribution of the Number of Heads from 4 Fair Coin Flips",
+       x = "Number of Heads",
+       y = "Probability") +
+  theme_minimal()
+
+```
+
+## Distributions in Practice: Experimental Design
+
+Imagine you are designing an experimental educational policy intervention with 3 treatment conditions (Control, T1 and T2).
+
+. . .
+
+Good randomization is the foundation of experimental inference, so you decide to randomize into conditions by flipping four coins. Let **X** be the number of heads. If **X** is 0 or 1 you assign the school to the control. If **X** is 2 you assign it to T1, and if **X** \>2, you assign it to T2.
+
+. . .
+
+What does the distribution of **X** look like? Would you use this randomization technique?

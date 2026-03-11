@@ -1,0 +1,181 @@
+---
+title: "Problem Set: Exploring Global Development with Gapminder Data"
+author: "Name:"
+date: today
+format: 
+  html:
+    toc: true
+    toc-depth: 2
+    code-fold: false
+    code-tools: true
+    embed-resources: true
+  pdf:
+    toc: false
+editor: visual
+---
+
+## Overview
+
+In this problem set, you will analyze the Gapminder dataset, which contains information about life expectancy, GDP per capita, and population for countries around the world from 1952 to 2007. This dataset provides an opportunity to explore how these indicators of development have changed over time and vary across continents.
+
+## Setup Instructions
+
+1.  Download the `gapminder.csv` file from the course website
+2.  Save it in the same folder as this .qmd file
+3.  Complete each question by adding your code in the provided code chunks
+4.  Write any text responses below the relevant code chunks
+
+### Start by loading tidy verse and then loading the gapminder csv in as "gapminder_data"
+
+```{r setup, message=FALSE, warning=FALSE}
+
+# Load required libraries
+library(tidyverse)
+# Read the data
+data <-read_csv("gapminder.csv")
+
+```
+
+------------------------------------------------------------------------
+
+## Part 1: Data Import and Exploration (30 points)
+
+### Question 1.1: Data Structure (15 points)
+
+After loading the data, explore its structure. Use appropriate R functions to answer:
+
+-   How many rows (observations) are in the dataset?
+-   How many columns (variables) are in the dataset?
+-   What are the variable names and their types?
+
+```{r, echo = T}
+# Your code here
+summary(gapminder)
+gapminder$country[1:10]
+```
+
+**Your written answer:**
+
+### Question 1.2: Missing Values (5 points)
+
+Check for missing values in each column. Are there any? Report your findings.
+
+```{r, echo = T}
+# Your code here
+
+```
+
+**Your written answer:**
+
+### Question 1.3: Unique Values (10 points)
+
+How many unique countries and continents are in the dataset? List all the continents.
+
+```{r, echo = T}
+# Your code here
+# number of unique countries
+
+# number of unique continents
+
+# list of all continents
+
+```
+
+------------------------------------------------------------------------
+
+## Part 2: Data Wrangling with dplyr (40 points)
+
+### Question 2.1: Filtering (10 points)
+
+Create a new data frame called `africa_21st` that contains only African countries for the years 2002 and 2007. How many rows does this filtered dataset have?
+
+```{r, echo = T}
+# Your code here
+
+```
+
+**Your written answer:**
+
+### Question 2.2: Creating New Variables (10 points)
+
+Using `mutate()`, add a new column to the gapminder data called `gdp_total` that represents the total GDP of each country (GDP per capita × population). What are the 3 countries with the highest total GDP in 2007?
+
+```{r, echo = T}
+# Your code here
+
+```
+
+**Your written answer:**
+
+### Question 2.3: Sorting Data (10 points)
+
+For the year 2007 only:
+
+-   Find the 5 countries with the highest life expectancy
+-   Find the 5 countries with the lowest life expectancy
+
+Display the country name, continent, and life expectancy for each.
+
+```{r, echo = T}
+# Your code here
+# Highest life expectancy
+
+
+# Lowest life expectancy
+
+```
+
+### Question 2.4: Grouping and Summarizing (10 points)
+
+Calculate the average life expectancy by continent for each year in the dataset. Your result should show the year, continent, and mean life expectancy. Store this in a new object called `life_exp_by_continent`.
+
+```{r, echo = T}
+# Your code here
+
+```
+
+------------------------------------------------------------------------
+
+## Part 3: Descriptive Statistics (30 points)
+
+### Question 3.1: Comparative Statistics (20 points)
+
+For the year 2007, calculate the mean and median GDP per capita for each continent. Which continent has the highest mean GDP per capita? Which has the largest difference between mean and median (what might this suggest)?
+
+```{r, echo = T}
+# Your code here
+
+```
+
+**Your written answer:**
+
+### Question 3.2: Change Over Time (10 points)
+
+Calculate the change in life expectancy from 1952 to 2007 for each country.
+
+-   Which country had the largest increase?
+-   Which country had the smallest increase (or largest decrease)?
+-   What was the average change across all countries?
+
+```{r, echo = T}
+# Your code here
+
+```
+
+**Your written answer:**
+
+------------------------------------------------------------------------
+
+## Submission Instructions
+
+1.  Make sure all code chunks run without errors
+2.  Render this document to HTML or PDF. Make sure the rendered document is readable and well formatted!
+3.  Submit both the .qmd file and the rendered output
+
+**Code quality:** Points may be deducted for:
+
+-   Code that doesn't run
+-   Lack of comments (use \## to comment your code)
+-   Unclear or incorrect labeling of plots
+
+Good luck, and remember to start early so you have time to ask questions!

@@ -1,0 +1,51 @@
+state,region,poverty_rate,median_income,unemployment_rate,pct_college_degree
+Alabama,South,15.5,54943,3.2,26.3
+Alaska,West,10.2,77790,4.8,29.8
+Arizona,West,13.5,65913,3.9,30.5
+Arkansas,South,16.2,52123,3.4,24.3
+California,West,12.3,84097,4.8,35.0
+Colorado,West,9.9,82254,3.2,42.7
+Connecticut,Northeast,10.0,83771,4.1,40.0
+Delaware,Northeast,11.3,72724,4.2,33.4
+Florida,South,13.1,63062,3.2,31.3
+Georgia,South,13.9,65030,3.5,33.0
+Hawaii,West,9.3,84857,3.5,34.0
+Idaho,West,11.2,64930,2.9,29.4
+Illinois,Midwest,11.5,72205,4.5,35.5
+Indiana,Midwest,12.1,61944,3.3,27.8
+Iowa,Midwest,10.4,65429,2.7,29.3
+Kansas,Midwest,11.4,64521,2.8,34.0
+Kentucky,South,16.3,55573,4.0,25.1
+Louisiana,South,18.6,52087,4.2,25.0
+Maine,Northeast,11.6,63182,3.1,33.5
+Maryland,Northeast,9.0,91431,3.0,41.3
+Massachusetts,Northeast,10.0,89645,3.8,45.0
+Michigan,Midwest,13.1,63498,4.3,30.0
+Minnesota,Midwest,9.0,77720,2.9,37.3
+Mississippi,South,19.4,48716,4.0,22.8
+Missouri,Midwest,12.9,60905,2.8,30.2
+Montana,West,12.6,60560,2.6,33.4
+Nebraska,Midwest,10.0,66817,2.3,33.0
+Nevada,West,12.9,65686,5.4,25.9
+New Hampshire,Northeast,7.2,83449,2.5,38.3
+New Jersey,Northeast,9.6,89296,4.3,41.2
+New Mexico,West,18.4,53992,4.8,28.3
+New York,Northeast,13.0,74314,4.3,37.8
+North Carolina,South,13.6,60516,3.7,33.4
+North Dakota,Midwest,10.6,68131,2.1,30.7
+Ohio,Midwest,13.4,60068,4.0,29.0
+Oklahoma,South,15.3,55826,3.3,26.2
+Oregon,West,11.4,70084,4.2,35.0
+Pennsylvania,Northeast,11.8,67587,4.4,32.8
+Rhode Island,Northeast,11.0,71169,3.8,35.4
+South Carolina,South,14.6,58234,3.3,29.4
+South Dakota,Midwest,11.9,62174,2.0,30.0
+Tennessee,South,13.6,58516,3.5,28.8
+Texas,South,14.0,66963,4.0,31.3
+Utah,West,8.4,79449,2.4,35.5
+Vermont,Northeast,10.3,63477,2.4,39.8
+Virginia,South,9.9,80615,2.9,40.5
+Washington,West,9.9,82228,4.2,37.0
+West Virginia,South,17.9,50884,4.0,22.0
+Wisconsin,Midwest,10.7,67080,2.9,31.3
+Wyoming,West,10.5,68002,3.7,28.0

@@ -1,0 +1,89 @@
+---
+title: "In-Class 1-13"
+author: "Will Horne"
+format: html
+editor: visual
+---
+
+In a qmd file, we can work as if we are in a normal word processor simply by typing outside of a code block. There are a few advantages to .qmd files; some we won't really make use of, like the ability to type set very complicated equations with mathematical symobls. For our purposes, the ability to include codeblocks and run data analyses within the document is the draw!
+
+To open a codeblock, either type \`\`\`{r} and hit enter, or use the keyobard shortcut ctrl command i (thanks, Lauren, for finding this)!
+
+Often, we want to work with packages beyond the base R package, in which case we can install them using the packages tab in the bottom right, and then opening a code block and calling the package from the library, as below.
+
+```{r}
+library(tidyverse)
+```
+
+To load data into R studio, we set the working directory to the location of the data (this is also where we should save our .qmd file). We then use `read_csv` from the tidyverse package to load the data by entering the file name. If we don't care about naming the file, we also could load it by clicking the .csv in the files tab in the bottom right and using the point and click import tool.
+
+Notice that I don't need to reload `tidyverse` here, since I loaded it in a previous block.
+
+```{r}
+class1_data <-read_csv("anes.csv")
+```
+
+`head` provides us an easy way to get a summary of the data. Usually, it's just as easy and perhaps more informative to go to our environment and click on the spreadsheet icon, which will open up a data viewer.
+
+```{r}
+head(class1_data)
+```
+
+We can use R as a calculator to do math, or use the print function to print out phrases. In practice, it's good to know the mathematical operators in R (+,-,=,\*,/,\^) because we may want them to do operations to our data.
+
+```{r}
+1 + 1 
+print("hello world!")
+```
+
+If we use the R assignment operator `<-`, we can save objects to the `global environemnt`, which you can see in the Environment tab. These objects are preserved until you end your R session; if you want to maintain them you will need to save them (we will cover this next week).
+
+```{r}
+data1 <- "a" 
+data2 <- "b"
+```
+
+Notice here that once I save the object to x, if I "call" x it will print out the value that we have assigned to x (which is 6+5+4, so 15).
+
+```{r}
+x <- 6 + 5 + 4
+
+x
+
+```
+
+The value of x is preserved through any future code blocks, and I can perform any type of mathematical operation on x and save it as some other value. Do be careful about variable names; if you assign a new value to x, you will overwrite the old one! Note; variable names are case sensitive!
+
+```{r}
+y <- x ^ 2
+z <- x + y
+```
+
+R has a bunch of built-in `functions`. One of them, `paste`, allows us to concatenate (link together/combine) two character strings. \[A character string is what we call data that is text, rather than numeric\].
+
+Functions have both required and optional `arguments`. Paste *requires* that you enter two objects that contain text (In the documentation, these are called character vectors, but we don't need to get deep into the technical language). These are the objects that you want to paste together, so it makes sense that you are required to enter something here!
+
+The optional argument is "sep", which tells R how to separate the concatenated objects. Optional arguments have defaults, such that if you don't enter anything it will assume that you are happy with the default. For paste, the default is to separate by a space. Below, I separate by a comma and space; you should try entering different options and seeing what happens.
+
+One other thing to notice is that I wrapped all of the text in quotations marks, but I didn't do this to the numbers. That is because if you don't wrap text in quotation marks, R will think it's code that it needs to evaluate rather than a character string!
+
+```{r}
+a <- "the small brown"
+b <- "fox"
+## paste strings together
+c <- paste(a, b, sep = ", ")
+c
+```
+
+Another useful function is class, which tells us the class (type) of an object. When it comes to what arguments to use for functions, or even if there is a function for your specific problem, google is your friend!
+
+```{r}
+## to check the class of an object named a
+class(a)
+```
+
+Data types can be important, for example if we try add a character and a numeric value together, we will get an error message. It's good to get used to seeing error messages, and if they don't make sense, copy and pasting them into google. You will not be the first person to have triggered this error!
+
+```{r}
+8 + "cat"
+```

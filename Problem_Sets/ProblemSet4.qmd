@@ -1,0 +1,231 @@
+---
+title: "Problem Set 4: Regression, Logistic Regression, and Model Interpretation"
+author: "Will Horne"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    code-fold: false
+    code-tools: true
+    embed-resources: true
+  pdf:
+    toc: false
+editor: visual
+---
+
+**If you get stuck, please reach out to me! Come to office hours, send me an email, or post on the discussion board. I would much rather help you work through a problem than have you spend hours frustrated. That is what I am here for.**
+
+## Overview
+
+A state workforce agency ran a **Young Adult Employment Initiative** targeting 18--29 year-olds. Some young adults chose to participate in the program (job skills training, resume workshops, interview coaching); others did not. Six months later, the agency collected data on each person's employment status and quarterly earnings.
+
+Your job is to analyze this data using the tools from Lectures 7--9: OLS regression, logistic regression, and interpretation of MLE output. The first question also builds on the data analysis tools you learned at the beginning of the course. You will also think critically about what these models can and cannot tell us about the program's effectiveness.
+
+## Setup
+
+Download `youth_employment.csv` from Canvas and save it in the same folder as this .qmd file.
+
+```{r setup, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(marginaleffects)
+
+youth <- read_csv("youth_employment.csv", show_col_types = FALSE)
+```
+
+The dataset contains 800 individuals with the following variables:
+
+| Variable | Description |
+|------------------------------------|------------------------------------|
+| `participant_id` | Unique identifier |
+| `age` | Age at time of program (18--29) |
+| `education_years` | Years of formal education (8--18) |
+| `prior_work_experience` | Had prior work experience before program (0 = No, 1 = Yes) |
+| `region` | Urban, Suburban, or Rural |
+| `program` | Participated in the Youth Employment Initiative (0 = No, 1 = Yes) |
+| `quarterly_earnings` | Earnings in the first full quarter after the program (\$) |
+| `employed_6months` | Employed six months after the program (0 = No, 1 = Yes) |
+
+------------------------------------------------------------------------
+
+## Question 1: Getting to Know the Data (15 points)
+
+### 1a. (8 points)
+
+What share of individuals participated in the program? What is the average quarterly earnings for program participants vs. non-participants? Calculate both using `group_by()` and `summarize()`.
+
+```{r}
+# Your code here
+
+
+```
+
+**Your written answer:**
+
+### 1b. (7 points)
+
+Can we conclude from the comparison in 1b that the program *caused* the difference in earnings? Why or why not? In your answer, name at least one specific variable in the dataset that might be a confounder, and explain briefly why it qualifies (i.e., how it could be related to both program participation and earnings).
+
+**Your written answer:**
+
+------------------------------------------------------------------------
+
+## Question 2: OLS Regression with an Interaction (30 points)
+
+The agency suspects that the program may be especially helpful for people with less formal education, since those individuals may have fewer existing job skills and more to gain from training. We will test this using an interaction between `program` and `education_years`.
+
+### 2a. (10 points)
+
+First, fit a "baseline" OLS model predicting `quarterly_earnings` from `program`, `education_years`, `prior_work_experience`, and `region`. Store the model as `model_base` and display the `summary()`.
+
+```{r}
+# Your code here
+
+
+```
+
+Next, Interpret the coefficient on `program` in one sentence. Be precise about units and what "holding constant" means here.
+
+**Your Written Answer:**
+
+### 2b. (10 points)
+
+Now fit an interaction model. Add the interaction between `program` and `education_years`. You can do this with `program * education_years` in the formula (R will automatically include both main effects and the interaction). Store this as `model_interaction` and display the `summary()`.
+
+```{r}
+# Your code here
+
+
+```
+
+**Your written answer:** Answer each of the following:
+
+1.  What is the coefficient on the interaction term `program:education_years`? Is it positive or negative, and is it statistically significant?
+2.  In a model with an interaction, the coefficient on `program` is no longer the "average effect of the program." What does it represent instead? (Hint: at what value of `education_years` does it apply?)
+3.  Using the coefficients from your model, calculate the estimated effect of the program on quarterly earnings for someone with 10 years of education, and again for someone with 16 years of education. You can use R, but it is also straightforward to this by hand or with a calculator. (*Hint, the relevant equations are on slide 8*). Does the pattern match the agency's hypothesis?
+
+### 2c. (10 points)
+
+Use the `marginaleffects` package to visualize how the effect of the program varies with education level. Use `plot_slopes()` with `variables = "program"` and `condition = "education_years"`. Add a horizontal line at zero and a descriptive title.
+
+```{r}
+# Your code here
+
+
+```
+
+**Your written answer:** Describe what the plot shows. At approximately what education level does the program's effect become statistically indistinguishable from zero (i.e., the confidence interval includes zero)?
+
+### 
+
+## Question 3: Logistic Regression (20 points)
+
+Now we turn to a different outcome: whether the person was employed at the six-month mark (`employed_6months`). This is a binary variable, so we need logistic regression.
+
+### 3a. (10 points)
+
+Fit a logistic regression predicting `employed_6months` from `program`, `age`, `education_years`, `prior_work_experience`, and `region`. Use `glm()` with `family = binomial(link = "logit")`. Store the model as `logit_fit` and display the `summary()`.
+
+```{r}
+# Your code here
+
+
+```
+
+**Your written answer:** The coefficients are on the log-odds scale. For the coefficient on `program`, explain in one sentence what the sign tells us about the program's relationship with employment. You do not need to interpret the exact magnitude in log-odds.
+
+### 3b. (10 points)
+
+Log-odds are hard to interpret. Let's get a more useful quantity:
+
+1.  Exponentiate the coefficients to get **odds ratios**. There is code to do this on my slides (lecture 9), or you can look up how exponentiate. What is the odds ratio for `program`? Interpret it in one sentence.
+
+```{r}
+# Your code here: Calculate Odds Ratios
+
+
+```
+
+**Your written answer:**
+
+## Question 4: Assumptions, Causality, and Bias (20 points)
+
+No code is required for this question. Answer in complete sentences.
+
+### 4a. (7 points)
+
+In our data, program participation was **not randomly assigned**. People chose whether to participate (or were referred by caseworkers based on their circumstances). Draw or describe a DAG (Directed Acyclic Graph) that shows at least one plausible confounder in the relationship between `program` and `quarterly_earnings`. Explain why the variable you chose is a confounder (i.e., how it relates to both the treatment and the outcome).
+
+You can draw the DAG by hand and describe it in words, or use text like:
+
+```         
+Confounder → Program
+Confounder → Earnings
+Program → Earnings
+```
+
+**Your written answer:**
+
+### 4b. (7 points)
+
+Suppose someone who had not taken this class looked at your regression from Question 2a and said: "The program increases earnings, so the state should expand it." What would you tell them? Your answer should address:
+
+-   Whether the coefficient can be interpreted as a causal effect
+-   What specific threat to causal inference (omitted variable bias, selection bias, etc.) is most concerning here
+-   What kind of study design would allow a causal interpretation
+
+### 4c. (6 points)
+
+In Question 3, we included `region` as a control variable. Suppose we also had data on `commute_time` (the person's commute to their job after the program). Should we include `commute_time` as a control in the logistic regression? Why or why not? Name the specific type of bias that would result if we did include it.
+
+**Your written answer:**
+
+------------------------------------------------------------------------
+
+## Question 5: Interpreting Other MLE Models (15 points)
+
+You do not need to run any code for this question. The output is provided for you.
+
+### 5a. Poisson Regression (8 points)
+
+A researcher studies what predicts the **number of 311 (non-emergency) calls** that city council districts receive per month. They fit a Poisson regression and get the following output:
+
+| Term                 | Coefficient | Std. Error | p-value  |
+|----------------------|-------------|------------|----------|
+| (Intercept)          | 3.120       | 0.205      | \< 0.001 |
+| population_thousands | 0.018       | 0.003      | \< 0.001 |
+| median_income_10k    | -0.095      | 0.031      | 0.002    |
+| pct_renters          | 0.012       | 0.004      | 0.003    |
+| has_311_app          | 0.223       | 0.078      | 0.004    |
+
+Answer the following:
+
+1.  Poisson regression uses a **log link**. This means the coefficients are on the log-count scale. If we exponentiate the coefficient on `has_311_app`, we get $e^{0.223} \approx 1.25$. Interpret this number in one sentence. What does it mean in terms of the expected number of 311 calls?
+2.  The coefficient on `median_income_10k` is negative. What does this tell us about the relationship between income and 311 calls? Compute the incidence rate ratio ($e^{-0.095} \approx 0.91$) and interpret it.
+3.  What is one reason the researchers might worry about **overdispersion** in this data? If overdispersion is present, what happens to the standard errors from the Poisson model, and what model should they use instead?
+
+**Your written answer:**
+
+### 5b. Ordered Logit (7 points)
+
+A different researcher surveys residents about their **satisfaction with city services** on a 1--5 scale (1 = Very Dissatisfied, 5 = Very Satisfied). They fit an ordered logit model and report the following predicted probabilities for a key variable:
+
+|   | Very Dissatisfied (1) | Dissatisfied (2) | Neutral (3) | Satisfied (4) | Very Satisfied (5) |
+|------------|------------|------------|------------|------------|------------|
+| **Low-income residents** | 0.15 | 0.25 | 0.30 | 0.20 | 0.10 |
+| **High-income residents** | 0.05 | 0.10 | 0.25 | 0.35 | 0.25 |
+
+Answer the following:
+
+1.  What is the most likely satisfaction rating for low-income residents? For high-income residents?
+2.  Why did the researcher choose ordered logit instead of OLS for this analysis? Give one specific reason.
+
+**Your written answer:**
+
+------------------------------------------------------------------------
+
+## Submission Instructions
+
+1.  Make sure all code chunks run without errors
+2.  Render this document to HTML or PDF
+3.  Submit both the .qmd file and the rendered output on Canvas

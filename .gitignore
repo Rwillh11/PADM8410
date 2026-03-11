@@ -1,0 +1,79 @@
+# macOS
+.DS_Store
+
+# R workspace files
+.Rhistory
+.RData
+.Rproj.user
+
+# Quarto
+/.quarto/
+_site/
+
+# Student submissions and grades
+**/submissions/
+**/submissions.zip
+**/*Grades*
+**/*grades*
+
+# Answer keys and solutions
+**/*Solutions*
+**/*AnswerKey*
+**/*_Solutions*
+**/*_solutions*
+
+# Midterm sensitive materials
+Midterm/PADM8410_Midterm_Grades.xlsx
+Midterm/submissions/
+Midterm/submissions.zip
+Midterm/*Answers*
+
+# Readings (copyrighted journal articles)
+Readings/
+
+# Draft/scratch files
+Untitled.qmd
+
+# Old/duplicate lecture versions (keep only current versions)
+PADM8410Lecture4.qmd
+PADM8410Lecture5.qmd
+PADM8410Lecture6.qmd
+PADM8410Lecture6.html
+PADM8410Lecture6_files/
+Lecture_03/Old Slides/
+Lecture_03/PADM8410_DataViz_Probabilitypdf.qmd
+Lecture_03/MiniProblemSet2.qmd
+Lecture_03/InClass_GroupActivity_DataViz.qmd
+Lecture_03/ProblemSet2.qmd
+
+# Rendered HTML files (Quarto will regenerate these)
+PADM8410Lecture*.html
+Lecture_01/*.html
+Lecture_02/*.html
+Lecture_03/*.html
+Midterm/*.html
+Problem_Sets/*.html
+*_Revised.html
+
+# Quarto _files output directories (regenerated on render)
+*_files/
+site_libs/
+
+# Beamer versions (keep revealjs/html versions for the website)
+*_beamer.qmd
+*_beamer.pdf
+*_beamer_files/
+
+# Rendered PDFs (too large for git; site will render HTML)
+*.pdf
+
+# Problem set student work
+Problem_Sets/Problem Set 3/
+Problem_Sets/Problem Set 3.zip
+Problem_Sets/Problem_Set_01/submissions/
+Problem_Sets/Problem_Set_01/submissions.zip
+Problem_Sets/Problem_Set_01/HW rough draft.pdf
+Problem_Sets/Problem_Set_01/martin draft.qmd
+
+# Publish config (Quarto Pub, not GitHub Pages)
+_publish.yml

@@ -1,0 +1,1428 @@
+---
+title: "Beyond OLS: Maximum Likelihood for Policy Analysis"
+author: "Will Horne"
+format: revealjs
+editor: visual
+code-fold: true
+execute:
+  fig-align: center
+---
+
+## Where We've Been, Where We're Going {.smaller}
+
+So far, all of our models have assumed continuous outcomes - test scores, graduation rates, spending.
+
+. . .
+
+But most policy outcomes aren't continuous:
+
+::: incremental
+-   Did the loan get approved? (**binary**)
+-   What type of insurance does someone carry? (**categorical**)
+-   How satisfied are residents with city services? (**ordered**)
+-   How many 911 calls did a district receive? (**count**)
+:::
+
+. . .
+
+Today we learn a **single framework** - Maximum Likelihood Estimation - that handles all of these.
+
+## Today's Roadmap
+
+::: incremental
+1.  **Why OLS breaks** for non-continuous outcomes
+2.  **The MLE framework**: Find the parameters that make our data least surprising
+3.  **Logistic regression**: The workhorse for binary outcomes
+4.  **Ordered and categorical models**: How to handle categorical outcomes
+5.  **Count models**: When outcomes are non-negative integers
+:::
+
+# Part 1: When OLS Breaks Down
+
+## A Lending Discrimination Study {.smaller}
+
+Suppose we want to know: **Do lenders discriminate against non-white applicants?**
+
+Loan approval is binary (yes/no). Let's see what happens if we force OLS to handle it.
+
+```{r}
+#| echo: true
+
+library(tidyverse)
+set.seed(30317)
+
+n <- 10000
+
+# Generate predictor variables
+income <- rnorm(n, mean = 50000, sd = 15000)
+race <- sample(c("White", "Black", "Hispanic", "Asian", "Other"),
+               size = n, replace = TRUE)
+marital_status <- sample(c("Single", "Married", "Divorced"),
+                         size = n, replace = TRUE)
+
+# Base probability of loan approval
+base_prob <- 0.4 + 0.3 * (income > 50000)
+
+# Racial bias in approval
+bias_adj <- case_when(
+  race == "White"    ~  0.20,
+  race == "Asian"    ~  0.10,
+  race == "Black"    ~ -0.20,
+  race == "Hispanic" ~ -0.30,
+  TRUE               ~  0.00
+)
+
+# Marital status adjustment
+marital_adj <- case_when(
+  marital_status == "Married"  ~  0.10,
+  marital_status == "Divorced" ~ -0.05,
+  TRUE                         ~  0.00
+)
+
+# Simulate loan approval
+final_prob <- pmin(pmax(base_prob + bias_adj + marital_adj, 0), 1)
+loan_approved <- rbinom(n, 1, final_prob)
+
+lending_data <- data.frame(
+  income = income / 1000,  # Convert to thousands of dollars
+  race, marital_status, loan_approved
+)
+
+# Save for later use
+write_csv(lending_data, "lending_data.csv")
+```
+
+## The OLS Problem: Predictions Outside \[0, 1\] {.smaller}
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4.5
+
+lending_data$race <- relevel(factor(lending_data$race), ref = "White")
+lm_fit <- lm(loan_approved ~ income + race + marital_status, data = lending_data)
+lending_data$predicted <- predict(lm_fit)
+
+ggplot(lending_data, aes(x = income, y = predicted, color = race)) +
+  geom_point(alpha = 0.4, size = 0.8) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "#F66733", linewidth = 1) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "#F66733", linewidth = 1) +
+  annotate("text", x = 20, y = 1.05, label = "Probability can't exceed 1",
+           color = "#F66733", fontface = "italic", size = 4) +
+  annotate("text", x = 20, y = -0.05, label = "Probability can't be negative",
+           color = "#F66733", fontface = "italic", size = 4) +
+  scale_color_brewer(palette = "Set2") +
+  labs(title = "OLS Predicts Impossible Probabilities",
+       subtitle = "Linear regression doesn't know the outcome is bounded between 0 and 1",
+       x = "Income ($1,000s)", y = "Predicted P(Loan Approved)") +
+  theme_minimal(base_size = 14)
+```
+
+## Why Can't We Just Use OLS Anyway? {.smaller}
+
+This is actually called the **Linear Probability Model** (LPM), and some researchers (mostly economists) do use it. The coefficients have a nice interpretation: "change in probability of approval."
+
+. . .
+
+But there are real problems:
+
+::: incremental
+-   Predictions go **below 0 and above 1**: nonsensical for probabilities
+-   Assumes a **constant effect** across the range: but going from \$20K to \$30K income probably matters more for approval than going from \$200K to \$210K
+    -   Basically, the true relationship between predictors and probability is **not linear**: it's an S-curve
+-   **Heteroskedasticity** is built in (variance depends on the predicted probability)
+:::
+
+. . .
+
+We need a model that respects the nature of binary data. We can use something called *Maximum Likelihood Estimation* to find it.
+
+## Beyond Binary: Other Non-Continuous Outcomes {.smaller}
+
+Binary data isn't the only type that breaks OLS. Consider:
+
+. . .
+
+**Health insurance type** (Public / Individual / Employer): no natural ordering, so what would the "slope" even mean?
+
+. . .
+
+**Resident satisfaction** (1 = Very Dissatisfied ... 5 = Very Satisfied): ordered, but the distance between 1 and 2 may not equal the distance between 4 and 5
+
+. . .
+
+**Number of 911 calls per district**: counts are non-negative, often skewed (many districts have few calls, a few have many)
+
+. . .
+
+**Maximum Likelihood Estimation** gives us a unified approach for all of these.
+
+# Part 2: MLE Intuition (+ some math)
+
+## Finding the "Least Surprising" Parameters {.smaller}
+
+The goal of MLE in plain language:
+
+> Given the data we observed, what population parameter values would make that data **most likely** to have occurred?
+
+. . .
+
+Let's build intuition with a simple example.
+
+. . .
+
+Suppose we survey 100 U.S. residents and find that 14 are foreign-born. What's our best estimate of the true proportion $p$ of foreign-born residents?
+
+. . .
+
+Intuitively: $\widehat{p} = 14/100 = 0.14$. MLE formalizes *why* this is the best answer.
+
+## What Does "Most Likely" Actually Mean? {.smaller}
+
+Let's make this concrete. We observed 14 foreign-born people out of 100. Now imagine three different *candidates* for the true proportion $p$:
+
+. . .
+
+**Candidate 1:** $p = 0.05$ (5% of the population is foreign-born)
+
+If only 5% of people are foreign-born, getting 14 out of 100 would be pretty surprising. Not impossible, but unlikely. We got way more than we'd expect.
+
+. . .
+
+**Candidate 2:** $p = 0.50$ (50% of the population is foreign-born)
+
+If half the population is foreign-born, getting only 14 out of 100 would also be very surprising. We got way fewer than we'd expect.
+
+. . .
+
+**Candidate 3:** $p = 0.14$ (14% of the population is foreign-born)
+
+This one makes our data look... completely ordinary. We got exactly what we'd expect.
+
+. . .
+
+The **likelihood function** is a formula that takes *any* candidate value of $p$ and tells us: "How probable is the data we actually observed, if this were the true $p$?" MLE just picks the $p$ where that probability is highest.
+
+## Building the Likelihood: One Person at a Time {.smaller}
+
+Before we write down the full formula, let's think about a single person from our survey.
+
+. . .
+
+Person $i$ is either foreign-born ($x_i = 1$) or not foreign-born ($x_i = 0$). If the true proportion is $p$, then:
+
+::: incremental
+-   If person $i$ **is** foreign-born: the probability of observing that is $p$
+-   If person $i$ **is not** foreign-born: the probability of observing that is $1 - p$
+:::
+
+## Building the Likelihood: The Formula {.smaller}
+
+There is a compact way to write both cases in a single expression:
+
+$$
+f(x_i | p) = p^{x_i}(1-p)^{1-x_i}
+$$
+
+. . .
+
+This looks more intimidating than it is. Let's just plug in and verify:
+
+::: incremental
+-   If $x_i = 1$ (foreign-born): $\; p^{1}(1-p)^{0} = p \cdot 1 = p$ ✓
+-   If $x_i = 0$ (not foreign-born): $\; p^{0}(1-p)^{1} = 1 \cdot (1-p) = 1-p$ ✓
+:::
+
+. . .
+
+It is just a notational shortcut. The exponents act like an "if/else" switch.
+
+## From One Person to the Whole Sample {.smaller}
+
+Now we need the probability of observing *all 100 results together*. Each person is sampled independently so, the joint probability is just the individual probabilities multiplied.
+
+. . .
+
+This is the same logic as coin flips: if you flip a fair coin twice, the probability of getting HH is $0.5 \times 0.5 = 0.25$. Independence means we multiply.
+
+. . .
+
+So for all $n$ people:
+
+$$
+\mathscr{L}(p | \text{data}) = \prod_{i=1}^{n} p^{x_i}(1-p)^{1-x_i}
+$$
+
+. . .
+
+The $\prod$ symbol just means "multiply all of these together" (it is the multiplication version of $\sum$).
+
+. . .
+
+This is the **likelihood function**. It answers the question from two slides ago: for any candidate value of $p$, how probable is the data we observed? The value of $p$ that makes $\mathscr{L}$ as large as possible is our MLE estimate.
+
+## Visualizing the Likelihood {.smaller}
+
+Let's plot the likelihood for every possible value of $p$ between 0 and 1. (We are actually plotting the log of the likelihood here, which we will explain on the next slide. The shape is the same either way.)
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4.5
+
+# 14 out of 100 are foreign born
+n_total <- 100
+n_foreign <- 14
+
+p_values <- seq(0.01, 0.99, by = 0.001)
+log_likelihood <- n_foreign * log(p_values) + (n_total - n_foreign) * log(1 - p_values)
+
+ll_data <- data.frame(p = p_values, log_lik = log_likelihood)
+
+ggplot(ll_data, aes(x = p, y = log_lik)) +
+  geom_line(color = "#522D80", linewidth = 1.2) +
+  geom_vline(xintercept = 0.14, linetype = "dashed", color = "#F66733", linewidth = 1) +
+  annotate("text", x = 0.25, y = max(log_likelihood) - 125,
+           label = "MLE: p = 0.14", color = "#F66733",
+           fontface = "bold", size = 5) +
+  labs(title = "The Likelihood Function",
+       subtitle = "The peak tells us which value of p makes our data most likely",
+       x = "Proportion Foreign-Born (p)",
+       y = "Log-Likelihood") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(face = "bold"))
+```
+
+The peak of this curve is at $p = 0.14$, exactly the sample proportion. Notice how it matches our intuition from the three candidates: $p = 0.05$ and $p = 0.50$ are far from the peak, while $p = 0.14$ sits right at the top. MLE just formalizes this.
+
+## How MLE Finds the Peak: The Log Trick {.smaller}
+
+We want to find the value of $p$ that maximizes the likelihood. From calculus, that means taking the derivative with respect to $p$ and setting it equal to zero.
+
+. . .
+
+But our likelihood is a big product of 100 terms. Taking the derivative of a product is messy. The standard trick is to take the **logarithm** first:
+
+. . .
+
+::: incremental
+-   Logs turn **products into sums**: $\ln(a \cdot b) = \ln a + \ln b$
+-   This makes the calculus much simpler, because derivatives of sums are easy
+-   The log function is always increasing, so the value of $p$ that maximizes the log-likelihood is the same value that maximizes the likelihood itself. We haven't changed the answer, just made the math easier.
+:::
+
+. . .
+
+The log-likelihood:
+
+$$\ell(p) = \sum_{i=1}^{n} \left[ x_i \ln p + (1-x_i) \ln(1-p) \right]$$
+
+## Taking the Derivative {.smaller}
+
+Now we differentiate the log-likelihood with respect to $p$. "With respect to $p$" means: how does the log-likelihood change as we nudge our candidate value of $p$ up or down?
+
+. . .
+
+$$\frac{\partial \ell}{\partial p} = \frac{\sum_{i=1}^{n} x_i}{p} - \frac{n - \sum_{i=1}^{n} x_i}{1-p}$$
+
+. . .
+
+There are two pieces here, and they have an intuitive interpretation:
+
+::: incremental
+-   The first term, $\frac{\sum x_i}{p}$, is based on the foreign-born people in our sample. It **pulls** $p$ upward. The more foreign-born people we observed, the stronger it pulls.
+-   The second term, $\frac{n - \sum x_i}{1-p}$, is based on the non-foreign-born people. It **pulls** $p$ downward. The more non-foreign-born people we observed, the stronger it pulls.
+-   The MLE is the value of $p$ where these two forces are perfectly balanced: the derivative equals zero, and we are at the peak of the curve.
+:::
+
+## Solving for the MLE {.smaller}
+
+Setting the derivative equal to zero and solving (you do not need to memorize this algebra):
+
+$$\frac{\sum x_i}{p} = \frac{n - \sum x_i}{1-p} \quad \Rightarrow \quad \widehat{p}_{ML} = \frac{\sum x_i}{n} = \bar{x}$$
+
+. . .
+
+That's a lot of machinery to get something we already knew! But the power of MLE is that **this same approach works for any data type**:
+
+::: incremental
+-   **Binary data** → Bernoulli/Binomial likelihood → **Logistic regression**
+-   **Ordered categories** → Cumulative logit likelihood → **Ordered logit**
+-   **Unordered categories** → Multinomial likelihood → **Multinomial logit**
+-   **Count data** → Poisson likelihood → **Poisson regression**
+-   We just swap in the right likelihood function, and R handles the optimization
+:::
+
+# Part 3: Logistic Regression
+
+## Back to Our Lending Data {.smaller}
+
+Remember the question from Part 1: **Do lenders discriminate against non-white applicants?**
+
+We have data on 10,000 loan applications. For each applicant, we know their income, race, marital status, and whether the loan was approved (1) or denied (0).
+
+. . .
+
+```{r}
+#| echo: true
+
+lending_data <- read_csv("lending_data.csv", show_col_types = FALSE)
+lending_data$race <- relevel(factor(lending_data$race), ref = "White")
+
+lending_data |>
+  head(8) |>
+  mutate(income = paste0("$", round(income, 1), "K"),
+         loan_approved = ifelse(loan_approved == 1, "Yes", "No")) |>
+  knitr::kable(col.names = c("Income ($1,000s)", "Race", "Marital Status", "Loan Approved"),
+               align = "rlll")
+```
+
+. . .
+
+We saw that OLS gives us nonsensical predictions (probabilities below 0 or above 1). We need a model that respects the fact that the outcome is binary. That is what logistic regression is for.
+
+## What Do We Need from a Model? {.smaller}
+
+Let's think about what a good model for binary outcomes should do:
+
+. . .
+
+We want to predict the **probability** that a loan is approved, given the applicant's characteristics. So our model needs to output a number between 0 and 1.
+
+. . .
+
+We also want to include multiple predictors (income, race, marital status) the same way we do in OLS, as a linear combination: $\beta_0 + \beta_1 X_1 + \beta_2 X_2 + \ldots$
+
+. . .
+
+The problem is that a linear model can produce any number from $-\infty$ to $+\infty$. That is exactly why OLS breaks for binary outcomes. The predicted values are not constrained to be between 0 and 1.
+
+. . .
+
+So we need some kind of function that takes the linear combination and *squishes* it into the 0 to 1 range. That function is the **sigmoid**.
+
+## The Sigmoid Function {.smaller}
+
+The sigmoid (also called the logistic function) takes any real number and maps it to a value between 0 and 1:
+
+$$\text{sigmoid}(z) = \frac{1}{1 + e^{-z}}$$
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4
+
+sigmoid <- function(x) 1 / (1 + exp(-x))
+x_vals <- seq(-8, 8, length.out = 400)
+
+ggplot(data.frame(x = x_vals, y = sigmoid(x_vals)), aes(x, y)) +
+  geom_line(color = "#522D80", linewidth = 1.2) +
+  geom_hline(yintercept = c(0, 1), linetype = "dotted", color = "gray50") +
+  labs(title = "The Sigmoid Function",
+       subtitle = "Any input gets mapped to a value between 0 and 1",
+       x = "Input (z)", y = "Output: sigmoid(z)") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(face = "bold"))
+```
+
+## Reading the Sigmoid {.smaller}
+
+A few things to notice about the shape:
+
+::: incremental
+-   When the input is very negative (say, $-6$), the output is close to 0. The model is very confident the outcome is "no."
+-   When the input is very positive (say, $+6$), the output is close to 1. The model is very confident the outcome is "yes."
+-   When the input is 0, the output is exactly 0.5. The model is on the fence.
+-   The curve is steepest in the middle and flattens out at the extremes. This means that a one-unit change in $X$ has the biggest effect on the predicted probability when the model is uncertain, and a smaller effect when the model is already confident.
+:::
+
+. . .
+
+This is a much more realistic picture of how things work than a straight line. Going from \$20K to \$30K income probably matters a lot more for loan approval than going from \$200K to \$210K.
+
+## Putting It Together: OLS vs. Logistic {.smaller}
+
+In logistic regression, we feed the linear combination $\beta_0 + \beta_1 X_1 + \ldots$ through the sigmoid:
+
+$$P(Y = 1 | X) = \frac{1}{1 + e^{-(\beta_0 + \beta_1 X_1 + \ldots)}}$$
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4
+
+sigmoid_data <- data.frame(
+  x = x_vals,
+  linear = 0.5 + 0.1 * x_vals,
+  sigmoid = sigmoid(x_vals)
+)
+
+ggplot(sigmoid_data) +
+  geom_line(aes(x = x, y = linear, color = "OLS (Linear)"),
+            linewidth = 1, linetype = "dashed") +
+  geom_line(aes(x = x, y = sigmoid, color = "Logistic (Sigmoid)"),
+            linewidth = 1.2) +
+  geom_hline(yintercept = c(0, 1), linetype = "dotted", color = "gray50") +
+  scale_color_manual(values = c("OLS (Linear)" = "#F66733",
+                                "Logistic (Sigmoid)" = "#522D80")) +
+  labs(title = "OLS vs. Logistic: How They Model Probability",
+       subtitle = "The sigmoid naturally stays between 0 and 1",
+       x = "Linear Predictor (β₀ + β₁X₁ + ...)", y = "Predicted Probability",
+       color = "Model") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "bottom",
+        plot.title = element_text(face = "bold"))
+```
+
+OLS just draws a line through the data and hopes for the best. Logistic regression bends that line through the sigmoid so the predictions always stay between 0 and 1.
+
+## Odds and Log-Odds {.smaller}
+
+To understand the math behind logistic regression, we need to talk about **odds**. You may have some intuition for this from sports (it's how betting lines are set).
+
+. . .
+
+If the probability of loan approval is $p = 0.75$, the **odds** of approval are:
+
+$$\text{odds} = \frac{p}{1-p} = \frac{0.75}{0.25} = 3$$
+
+This means approval is 3 times as likely as denial. We would say the odds are "3 to 1."
+
+. . .
+
+::: incremental
+-   If $p = 0.50$, odds $= 1$ (equally likely)
+-   If $p = 0.20$, odds $= 0.25$ (denial is 4 times as likely as approval)
+-   Odds range from 0 to $+\infty$, while probabilities range from 0 to 1
+:::
+
+## The Logit: Log of the Odds {.smaller}
+
+If we take the natural log of the odds, we get the **logit**:
+
+$$\text{logit}(p) = \ln\left(\frac{p}{1-p}\right)$$
+
+. . .
+
+Why do we take the log? Because the log-odds can be any number from $-\infty$ to $+\infty$.
+
+. . .
+
+So the logistic regression model is:
+
+$$\ln\left(\frac{p}{1-p}\right) = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \ldots$$
+
+. . .
+
+The right side looks just like OLS. But the left side is in **log-odds**, not probability.
+
+$$p = \frac{e^{X\beta}}{1 + e^{X\beta}}$$
+
+The sigmoid and the logit are inverses of each other. The logit takes a probability and gives you log-odds. The sigmoid takes log-odds and gives you a probability.
+
+## The Logistic Likelihood {.smaller}
+
+Now we can connect this back to what we learned about MLE. Each loan outcome $y_i$ is 0 or 1 (approved or denied). This is a Bernoulli random variable, exactly like the foreign-born example.
+
+. . .
+
+The log-likelihood for the whole dataset has the same structure we saw before:
+
+$$\ell(\beta) = \sum_{i=1}^{n} \left[ y_i \ln(p_i) + (1-y_i) \ln(1-p_i) \right]$$
+
+. . .
+
+The only difference is that now $p_i$ is not a single number. It depends on each person's characteristics, run through the sigmoid:
+
+$$p_i = \frac{e^{X_i\beta}}{1 + e^{X_i\beta}}$$
+
+. . .
+
+R finds the vector of $\beta$ coefficients that maximizes this log-likelihood. There is no closed-form solution like $\hat{p} = \bar{x}$ this time, so R uses a numerical optimization algorithm (it tries different values of $\beta$ and iterates until it finds the peak).
+
+## Fitting Logistic Regression in R {.smaller}
+
+It's almost identical to `lm()` — just use `glm()` with `family = binomial(link = "logit")`:
+
+```{r}
+#| echo: true
+
+# Fit logistic regression
+logit_fit <- glm(loan_approved ~ income + race + marital_status,
+                 data = lending_data,
+                 family = binomial(link = "logit"))
+summary(logit_fit)
+```
+
+## Reading the Output {.smaller}
+
+The output looks like OLS, but the coefficients are on the **log-odds scale**:
+
+::: incremental
+-   For income: a one-unit increase (here, \$1,000) is associated with a $\hat{\beta}$ change in the **log-odds** of loan approval
+-   This isn't very intuitive on its own
+-   We have three better options for interpretation:
+    1.  **Odds ratios**: exponentiate the coefficients
+    2.  **Predicted probabilities**: plug in specific values
+    3.  **Marginal effects**: the change in probability for a one-unit change
+:::
+
+## Wait, What About Race and Marital Status? {.smaller}
+
+You'll notice the output has rows like `raceBlack`, `raceHispanic`, `marital_statusMarried`, etc., but no row for `raceWhite` or `marital_statusSingle`.
+
+. . .
+
+When you put a categorical variable into a regression, R picks one category as the **reference group** and leaves it out. The other categories are compared *to* that reference.
+
+. . .
+
+::: incremental
+-   We can set the reference group with`relevel()`). Here it is set to `white`, so the coefficient on `raceBlack` tells us the difference in log-odds between Black and White applicants, holding everything else constant.
+-   `Divorced` is the reference for marital status. So `marital_statusMarried` is the difference between married and divorced applicants.
+-   The reference group is not "missing" from the model. The intercept represents the log-odds for someone in *all* reference categories at income = 0.
+:::
+
+. . .
+
+This is the same thing that happens in OLS. It is not specific to logistic regression. If you have $k$ categories, you get $k - 1$ coefficients, each measured relative to the reference.
+
+## Odds Ratios {.smaller}
+
+Exponentiate the coefficients to get odds ratios:
+
+```{r}
+#| echo: true
+
+# Odds ratios with 95% CIs
+exp(cbind(OR = coef(logit_fit), confint(logit_fit)))
+```
+
+. . .
+
+An odds ratio of 1.5 means "1.5 times the odds." An OR below 1 means lower odds compared to the reference group.
+
+## Predicted Probabilities {.smaller}
+
+Often more useful than odds ratios - what's the actual predicted probability for a specific person?
+
+```{r}
+#| echo: true
+
+# Predicted probability for a married White applicant earning $60K
+pred_white <- predict(logit_fit,
+                      newdata = data.frame(income = 60,
+                                           race = "White",
+                                           marital_status = "Married"),
+                      type = "response")
+
+# Same person, but Black
+pred_black <- predict(logit_fit,
+                      newdata = data.frame(income = 60,
+                                           race = "Black",
+                                           marital_status = "Married"),
+                      type = "response")
+
+cat("P(Approved | White, Married, $60K):", round(pred_white, 3), "\n")
+cat("P(Approved | Black, Married, $60K):", round(pred_black, 3), "\n")
+cat("Difference:", round(pred_white - pred_black, 3), "\n")
+```
+
+## Marginal Effects {.smaller}
+
+Because logistic regression is non-linear, the effect of a variable **changes depending on where you are** on the curve.
+
+```{r}
+#| echo: true
+#| fig-width: 10
+#| fig-height: 4
+
+library(marginaleffects)
+
+# Average marginal effects
+avg_mfx <- avg_slopes(logit_fit)
+print(avg_mfx)
+```
+
+. . .
+
+These are in **probability units** — much easier to interpret than log-odds. "Being Black (vs. White) decreases the probability of loan approval by X percentage points, on average."
+
+## Visualizing Marginal Effects {.smaller}
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4.5
+
+mfx_data <- as.data.frame(avg_mfx) |>
+  filter(term != "(Intercept)") |>
+  mutate(label = case_when(
+    contrast == "dY/dX" ~ paste0(term, " (1-unit increase)"),
+    TRUE ~ contrast
+  ))
+
+ggplot(mfx_data, aes(x = reorder(label, estimate), y = estimate)) +
+  geom_point(color = "#522D80", size = 3) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high),
+                width = 0.2, color = "#522D80") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "#F66733") +
+  coord_flip() +
+  labs(title = "Average Marginal Effects on Loan Approval",
+       subtitle = "Effect on predicted probability (in percentage points)",
+       x = "", y = "Change in P(Approved)") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(face = "bold"))
+```
+
+## The GLM Framework {.smaller}
+
+Logistic regression is one member of a family called **Generalized Linear Models (GLMs)**:
+
+| Model | Outcome Type | Link Function | R Code |
+|------------------|------------------|-------------------|------------------|
+| **OLS** | Continuous | Identity ($\mu = X\beta$) | `lm()` or `glm(family = gaussian)` |
+| **Logit** | Binary (0/1) | Logit ($\ln\frac{p}{1-p} = X\beta$) | `glm(family = binomial)` |
+| **Poisson** | Counts | Log ($\ln\lambda = X\beta$) | `glm(family = poisson)` |
+
+. . .
+
+The idea is always the same: the predictors are linear, but a **link function** connects them to the appropriate scale for the outcome.
+
+# Part 4: Ordered and Categorical Outcomes
+
+## Ordered Data Is Everywhere in Policy {.smaller}
+
+::: incremental
+-   Likert scales: "Strongly Disagree" to "Strongly Agree"
+-   Performance ratings: "Poor", "Fair", "Good", "Excellent"
+-   Risk categories: "Low", "Medium", "High"
+-   Program evaluations: 1 to 5 stars
+:::
+
+. . .
+
+We could treat these as continuous and use OLS, but:
+
+::: incremental
+-   OLS might predict values outside the scale (a 6 on a 1–5 scale?)
+-   OLS assumes **equal spacing** between categories — is the jump from "Poor" to "Fair" the same as from "Good" to "Excellent"?
+-   We lose the **probability** interpretation — what's the probability of being "Excellent"?
+:::
+
+## Motivating Example: Radio and Dissent in Rwanda {.smaller}
+
+Paluck & Green conducted a field experiment in Rwanda:
+
+::: incremental
+-   **Treatment**: Communities randomly assigned to listen to a radio program discouraging blind obedience to authority
+-   **Control**: Communities listened to a program about HIV
+-   **Outcome**: Willingness to display dissent (1 = "Should Stay Quiet" to 4 = "Should Dissent")
+-   Article is on Canvas - it's very interesting and well done!
+:::
+
+## Paluck and Green Graph
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4
+
+pg <- read_csv("paluckgreen.csv", show_col_types = FALSE)
+pg$dissent.f <- as.factor(pg$dissent)
+
+pg |>
+  filter(!is.na(dissent)) |>
+  ggplot(aes(x = dissent.f, group = factor(treat), fill = factor(treat))) +
+  geom_bar(aes(y = after_stat(prop)), stat = "count",
+           position = "dodge", color = "black") +
+  theme_minimal(base_size = 14) +
+  scale_fill_manual("Condition", labels = c("Control", "Treatment"),
+                    values = c("#522D80", "#F66733")) +
+  scale_x_discrete(labels = c("Should Stay\nQuiet", "2", "3", "Should\nDissent")) +
+  labs(title = "Willingness to Display Dissent by Treatment Group",
+       x = "Dissent Score", y = "Proportion") +
+  theme(legend.position = "bottom")
+```
+
+## The Ordered Logit Model: Intuition {.smaller}
+
+The key idea: imagine there's a **latent (hidden) continuous variable** $Y^*$ underlying the ordered categories.
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4
+
+x_vals <- seq(-4, 4, length.out = 300)
+y_vals <- dnorm(x_vals)
+
+cutpoints <- c(-1.5, 0.5, 1.5)
+cut_labels <- data.frame(
+  x = c(-2.5, -0.5, 1.0, 2.5),
+  y = rep(0.12, 4),
+  label = c("Stay Quiet", "2", "3", "Dissent")
+)
+
+ggplot(data.frame(x = x_vals, y = y_vals), aes(x, y)) +
+  geom_line(color = "#522D80", linewidth = 1.2) +
+  geom_vline(xintercept = cutpoints, linetype = "dashed", color = "#F66733") +
+  geom_text(data = cut_labels, aes(x = x, y = y, label = label),
+            fontface = "bold", size = 4.5, color = "#522D80") +
+  annotate("text", x = -1.5, y = -0.02, label = "ζ₁", color = "#F66733", size = 4) +
+  annotate("text", x = 0.5, y = -0.02, label = "ζ₂", color = "#F66733", size = 4) +
+  annotate("text", x = 1.5, y = -0.02, label = "ζ₃", color = "#F66733", size = 4) +
+  labs(title = "The Latent Variable and Cutpoints",
+       subtitle = "Where you fall on the latent scale determines your observed category",
+       x = "Latent Willingness to Dissent (Y*)", y = "") +
+  theme_minimal(base_size = 14) +
+  theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(),
+        plot.title = element_text(face = "bold"))
+```
+
+The **cutpoints** ($\zeta$) divide the latent scale into observed categories. The model estimates both the cutpoints and the effect of predictors on $Y^*$.
+
+## Quick R Note: Factor Variables {.smaller}
+
+Before we fit this model, a quick note about how R handles categorical and ordered data.
+
+. . .
+
+In R, a **factor** is a special variable type that tells R "this is a category, not a number." You create one with `factor()` or `as.factor()`:
+
+```{r}
+#| echo: true
+
+# Without factor(), R thinks dissent is just a number
+class(pg$dissent)
+
+# With factor(), R knows it's a set of categories
+class(as.factor(pg$dissent))
+```
+
+. . .
+
+Why does this matter?
+
+::: incremental
+-   If you put a numeric variable like `dissent` (coded 1, 2, 3, 4) into a model without converting it to a factor, R will treat it as continuous. It will estimate one slope, assuming the jump from 1 to 2 is the same size as the jump from 3 to 4.
+-   The ordered logit model (`polr()`) **requires** a factor as the outcome. It needs to know the categories, not just the numbers.
+:::
+
+## Fitting Ordered Logit in R {.smaller}
+
+```{r}
+#| echo: true
+
+library(MASS)
+library(AER)
+
+pg <- pg |> filter(!is.na(dissent))
+ordered_fit <- polr(as.factor(dissent) ~ treat, data = pg,
+                    Hess = TRUE, method = "logistic")
+coeftest(ordered_fit)
+```
+
+## Interpreting the Ordered Logit Output {.smaller}
+
+The output has two parts:
+
+. . .
+
+**The coefficient on `treat`**: This is on the log-odds scale, just like in regular logistic regression. A positive coefficient means being in the treatment group shifts the latent variable $Y^*$ to the right, making higher dissent categories more likely.
+
+. . .
+
+**The cutpoints** (`1|2`, `2|3`, `3|4`): These are the boundaries between categories on the latent scale. You generally don't interpret these directly. They are just the dividing lines that separate the categories, as shown in the latent variable diagram a few slides ago.
+
+. . .
+
+::: incremental
+-   An important assumption of this model is called the **proportional odds assumption**: the effect of treatment is the same regardless of which boundary you are crossing. Being treated shifts the entire distribution by the same amount, whether we are comparing "Stay Quiet vs. everything else" or "everything else vs. Dissent."
+-   The coefficient tells us the direction and relative size of the effect. Predicted probabilities are useful for communicating results.
+:::
+
+## Predicted Probabilities from the Ordered Model {.smaller}
+
+More useful than log-odds: what is the predicted probability of each category for treated vs. control?
+
+```{r}
+#| echo: true
+
+pred_probs <- predict(ordered_fit,
+                      newdata = data.frame(treat = c(0, 1)),
+                      type = "probs")
+rownames(pred_probs) <- c("Control", "Treatment")
+round(pred_probs, 3)
+```
+
+. . .
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4
+
+pred_df <- as.data.frame(pred_probs) |>
+  mutate(group = c("Control", "Treatment")) |>
+  pivot_longer(-group, names_to = "category", values_to = "probability")
+
+ggplot(pred_df, aes(x = category, y = probability, fill = group)) +
+  geom_col(position = "dodge", color = "black") +
+  scale_fill_manual(values = c("#522D80", "#F66733")) +
+  labs(title = "Predicted Probabilities by Treatment Group",
+       x = "Dissent Category", y = "Predicted Probability", fill = "") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "bottom", plot.title = element_text(face = "bold"))
+```
+
+## When Categories Have No Order {.smaller}
+
+Not all categorical outcomes have a natural ranking. Consider:
+
+::: incremental
+-   What type of **health insurance** does someone carry? (Employer, Individual, Public, Uninsured)
+-   What **mode of transportation** do commuters use? (Car, Bus, Rail, Bike)
+-   After leaving office, what **career path** does a legislator take? (Senate, Governor, Mayor, Cabinet, Bureaucracy, Nothing)
+:::
+
+. . .
+
+For the dissent example, the categories had a clear order from 1 to 4. But here, there is no meaningful way to rank "Bus" above "Rail" or "Cabinet" above "Senate." The categories are just different, not higher or lower.
+
+. . .
+
+We cannot use ordered logit because it assumes a single latent scale from low to high. And we cannot collapse these into binary (yes/no) without throwing away information about *which* category was chosen. We need a model that handles multiple unordered outcomes: **multinomial logit**.
+
+## How Multinomial Logit Works: The Intuition {.smaller}
+
+The key idea: multinomial logit is like running **multiple logistic regressions at the same time**.
+
+. . .
+
+You pick one category as the **baseline** (reference group). Then the model estimates a separate set of coefficients comparing each other category to that baseline.
+
+. . .
+
+If you have 3 categories (say, Senate, Governor, Other), and you set "Other" as the baseline, the model estimates:
+
+::: incremental
+-   One equation for $\ln\left(\frac{P(\text{Senate})}{P(\text{Other})}\right) = \beta_0^{(S)} + \beta_1^{(S)} X_1 + \ldots$
+-   Another equation for $\ln\left(\frac{P(\text{Governor})}{P(\text{Other})}\right) = \beta_0^{(G)} + \beta_1^{(G)} X_1 + \ldots$
+-   Each equation has its own set of $\beta$ coefficients. A predictor might increase the probability of one outcome while decreasing the probability of another.
+:::
+
+. . .
+
+The probabilities across all categories must add up to 1, and the model enforces this automatically.
+
+## Gender and Political Careers in Mexico {.smaller}
+
+Kerevel (2015) studied the career paths of Mexican federal deputies after they leave office. The question: **Do men and women follow different career paths after serving in the legislature?**
+
+. . .
+
+```{r}
+#| echo: true
+
+ker <- read_csv("kerevel.csv")
+
+# What are the career path categories?
+table(ker$genderimmedambcat3)
+```
+
+. . .
+
+The outcome has three categories. We will set "other" as the reference category, meaning the model will estimate how gender affects the probability of pursuing a given path relative to "other."
+
+## Fitting Multinomial Logit in R {.smaller}
+
+We use `multinom()` from the `nnet` package. The syntax is similar to `glm()`:
+
+```{r}
+#| echo: true
+
+library(nnet)
+
+ker$genderimmedambcat3 <- relevel(factor(ker$genderimmedambcat3), ref = "other")
+fit_mn <- multinom(genderimmedambcat3 ~ factor(female), data = ker, trace = FALSE)
+summary(fit_mn)
+```
+
+. . .
+
+Notice the output has **several rows** of coefficients, one for each non-reference category. Each row is a separate logistic regression comparing that category to the baseline ("other").
+
+## Interpreting the Multinomial Output {.smaller}
+
+```{r}
+#| echo: true
+
+# Marginal effects: how does being female change the probability of each outcome?
+library(marginaleffects)
+me_mn <- avg_comparisons(fit_mn, variables = list(female = c(0, 1)))
+print(me_mn)
+```
+
+. . .
+
+Each row tells you: compared to men, how much more or less likely are women to end up in each career path? These are in probability units, so you can read them as percentage point differences.
+
+## Are These Differences Statistically Significant? {.smaller}
+
+You might have noticed something annoying: `summary(fit_mn)` gives you coefficients and standard errors, but **no p-values**. This is a quirk of the `nnet` package. We can compute them ourselves by dividing each coefficient by its standard error to get a z-statistic, and then looking up the p-value from the normal distribution:
+
+```{r}
+#| echo: true
+
+# Extract coefficients and standard errors
+z_scores <- summary(fit_mn)$coefficients / summary(fit_mn)$standard.errors
+p_values <- 2 * (1 - pnorm(abs(z_scores)))
+p_values
+```
+
+. . .
+
+But for most applied work, we do not need to do this by hand. The `marginaleffects` output we just saw already provides confidence intervals, and the predicted probability table on the next slide includes them too. If a confidence interval for a difference does not contain zero, that is your signal that the difference is statistically significant.
+
+## Predicted Probabilities by Gender {.smaller}
+
+The most intuitive way to present multinomial results: what is the predicted probability of each career path for men vs. women?
+
+```{r}
+#| echo: true
+
+pred_mn <- avg_predictions(fit_mn, by = "female",
+                           newdata = datagrid(female = c(0, 1),
+                                              model = fit_mn))
+as.data.frame(pred_mn) |>
+  mutate(gender = ifelse(female == 1, "Women", "Men")) |>
+  dplyr::select(gender, group, estimate, conf.low, conf.high) |>
+  knitr::kable(col.names = c("Gender", "Career Path", "Predicted Prob.", "95% CI Low", "95% CI High"),
+               digits = 3)
+```
+
+## Visualizing Gender Gaps in Political Advancement {.smaller}
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4.5
+
+pred_df <- as.data.frame(pred_mn) |>
+  mutate(gender = ifelse(female == 1, "Women", "Men"))
+
+ggplot(pred_df, aes(x = group, y = estimate, fill = gender)) +
+  geom_col(position = "dodge", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high),
+                position = position_dodge(0.6), width = 0.2) +
+  scale_fill_manual(values = c("#522D80", "#F66733")) +
+  labs(title = "Predicted Probability of Each Career Path",
+       subtitle = "Mexican Federal Deputies (Kerevel 2015)",
+       x = "Post-Office Career Path", y = "Predicted Probability", fill = "") +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "bottom",
+        plot.title = element_text(face = "bold"),
+        axis.text.x = element_text(angle = 20, hjust = 1))
+```
+
+## Ordered vs. Multinomial: When to Use Which {.smaller}
+
+Both models handle categorical outcomes, but they make very different assumptions:
+
+. . .
+
+**Use ordered logit** when the categories have a clear ranking and you believe there is a single underlying dimension (like satisfaction from low to high, or willingness to dissent from quiet to outspoken). The model estimates one set of coefficients that shifts the whole distribution up or down.
+
+. . .
+
+**Use multinomial logit** when the categories are qualitatively different with no natural ordering (like career paths, transportation modes, or insurance types). The model estimates separate coefficients for each category, allowing a predictor to have different effects on different outcomes.
+
+. . .
+
+If you are unsure, ask yourself: does it make sense to say that one category is "more" than another? If yes, ordered. If the categories are just different, multinomial.
+
+# Part 5: Count Data
+
+## When Outcomes Are Counts {.smaller}
+
+Count data describes the **number of times** something happens in a given period or area:
+
+::: incremental
+-   Number of **executive orders** issued per year
+-   Number of **arrests** in a police district per month
+-   Number of **building permits** in a zoning district per year
+-   Number of **bills** passed per legislative session
+:::
+
+. . .
+
+Counts have two important properties that make them different from continuous outcomes:
+
+::: incremental
+-   They are always **non-negative integers** (you can't have $-3$ executive orders)
+-   They are often heavily **right-skewed**: many observations near zero, a few very large values
+:::
+
+## Why Not Just Use OLS for Counts? {.smaller}
+
+The same basic problem as with binary data: OLS does not know anything about the structure of counts.
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4.5
+
+set.seed(30317)
+
+count_data <- data.frame(
+  distribution = rep(c("Poisson (λ=3)", "Negative Binomial",
+                       "Geometric", "Lognormal"), each = 1000),
+  count = c(rpois(1000, 3), rnbinom(1000, 2, mu = 3),
+            rgeom(1000, 0.2), round(rlnorm(1000, 1, 0.75)))
+)
+
+ggplot(count_data, aes(x = count, fill = distribution)) +
+  geom_histogram(binwidth = 1, alpha = 0.8, color = "white") +
+  facet_wrap(~distribution, scales = "free") +
+  scale_fill_manual(values = c("#522D80", "#F66733", "#8B6914", "#2D5280")) +
+  labs(title = "Count Data Is Often Right-Skewed",
+       subtitle = "Many small values, few large ones",
+       x = "Count", y = "Frequency") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "none",
+        plot.title = element_text(face = "bold"))
+```
+
+. . .
+
+::: incremental
+-   OLS can predict **negative counts** (nonsensical)
+-   OLS assumes errors are normally distributed and symmetric, but count data is usually skewed
+-   The variance of counts often depends on the mean (more events = more variability), violating OLS assumptions
+:::
+
+## The Poisson Distribution: Intuition {.smaller}
+
+The **Poisson distribution** is a natural model for "how many times does something happen in a fixed window?"
+
+. . .
+
+Think of it this way: if 911 calls arrive at a dispatch center at an average rate of $\lambda = 5$ per hour, then in any given hour the actual number might be 3, or 7, or 5. The Poisson distribution tells us the probability of each possible count.
+
+. . .
+
+```{r}
+#| fig-width: 10
+#| fig-height: 3.5
+
+pois_data <- data.frame(
+  k = 0:15,
+  prob = dpois(0:15, lambda = 5)
+)
+
+ggplot(pois_data, aes(x = k, y = prob)) +
+  geom_col(fill = "#522D80", color = "white", width = 0.7) +
+  geom_vline(xintercept = 5, linetype = "dashed", color = "#F66733", linewidth = 1) +
+  annotate("text", x = 7, y = 0.17, label = "Mean (λ = 5)",
+           color = "#F66733", fontface = "bold", size = 4.5) +
+  labs(title = "Poisson Distribution with λ = 5",
+       subtitle = "The most likely counts cluster around the mean, with a right-skewed tail",
+       x = "Number of Events (k)", y = "Probability") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(face = "bold"))
+```
+
+. . .
+
+The key parameter is $\lambda$ (lambda): the average rate. The Poisson model lets us ask: how do predictors (divided government, wartime, etc.) change $\lambda$?
+
+## The Poisson Model {.smaller}
+
+The probability of observing exactly $k$ events:
+
+$$P(Y = k | \lambda) = \frac{e^{-\lambda} \lambda^k}{k!}$$
+
+. . .
+
+You do not need to memorize this formula. The important things to know are:
+
+::: incremental
+-   $\lambda$ is the average count (the expected number of events)
+-   In a Poisson distribution, the **mean equals the variance**. This is a strong assumption, and we will come back to what happens when it is violated.
+:::
+
+. . .
+
+To include predictors, we use a **log link**, just like logistic regression uses a logit link:
+
+$$\ln(\lambda_i) = \beta_0 + \beta_1 X_1 + \ldots \quad \Rightarrow \quad \lambda_i = e^{X_i\beta}$$
+
+. . .
+
+Why the log? Because $\lambda$ must be positive (you can't have a negative average count), and $e^{\text{anything}}$ is always positive. The log link guarantees that no matter what values the predictors take, the predicted count is positive.
+
+## The Bolton & Thrower Data {.smaller}
+
+Bolton & Thrower (2016) study what explains the number of non-ceremonial executive orders issued by U.S. presidents. The question: **Does divided government lead to more executive orders?**
+
+. . .
+
+The idea is that when the president's party does not control Congress, the president may turn to executive orders as an alternative way to make policy.
+
+. . .
+
+```{r}
+#| echo: true
+
+bolton <- read_csv("bolton_thrower.csv", show_col_types = FALSE)
+
+bolton |>
+  head(7) |>
+  dplyr::select(year, allnoncerm_eo, divided, war, lame_duck) |>
+  knitr::kable(col.names = c("Year", "Executive Orders", "Divided Gov.", "War", "Lame Duck"))
+```
+
+## Executive Orders Over Time {.smaller}
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4.5
+
+ggplot(bolton, aes(x = year, y = allnoncerm_eo)) +
+  geom_point(color = "#522D80", alpha = 0.7, size = 2) +
+  geom_vline(xintercept = 1945, linetype = "dashed",
+             color = "#F66733", linewidth = 1) +
+  annotate("text", x = 1948, y = 450, label = "Post-WWII",
+           color = "#F66733", fontface = "italic", size = 4) +
+  labs(title = "Non-Ceremonial Executive Orders by Year",
+       subtitle = "Bolton & Thrower focus on the pre-1945 era (left of the dashed line)",
+       x = "Year", y = "Number of Executive Orders") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(face = "bold"))
+```
+
+. . .
+
+Notice the count nature of the data: always non-negative, right-skewed, with enormous variation. This is exactly the kind of outcome that calls for a Poisson model.
+
+## Fitting Poisson Regression in R {.smaller}
+
+Just like logistic regression, we use `glm()`. The only difference is `family = "poisson"` instead of `family = binomial`:
+
+```{r}
+#| echo: true
+
+# Focus on pre-1945 era
+bolton_pre <- subset(bolton, year < 1945)
+
+poisson_fit <- glm(allnoncerm_eo ~ divided + inflation +
+                     spending_percent_gdp + war + lame_duck +
+                     administration_change + trend,
+                   family = "poisson",
+                   data = bolton_pre)
+summary(poisson_fit)
+```
+
+## What Do the Coefficients Mean? {.smaller}
+
+The coefficients are on the **log-count scale**. A one-unit increase in $X$ is associated with a $\widehat{\beta}$ change in $\ln(\lambda)$.
+
+. . .
+
+This is not very intuitive. But if we exponentiate the coefficients, we get something more useful: **incidence rate ratios** (IRRs).
+
+. . .
+
+```{r}
+#| echo: true
+
+# Exponentiate to get Incidence Rate Ratios
+exp(coef(poisson_fit)) |> round(3)
+```
+
+## Interpreting Incidence Rate Ratios {.smaller}
+
+An IRR tells you the **multiplicative change** in the expected count for a one-unit increase in the predictor.
+
+. . .
+
+::: incremental
+-   An IRR of **1.0** means no change (the predictor has no effect on the count)
+-   An IRR of **1.25** means 25% more events (multiply the count by 1.25)
+-   An IRR of **0.80** means 20% fewer events (multiply the count by 0.80)
+:::
+
+. . .
+
+```{r}
+#| echo: true
+
+# Percent change interpretation for divided government
+pct_change <- (exp(coef(poisson_fit)["divided"]) - 1) * 100
+cat("Divided government is associated with a",
+    round(pct_change, 1), "% change in executive orders\n")
+```
+
+. . .
+
+The formula for percent change is: $(e^{\hat{\beta}} - 1) \times 100$. If the coefficient is positive, this gives a positive percent change (more events). If negative, fewer events.
+
+## Predicted Counts {.smaller}
+
+Just like with logistic regression, we can also look at predicted counts directly using `marginaleffects`:
+
+```{r}
+#| echo: true
+
+avg_predictions(poisson_fit, by = "divided",
+                newdata = datagrid(divided = c(0, 1),
+                                   model = poisson_fit),
+                type = "response")
+```
+
+. . .
+
+This tells us: holding everything else at its average, how many executive orders do we predict under unified vs. divided government? These are on the original count scale, so they are straightforward to interpret and communicate.
+
+## When Poisson Fails: Overdispersion {.smaller}
+
+Remember the key Poisson assumption: **mean = variance**. Let's check whether that holds in our data:
+
+```{r}
+#| echo: true
+
+cat("Mean:", round(mean(bolton_pre$allnoncerm_eo), 1), "\n")
+cat("Variance:", round(var(bolton_pre$allnoncerm_eo), 1), "\n")
+```
+
+. . .
+
+The variance is much larger than the mean. This is called **overdispersion**, and it is extremely common with real-world count data.
+
+## Why Care about Overdispersion?
+
+Why does this matter? When the Poisson model assumes the variance equals the mean but the true variance is much larger, the standard errors on the coefficients are **too small**. The model thinks it has more precision than it actually does. This means p-values are too low and confidence intervals are too narrow. We would be overconfident in our conclusions.
+
+. . .
+
+We can test for this formally:
+
+```{r}
+#| echo: true
+
+dispersiontest(poisson_fit)
+```
+
+## The Fix: Negative Binomial Regression {.smaller}
+
+The **negative binomial** model relaxes the mean = variance assumption by adding an extra parameter that lets the variance be larger than the mean.
+
+. . .
+
+In R, it is almost identical to the Poisson model. We just use `glm.nb()` from the `MASS` package instead of `glm()`:
+
+```{r}
+#| echo: true
+
+nb_fit <- glm.nb(allnoncerm_eo ~ divided + inflation +
+                   spending_percent_gdp + war + lame_duck +
+                   administration_change + trend,
+                 data = bolton_pre)
+```
+
+. . .
+
+The coefficients are interpreted the same way as Poisson (exponentiate to get IRRs). The difference is in the standard errors and confidence intervals.
+
+## Poisson vs. Negative Binomial: A Comparison {.smaller}
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4.5
+
+comp_data <- data.frame(
+  model = rep(c("Poisson", "Negative Binomial"), each = 3),
+  term = rep(c("Divided Gov.", "War", "Lame Duck"), 2),
+  estimate = c(coef(poisson_fit)[c("divided", "war", "lame_duck")],
+               coef(nb_fit)[c("divided", "war", "lame_duck")]),
+  se = c(summary(poisson_fit)$coefficients[c("divided", "war", "lame_duck"), "Std. Error"],
+         summary(nb_fit)$coefficients[c("divided", "war", "lame_duck"), "Std. Error"])
+)
+
+ggplot(comp_data, aes(x = term, y = estimate, color = model)) +
+  geom_point(position = position_dodge(0.4), size = 3) +
+  geom_errorbar(aes(ymin = estimate - 1.96*se, ymax = estimate + 1.96*se),
+                position = position_dodge(0.4), width = 0.2) +
+  scale_color_manual(values = c("#F66733", "#522D80")) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(title = "Poisson vs. Negative Binomial: Same Estimates, Wider CIs",
+       subtitle = "Negative binomial accounts for overdispersion with more honest uncertainty",
+       x = "", y = "Coefficient (log scale)", color = "") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "bottom", plot.title = element_text(face = "bold"))
+```
+
+. . .
+
+The point estimates are very similar, but the negative binomial confidence intervals are wider. That is the whole point: the Poisson model was falsely precise because it underestimated the variance.
+
+## Choosing the Right Count Model {.smaller}
+
+A practical workflow:
+
+. . .
+
+::: incremental
+1.  **Start with Poisson regression**. It is simpler and it is the default.
+2.  **Check for overdispersion** using `dispersiontest()` from the `AER` package. Compare the mean and variance of your outcome.
+3.  If the variance is roughly equal to the mean, **Poisson is fine**. You are done.
+4.  If the variance is much larger than the mean (which is very common), **switch to negative binomial**. The interpretation of coefficients does not change, only the standard errors get wider.
+:::
+
+. . .
+
+The good news: whichever model you use, the interpretation tools are the same. Exponentiate for IRRs, use `marginaleffects` for predicted counts, and the R syntax barely changes.
+
+# Wrapping Up
+
+## The MLE Toolkit {.smaller}
+
+| Outcome Type | Distribution | R Function | Interpretation |
+|------------------|------------------|------------------|-------------------|
+| **Continuous** | Normal | `lm()` | Coefficients in units of Y |
+| **Binary** | Bernoulli | `glm(family = binomial)` | Log-odds → Odds ratios or marginal effects |
+| **Ordered** | Cumulative logit | `MASS::polr()` | Predicted probabilities per category |
+| **Categorical** | Multinomial | `nnet::multinom()` | Predicted probabilities per category |
+| **Count** | Poisson / NegBin | `glm(family = poisson)` / `MASS::glm.nb()` | Incidence rate ratios |
+
+## The Common Thread {.smaller}
+
+Every model we've seen today follows the same logic:
+
+::: incremental
+1.  **Identify the data type** → choose the right distribution
+2.  **Write the likelihood** → the probability of observing our data given some parameters
+3.  **Maximize** → R finds the parameters that make the data most likely
+4.  **Interpret** → marginal effects and predicted probabilities, not just raw coefficients
+:::
+
+. . .
+
+::: callout-tip
+## Practical Advice
+
+Don't worry about the math - focus on matching the model to your data type. All of these models give you `predict()`, `marginaleffects`, and confidence intervals. The tools are the same; only the likelihood changes. There are *many* more types of MLE model out there.
+:::
+
+## Looking Ahead
+
+::: incremental
+-   These models handle different **data types**, but they still face the same **causal identification** challenges as OLS
+-   Omitted variable bias, collider bias, and Simpson's Paradox all apply here too
+-   Coming up: **research designs** (experiments, difference-in-differences, RDD) that tackle the causal question directly
+-   MLE + good research design = the core of modern quantitative policy analysis
+:::
+
+## Your Turn: Choosing the Right Model {.smaller}
+
+For each scenario, what model would you use and why?
+
+. . .
+
+::: incremental
+1.  **Does body camera funding reduce civilian complaints?** (Outcome: number of complaints per precinct per year)
+2.  **Do voter ID laws reduce turnout?** (Outcome: voted or didn't)
+3.  **Does pre-K quality affect parent satisfaction?** (Outcome: 1–5 Likert scale)
+4.  **What predicts whether a parolee returns to prison, finds employment, or leaves the state?** (Outcome: three unordered categories)
+:::

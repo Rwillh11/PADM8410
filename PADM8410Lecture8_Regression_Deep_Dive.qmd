@@ -1,0 +1,1296 @@
+---
+title: "Regression Deep Dive"
+author: "Will Horne"
+format: revealjs
+editor: visual
+code-fold: true
+execute:
+  fig-align: center
+---
+
+## Quick Recap: What We Covered Last Time {.smaller}
+
+Last lecture, we introduced regression:
+
+::: incremental
+-   **Simple regression** models the relationship between one predictor and an outcome
+-   **Multiple regression** adds controls - allowing us to "hold constant" confounders
+-   **R-squared** tells us how much variation our model explains
+-   **Residual plots** help us diagnose problems
+:::
+
+. . .
+
+Today, we'll dig in. We'll formalize the intuition, learn what can go wrong, and extend regression to handle more complex questions.
+
+## Today
+
+::: incremental
+1.  **Deeper on coefficients**: Binary vs. continuous predictors, non-linear terms
+2.  **The R-squared trap**: Why blindly adding variables is dangerous
+3.  **When regression fails**: Omitted variable bias, collider bias, Simpson's Paradox
+4.  **Interactions**: What if the effect of X varies
+5.  **Marginal effects**: How to best interpret interaction models
+:::
+
+# Part 1: Understanding Coefficients
+
+## Binary vs. Continuous Predictors {.smaller}
+
+Last time, our predictors were continuous (spending in dollars, poverty rate). But predictors can also be **binary** - taking values of 0 or 1.
+
+. . .
+
+Imagine we want to predict children's test scores based on whether their mother graduated from high school:
+
+$$
+\text{Kid Score} = 78 + 12 \times \text{Mom HS Grad} + \epsilon
+$$
+
+. . .
+
+::: incremental
+-   **If Mom didn't graduate** (Mom HS Grad = 0): Predicted score = 78 + 12(0) = **78**
+-   **If Mom graduated** (Mom HS Grad = 1): Predicted score = 78 + 12(1) = **90**
+-   $\beta_1 = 12$ is just the **difference in group means** — just like a t-test
+:::
+
+## Bivariate Regression with a Binary Predictor
+
+With a binary predictor, regression gives us the difference in **conditional expectations**:
+
+$$\beta_1 = E[Y | X = 1] - E[Y | X = 0]$$
+
+. . .
+
+This is equivalent to a difference in means test — regression and t-tests are doing the same thing here.
+
+. . .
+
+::: callout-tip
+## Key Insight
+
+Simple regression with a binary predictor is just a fancy t-test. The machinery is the same; regression just gives us a more flexible framework.
+:::
+
+## Continuous Predictors: The Slope {.smaller}
+
+Now imagine we have *years of education* instead of a binary variable:
+
+$$
+\text{Kid Score} = 40 + 3.5 \times \text{Mom Education Years} + \epsilon
+$$
+
+. . .
+
+::: incremental
+-   $\beta_0 = 40$: Predicted score when Mom has 0 years of education
+-   $\beta_1 = 3.5$: For **each additional year** of Mom's education, the kid's predicted score increases by 3.5 points
+-   This is the **slope** — the rate of change in Y as X increases by one unit
+:::
+
+## The Slope Is a Partial Derivative {.smaller}
+
+You don't need calculus for this class, but it's worth seeing the connection once:
+
+$$
+\frac{d \widehat{Y}}{d X} = \beta_1
+$$
+
+. . .
+
+This just says: "if I nudge X up by a tiny amount, how much does predicted Y change?" The answer is $\beta_1$ — the slope.
+
+. . .
+
+With multiple predictors, the same idea applies to each one:
+
+$$
+\hat{Y} = \beta_0 + \beta_1 X_1 + \beta_2 X_2 \quad \Longrightarrow \quad \frac{\partial \widehat{Y}}{\partial X_1} = \beta_1
+$$
+
+. . .
+
+The partial derivative just means "the rate of change in Y with respect to $X_1$, **holding** $X_2$ fixed." That's exactly what "holding constant" means — the calculus and the intuition are saying the same thing.
+
+## The Linearity Assumption
+
+With a continuous predictor, our model assumes the effect is **constant**:
+
+$$
+E[Y | X = 12] - E[Y | X = 11] = E[Y | X = 16] - E[Y | X = 15] = \beta_1
+$$
+
+. . .
+
+In words: going from 11 to 12 years of education has the **same** predicted effect as going from 15 to 16 years.
+
+. . .
+
+Is this realistic? Probably not! The jump from no high school diploma to a diploma might matter more than the jump from a master's to a PhD.
+
+. . .
+
+What can we do about it?
+
+## Adding Non-Linear Terms
+
+We can include **transformations** of X in our model. The most common: a quadratic term.
+
+$$
+Y = \beta_0 + \beta_1 X + \beta_2 X^2 + \epsilon
+$$
+
+. . .
+
+Now the effect of X is no longer constant — it changes as X changes:
+
+$$
+\frac{\partial Y}{\partial X} = \beta_1 + 2\beta_2 X
+$$
+
+## Plot: Linear vs Quadratic
+
+```{r}
+#| echo: true
+#| fig-width: 10
+#| fig-height: 4
+
+library(tidyverse)
+
+set.seed(30317)
+n <- 50
+MomEdu <- runif(n, min = 0, max = 24)
+KidScore <- 40 + 3.5 * MomEdu - 0.1 * (MomEdu^2) + rnorm(n, 0, 2)
+
+mod_linear <- lm(KidScore ~ MomEdu)
+mod_quad <- lm(KidScore ~ MomEdu + I(MomEdu^2))
+
+pred_data <- data.frame(MomEdu = seq(0, 24, length.out = 200))
+pred_data$Linear <- predict(mod_linear, newdata = pred_data)
+pred_data$Quadratic <- predict(mod_quad, newdata = pred_data)
+
+ggplot(mapping = aes(x = MomEdu, y = KidScore)) +
+  geom_point(data = data.frame(MomEdu, KidScore), color = "#522D80", size = 2) +
+  geom_line(data = pred_data, aes(y = Linear, color = "Linear"), linewidth = 1) +
+  geom_line(data = pred_data, aes(y = Quadratic, color = "Quadratic"), linewidth = 1) +
+  scale_color_manual(values = c("Linear" = "#522D80", "Quadratic" = "#F66733")) +
+  labs(title = "Linear vs. Quadratic Fit",
+       x = "Mom Education (years)", y = "Kid Score", color = "Model") +
+  theme_minimal(base_size = 14)
+```
+
+The quadratic model captures **diminishing returns** — once mom has a college degree, further education doesn't help much.
+
+## When to Include a Non-Linear Term?
+
+::: incremental
+-   If you have a **theory** that suggests diminishing (or increasing) returns
+    -   Or, in our example, returns that go negative after a certain point
+-   If your **residual plot** shows a curve when you fit a linear model
+-   **Be careful**: adding extra predictors always "improves" the fit (more on this next)
+-   Another common transformation: $\log(X)$ if you expect declining marginal returns
+:::
+
+## Making a Residual Plot in R {.smaller}
+
+A residual plot is just three steps: fit the model, get the residuals, and plot them against the fitted values.
+
+```{r}
+#| echo: true
+#| fig-width: 8
+#| fig-height: 4
+
+# Step 1: Fit the model (we already did this)
+linear_fit <- lm(KidScore ~ MomEdu)
+
+# Step 2: Get predicted values and residuals
+resid_data <- data.frame(
+  fitted = fitted(linear_fit),
+  residual = resid(linear_fit)
+)
+
+# Step 3: Plot residuals vs. fitted values
+ggplot(resid_data, aes(x = fitted, y = residual)) +
+  geom_point(color = "#522D80", size = 2, alpha = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "#F66733") +
+  labs(x = "Predicted Value", y = "Residual") +
+  theme_minimal(base_size = 14)
+```
+
+. . .
+
+**That's it.** If the points scatter randomly around the dashed line, your model is doing fine. If you see a pattern: a curve, a funnel, a trend -something is off.
+
+## Spotting Non-Linearity in Residuals {.smaller}
+
+Here's the same education data. We fit a straight line, but the true relationship is curved. The residual plot makes the problem obvious:
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4
+
+library(patchwork)
+
+# Reuse the data from the earlier slide
+linear_fit <- lm(KidScore ~ MomEdu)
+
+resid_data <- data.frame(
+  MomEdu = MomEdu,
+  KidScore = KidScore,
+  fitted = fitted(linear_fit),
+  residual = resid(linear_fit)
+)
+
+p1 <- ggplot(resid_data, aes(x = MomEdu, y = KidScore)) +
+  geom_point(color = "#522D80", size = 2, alpha = 0.7) +
+  geom_smooth(method = "lm", se = FALSE, color = "#F66733", linewidth = 1.2) +
+  labs(title = "Linear Fit Forced Through Curved Data",
+       x = "Mom Education (years)", y = "Kid Score") +
+  theme_minimal(base_size = 12)
+
+p2 <- ggplot(resid_data, aes(x = fitted, y = residual)) +
+  geom_point(color = "#522D80", size = 2, alpha = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "#F66733", linewidth = 1) +
+  geom_smooth(method = "loess", se = FALSE, color = "gray40", linewidth = 0.8) +
+  labs(title = "Residual Plot Shows the U-Shape",
+       x = "Fitted Values", y = "Residual") +
+  theme_minimal(base_size = 12)
+
+p1 + p2
+```
+
+. . .
+
+The U-shape in the residuals tells us the linear model is **systematically wrong** — it overpredicts in the middle and underpredicts at the extremes. This is your cue to try a quadratic (or log) term.
+
+## What a Good Residual Plot Looks Like {.smaller}
+
+Now let's fit the quadratic model to the same data and check the residuals again:
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4
+
+quad_fit <- lm(KidScore ~ MomEdu + I(MomEdu^2))
+
+resid_quad <- data.frame(
+  MomEdu = MomEdu,
+  KidScore = KidScore,
+  fitted = fitted(quad_fit),
+  residual = resid(quad_fit)
+)
+
+p1 <- ggplot(resid_quad, aes(x = MomEdu, y = KidScore)) +
+  geom_point(color = "#522D80", size = 2, alpha = 0.7) +
+  geom_line(aes(y = fitted), color = "#F66733", linewidth = 1.2) +
+  labs(title = "Quadratic Fit (Matches the Curve)",
+       x = "Mom Education (years)", y = "Kid Score") +
+  theme_minimal(base_size = 12)
+
+p2 <- ggplot(resid_quad, aes(x = fitted, y = residual)) +
+  geom_point(color = "#522D80", size = 2, alpha = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "#F66733", linewidth = 1) +
+  geom_smooth(method = "loess", se = FALSE, color = "gray40", linewidth = 0.8) +
+  labs(title = "Residuals: No Pattern",
+       x = "Fitted Values", y = "Residual") +
+  theme_minimal(base_size = 12)
+
+p1 + p2
+```
+
+. . .
+
+**This is what we want.** The residuals scatter randomly around zero with no curve or funnel. The loess smoother is basically flat — our model is capturing the real relationship.
+
+## Multiple Predictors Revisited {.smaller}
+
+Last time we added poverty as a control. We can add as many predictors as we want:
+
+$$
+\text{Score} = 10 + 2.4 \times \text{Mom Yrs} + 2.1 \times \text{Dad Yrs} + 4 \times \text{Fam Income} + \epsilon
+$$
+
+. . .
+
+::: incremental
+-   Each $\beta_j$ is the average change in Y for a one-unit change in $X_j$, **holding all other variables fixed**
+-   Controls are a powerful tool; but doesn't mean we should throw every variable we can find into the model
+-   **Bad controls introduce bias** (we'll see why shortly)
+-   **Collinearity** between predictors can make the "holding constant" interpretation tricky
+:::
+
+# Part 2: The 'Add More Controls' Trap
+
+## A Quick R-squared Refresher {.smaller}
+
+From last time: $R^2$ measures what fraction of the variation in Y our model explains.
+
+$$R^2 = 1 - \frac{\text{Residual SS}}{\text{Total SS}} = 1 - \frac{\sum(y_i - \hat{y}_i)^2}{\sum(y_i - \bar{y})^2}$$
+
+. . .
+
+Think of it as: how much better is our model at predicting Y compared to just guessing the mean every time?
+
+. . .
+
+::: callout-note
+Higher $R^2$ = better model fit. But there's a catch...
+:::
+
+## The R-squared Trap: A Demonstration {.smaller}
+
+```{r}
+#| echo: true
+
+library(tidyverse)
+
+set.seed(30317)
+
+n <- 100
+x1 <- rnorm(n)  # Meaningful predictor
+noise <- rnorm(n, 0, 4)  # Pure noise — NO relationship with Y
+y <- 2 + 3 * x1 + rnorm(n, 0, 2)  # True relationship only involves x1
+
+# Fit two models
+model1 <- lm(y ~ x1)
+model2 <- lm(y ~ x1 + noise)
+
+# Compare R-squared
+cat("Model 1 (just x1):", round(summary(model1)$r.squared, 4), "\n")
+cat("Model 2 (x1 + noise):", round(summary(model2)$r.squared, 4), "\n")
+```
+
+. . .
+
+$R^2$ **increased** even though we added a completely meaningless variable!
+
+## Why Does This Happen? {.smaller}
+
+```{r}
+#| fig-width: 10
+#| fig-height: 3.5
+
+rsq1 <- summary(model1)$r.squared
+rsq2 <- summary(model2)$r.squared
+
+plot_data <- data.frame(
+  Model = c("Just Spending", "Spending + Random Noise"),
+  R_squared = c(rsq1, rsq2)
+)
+
+ggplot(plot_data, aes(x = Model, y = R_squared)) +
+  geom_bar(stat = "identity", fill = "#522D80", alpha = 0.8, width = 0.5) +
+  geom_text(aes(label = sprintf("%.4f", R_squared)), vjust = 1.5, size = 5,
+            color = "white", fontface = "bold") +
+  labs(title = expression(paste(R^2, " Always Increases When You Add Predictors")),
+       subtitle = "Even completely random variables 'explain' some variance by chance",
+       y = expression(R^2)) +
+  theme_minimal(base_size = 14)
+```
+
+::: incremental
+-   Each predictor "explains" some variance **by chance**, even if it has no real relationship with Y
+-   OLS is a very efficient algorithm — it will find *some* pattern, even in random noise
+-   This means $R^2$ alone can't tell you if a model is good
+:::
+
+## The Fix: Adjusted R-squared {.smaller}
+
+Adjusted $R^2$ penalizes you for adding predictors that don't pull their weight:
+
+$$\text{Adjusted } R^2 = 1 - \frac{(1 - R^2)(n - 1)}{n - p - 1}$$
+
+. . .
+
+::: incremental
+-   $n$ = number of observations
+-   $p$ = number of predictors
+-   Unlike regular $R^2$, adjusted $R^2$ can actually **decrease** if you add a useless predictor
+-   Use adjusted $R^2$ when comparing models with different numbers of predictors
+:::
+
+. . .
+
+```{r}
+#| echo: true
+
+cat("Model 1 Adj R²:", round(summary(model1)$adj.r.squared, 4), "\n")
+cat("Model 2 Adj R²:", round(summary(model2)$adj.r.squared, 4), "\n")
+```
+
+Adjusted $R^2$ went down, telling us the noise variable isn't helping.
+
+## Key Takeaways on Model Fit
+
+::: incremental
+-   $R^2$ is useful but always goes up when you add predictors: don't be fooled
+-   **Adjusted** $R^2$ corrects for this and is better for comparing models
+-   If you care about **prediction**, cross-validation is even better (we'll discuss near end of semester)
+-   If you care about **causation**, the right model is the one that matches your causal theory, so $R^2$ is less relevant
+:::
+
+# Part 3: When Regression Goes Wrong
+
+## Three Threats {.smaller}
+
+When we run a regression and interpret coefficients, we're implicitly making claims about relationships. Three common pitfalls:
+
+::: incremental
+1.  **Omitted Variable Bias**: Leaving out a confounder that distorts our estimate
+2.  **Collider Bias**: Controlling for the *wrong* thing and creating a spurious relationship
+3.  **Simpson's Paradox**: An aggregate trend that reverses when you look within groups
+:::
+
+. . .
+
+We'll use **DAGs** (Directed Acyclic Graphs) to think through each one. DAGs are just arrow diagrams showing which variables cause which.
+
+## Omitted Variable Bias: The DAG {.smaller}
+
+```{r}
+#| fig-width: 8
+#| fig-height: 3.5
+#| fig-align: center
+
+library(dagitty)
+library(ggdag)
+
+dag_ovb <- dagitty('dag{
+    "Family Income" [pos="0,0"]
+    "Preschool" [pos="1,1"]
+    "Graduation" [pos="2,0"]
+    "Family Income" -> "Preschool"
+    "Family Income" -> "Graduation"
+    "Preschool" -> "Graduation"
+}')
+
+ggdag(dag_ovb, text = FALSE, use_labels = "name") +
+  theme_dag() +
+  coord_cartesian(clip = "off") +
+  labs(title = "Omitted Variable Bias",
+       subtitle = "Family Income causes BOTH Preschool attendance and Graduation") +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+        plot.subtitle = element_text(hjust = 0.5, size = 12),
+        legend.position = "none",
+        plot.margin = margin(t = 20, r = 10, b = 10, l = 10))
+```
+
+. . .
+
+If we regress Graduation on Preschool **without** controlling for Family Income, we'll overestimate the preschool effect — because part of what we're picking up is actually the effect of income.
+
+## OVB: Seeing It in Action {.smaller}
+
+```{r}
+#| echo: true
+library(tidyverse)
+library(dagitty)
+library(ggdag)
+
+set.seed(30317)
+N <- 1000
+
+# Family income (the confounder)
+family_income <- rnorm(N)
+
+# Preschool attendance (caused by income)
+preschool <- 0.5 * family_income + rnorm(N)
+
+# Graduation rate (caused by BOTH preschool and income)
+graduation <- 0.4 * preschool + 0.3 * family_income + rnorm(N)
+
+# Biased model (omitting income)
+model_biased <- lm(graduation ~ preschool)
+
+# Unbiased model (including income)
+model_unbiased <- lm(graduation ~ preschool + family_income)
+```
+
+. . .
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4
+
+coef_data <- data.frame(
+  Model = c("Without Income\n(Biased)", "With Income\n(Unbiased)"),
+  Coefficient = c(coef(model_biased)["preschool"],
+                 coef(model_unbiased)["preschool"])
+)
+
+ggplot(coef_data, aes(x = Model, y = Coefficient)) +
+  geom_bar(stat = "identity", fill = "#522D80", alpha = 0.8, width = 0.5) +
+  geom_hline(yintercept = 0.4, color = "#F66733", linetype = "dashed", linewidth = 1) +
+  geom_text(aes(label = sprintf("%.3f", Coefficient)), vjust = 1.5, size = 5,
+            color = "white", fontface = "bold") +
+  annotate("text", x = 2.4, y = 0.41, label = "True Effect = 0.4",
+           color = "#F66733", fontface = "italic", size = 4) +
+  labs(title = "Omitted Variable Bias in Action",
+       subtitle = "Leaving out Family Income inflates the Preschool coefficient",
+       y = "Estimated Effect of Preschool") +
+  theme_minimal(base_size = 14)
+```
+
+We *know* the true effect is 0.4 (we simulated it!), but omitting income makes preschool look more impactful than it really is.
+
+## What Makes Something an OVB Threat? {.smaller}
+
+Not every omitted variable creates bias. For OVB to occur, the omitted variable must:
+
+::: incremental
+1.  Be correlated with the **predictor** (X): Family income affects who goes to preschool
+2.  **Cause** the **outcome** (Y): Family income directly affects graduation rates
+3.  Not be caused by X: If the omitted variable is *caused* by your predictor, including it would be a different kind of problem...
+:::
+
+. . .
+
+::: callout-warning
+## Common Misconception
+
+It's not enough for a variable to be correlated with X and Y. It must **cause** Y. Correlation alone can mislead us.
+:::
+
+## Post-Treatment Bias {.smaller}
+
+Consider another potential control. Some argue that *natural aptitude* also contributes to graduation rates, and we should capture this by controlling for **reading scores in first grade**.
+
+. . .
+
+Should we control for first-grade reading scores in our model?
+
+. . .
+
+**No!** Preschool might *cause* higher reading scores. If we control for reading scores, we're "blocking" part of the very effect we're trying to measure.
+
+. . .
+
+::: callout-important
+## Rule of Thumb
+
+Only control for variables that are **not caused by your treatment**. If the treatment can influence the control variable, including it will bias your estimate. This is called **post-treatment bias**.
+:::
+
+## Collider Bias: A Different Problem Entirely {.smaller}
+
+OVB is about *leaving out* the right variable. Collider bias is about *including* the wrong one.
+
+::: incremental
+-   A **collider** is a variable that is *caused by* both X and Y
+-   Conditioning on a collider (either by including it in the model or by sample selection) creates a spurious relationship between X and Y
+-   Classic example: does being tall make you a worse free-throw shooter?
+:::
+
+## Shaq Example {.smaller}
+
+```{r}
+#| fig-width: 8
+#| fig-height: 3.5
+#| fig-align: center
+
+dag_nba <- dagitty('dag{
+    Height [pos="0,1"]
+    "Free Throw %" [pos="2,1"]
+    "NBA Status" [pos="1,0"]
+    Height -> "NBA Status"
+    "Free Throw %" -> "NBA Status"
+}')
+
+ggdag(dag_nba, text = FALSE, use_labels = "name") +
+  theme_dag() +
+  coord_cartesian(clip = "off") +
+  labs(title = "NBA Status Is a Collider",
+       subtitle = "Both Height and Free Throw % affect NBA chances") +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+        plot.subtitle = element_text(hjust = 0.5, size = 12),
+        legend.position = "none",
+        plot.margin = margin(t = 20, r = 10, b = 10, l = 10))
+```
+
+. . .
+
+::: incremental
+-   Height helps you make the NBA
+-   Free throw shooting helps you make the NBA
+-   **But height and FT% have no direct relationship** in the general population
+:::
+
+## In the General Population {.smaller}
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4.5
+#| fig-align: center
+
+set.seed(30317)
+N <- 10000
+
+height <- rnorm(N, mean = 74, sd = 4)  # inches
+ft_pct <- rnorm(N, mean = 70, sd = 15)
+
+# NBA selection depends on both
+nba_prob <- plogis(-2 + 0.25 * (height - 74) + 0.05 * (ft_pct - 70))
+made_nba <- rbinom(N, 1, nba_prob)
+
+basketball_data <- data.frame(height, ft_pct, made_nba)
+nba_data <- basketball_data |> filter(made_nba == 1)
+
+ggplot(basketball_data, aes(x = height, y = ft_pct)) +
+  geom_point(alpha = 0.1, color = "#522D80") +
+  geom_smooth(method = "lm", color = "#F66733", linewidth = 1.2) +
+  labs(title = "Height vs Free Throw % (All Basketball Players)",
+       subtitle = paste("Correlation:",
+                       round(cor(basketball_data$height,
+                               basketball_data$ft_pct), 3)),
+       x = "Height (inches)", y = "Free Throw %") +
+  theme_minimal(base_size = 14)
+```
+
+No relationship — as expected. Being tall doesn't make you a better or worse shooter.
+
+## But If We Only Look at NBA Players... {.smaller}
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4.5
+#| fig-align: center
+
+ggplot(nba_data, aes(x = height, y = ft_pct)) +
+  geom_point(alpha = 0.4, color = "#522D80") +
+  geom_smooth(method = "lm", color = "#F66733", linewidth = 1.2) +
+  labs(title = "Height vs Free Throw % (NBA Players Only)",
+       subtitle = paste("Correlation:",
+                       round(cor(nba_data$height, nba_data$ft_pct), 3)),
+       x = "Height (inches)", y = "Free Throw %") +
+  theme_minimal(base_size = 14)
+```
+
+Now it looks like taller players are *worse* shooters! But this is an illusion created by **conditioning on the collider**.
+
+## Why Does This Happen? {.smaller}
+
+Think about what it takes to make the NBA:
+
+::: incremental
+-   **Shorter players** need to be exceptional shooters to compensate — think about how good a 5'5" NBA player would have to be!
+-   **Taller players** can make it with weaker shooting — think Shaq
+-   So among NBA players, height and shooting are **negatively correlated** — not because one causes the other, but because NBA selection (the collider) creates this pattern
+:::
+
+## Simpson's Paradox: A Real-World Trap {.smaller}
+
+One of the most dangerous ways aggregate data can mislead us comes from the COVID-19 pandemic.
+
+. . .
+
+In 2021, news outlets reported a startling statistic: in some countries, the **death rate among vaccinated people was higher** than among the unvaccinated.
+
+. . .
+
+Anti-vaccine groups seized on this as proof that vaccines were harmful. But the data told the opposite story once you looked more carefully.
+
+. . .
+
+::: callout-warning
+## The Paradox
+
+A trend that appears in aggregate data can reverse — or even disappear — when the data is split into meaningful groups.
+:::
+
+## Setting Up the Vaccine Example {.smaller}
+
+```{r}
+#| echo: true
+
+set.seed(2021)
+N <- 10000
+
+# Age group: older people have higher death rates AND higher vaccination rates
+age_group <- sample(c("Under 50", "50-69", "70+"), N,
+                    prob = c(0.5, 0.3, 0.2), replace = TRUE)
+
+# Pre-existing conditions: more common in older people
+has_condition <- case_when(
+  age_group == "Under 50" ~ rbinom(N, 1, 0.10),
+  age_group == "50-69"    ~ rbinom(N, 1, 0.30),
+  age_group == "70+"      ~ rbinom(N, 1, 0.55)
+)
+
+# Vaccination: older people and those with conditions vaccinated at MUCH higher rates
+vax_prob <- case_when(
+  age_group == "Under 50" & has_condition == 0 ~ 0.30,
+  age_group == "Under 50" & has_condition == 1 ~ 0.50,
+  age_group == "50-69"    & has_condition == 0 ~ 0.70,
+  age_group == "50-69"    & has_condition == 1 ~ 0.85,
+  age_group == "70+"      & has_condition == 0 ~ 0.85,
+  age_group == "70+"      & has_condition == 1 ~ 0.92
+)
+vaccinated <- rbinom(N, 1, vax_prob)
+```
+
+## Setting Up the Vaccine Example (cont.) {.smaller}
+
+```{r}
+#| echo: true
+
+# Death probability: age and conditions increase risk; vaccine REDUCES risk
+base_death <- case_when(
+  age_group == "Under 50" ~ 0.001,
+  age_group == "50-69"    ~ 0.015,
+  age_group == "70+"      ~ 0.080
+)
+
+death_prob <- base_death *
+  (1 + 2.0 * has_condition) *   # Pre-existing conditions double+ risk
+  (1 - 0.85 * vaccinated)       # Vaccine reduces death risk by 85%
+
+died <- rbinom(N, 1, pmin(death_prob, 1))
+
+covid_data <- tibble(
+  age_group = factor(age_group, levels = c("Under 50", "50-69", "70+")),
+  has_condition = has_condition,
+  vaccinated = factor(vaccinated, labels = c("Unvaccinated", "Vaccinated")),
+  died = died
+)
+```
+
+. . .
+
+We built in an **85% reduction in death risk** from vaccination. The vaccine clearly works in our simulation. But watch what happens in the aggregate...
+
+## The Misleading Aggregate {.smaller}
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4
+#| fig-align: center
+
+overall_rates <- covid_data |>
+  group_by(vaccinated) |>
+  summarize(deaths = sum(died), n = n(),
+            death_rate = deaths / n * 100, .groups = "drop")
+
+ggplot(overall_rates, aes(x = vaccinated, y = death_rate, fill = vaccinated)) +
+  geom_col(width = 0.5) +
+  geom_text(aes(label = sprintf("%.2f%%\n(%d / %d)", death_rate, deaths, n)),
+            vjust = 1.3, size = 5, color = "white", fontface = "bold") +
+  scale_fill_manual(values = c("Unvaccinated" = "#522D80", "Vaccinated" = "#F66733")) +
+  labs(title = "Overall Death Rates: Vaccinated vs. Unvaccinated",
+       subtitle = "Wait... vaccinated people die at a HIGHER rate?",
+       x = "", y = "Death Rate (%)") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none")
+```
+
+. . .
+
+If you stopped here, you'd conclude vaccines are harmful. But this is **Simpson's Paradox** in action.
+
+## Now Break It Down by Age Group {.smaller}
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4
+#| fig-align: center
+
+age_rates <- covid_data |>
+  group_by(age_group, vaccinated) |>
+  summarize(deaths = sum(died), n = n(),
+            death_rate = deaths / n * 100, .groups = "drop")
+
+ggplot(age_rates, aes(x = vaccinated, y = death_rate, fill = vaccinated)) +
+  geom_col(position = "dodge", width = 0.6) +
+  geom_text(aes(label = sprintf("%.2f%%", death_rate)),
+            position = position_dodge(width = 0.6), vjust = 1.3, size = 3.5,
+            color = "white", fontface = "bold") +
+  facet_wrap(~ age_group, scales = "free_y") +
+  scale_fill_manual(values = c("Unvaccinated" = "#522D80", "Vaccinated" = "#F66733")) +
+  labs(title = "Death Rates by Age Group: The Real Story",
+       subtitle = "Within every age group, vaccination dramatically reduces death rates",
+       x = "", y = "Death Rate (%)", fill = "") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+```
+
+. . .
+
+**Within every age group**, vaccinated people die at a much lower rate. The vaccine works — the aggregate just hid it.
+
+## Why Does Simpson's Paradox Happen Here? {.smaller}
+
+::: incremental
+-   **Older people** have much higher baseline death rates (8% vs. 0.1%)
+-   **Older people** were vaccinated at much higher rates (85-92% vs. 30%)
+-   So the vaccinated group is **disproportionately old**
+-   When you compare all vaccinated to all unvaccinated, you're really comparing mostly-elderly to mostly-young
+:::
+
+## The Composition Effect {.smaller}
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4.5
+#| fig-align: center
+
+vax_age <- covid_data |>
+  group_by(vaccinated, age_group) |>
+  summarize(n = n(), .groups = "drop") |>
+  group_by(vaccinated) |>
+  mutate(pct = n / sum(n) * 100)
+
+ggplot(vax_age, aes(x = vaccinated, y = pct, fill = age_group)) +
+  geom_col(width = 0.5) +
+  geom_text(aes(label = sprintf("%.0f%%", pct)),
+            position = position_stack(vjust = 0.5), size = 5,
+            color = "white", fontface = "bold") +
+  scale_fill_manual(values = c("Under 50" = "#8FD694", "50-69" = "#F66733", "70+" = "#522D80")) +
+  labs(title = "Age Composition of Each Group",
+       subtitle = "The vaccinated group is much older — that's why the aggregate is misleading",
+       x = "", y = "Percent", fill = "Age Group") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "bottom")
+```
+
+## The Lesson for Policy Analysts {.smaller}
+
+::: callout-tip
+## When You See a Surprising Aggregate Result
+
+Always ask: "Could this be driven by group composition?" If the groups differ on both the treatment AND the outcome, the aggregate trend can be misleading.
+:::
+
+. . .
+
+This isn't just academic. Simpson's Paradox with COVID vaccines:
+
+::: incremental
+-   Fueled vaccine hesitancy and cost lives
+-   Was used (intentionally or not) to mislead the public
+-   Could have been avoided by reporting age-stratified data from the start
+:::
+
+. . .
+
+The fix is the same as always: **control for the confounder**. In a regression, adding age group as a predictor reveals the true protective effect of vaccination.
+
+## Outliers and Influence {.smaller}
+
+One more diagnostic: some data points have outsized impact on the regression line.
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4
+
+set.seed(30317)
+n_main <- 40
+x_main <- rnorm(n_main, mean = 0, sd = 1)
+y_main <- 2 + 3 * x_main + rnorm(n_main, sd = 1)
+
+x_high_off <- c(8, 10)
+y_high_off <- c(40, -5)
+
+x_youtlier <- 0
+y_youtlier <- 50
+
+x <- c(x_main, x_high_off, x_youtlier)
+y <- c(y_main, y_high_off, y_youtlier)
+df <- data.frame(x = x, y = y)
+
+model <- lm(y ~ x, data = df)
+df$cooks_dist <- cooks.distance(model)
+cook_cutoff <- 4 / nrow(df)
+df$high_influence <- df$cooks_dist > cook_cutoff
+
+ggplot(df, aes(x = x, y = y)) +
+  geom_point(aes(color = high_influence), size = 3) +
+  geom_smooth(method = "lm", se = FALSE, color = "#522D80", linewidth = 1.2) +
+  scale_color_manual(values = c("FALSE" = "gray50", "TRUE" = "#F66733"),
+                     labels = c("Normal", "High Influence")) +
+  labs(title = "Some Points Pull the Line More Than Others",
+       subtitle = paste("Points with Cook's Distance >",
+                       round(cook_cutoff, 3), "are flagged"),
+       x = "X", y = "Y", color = "Influence") +
+  theme_minimal(base_size = 14)
+```
+
+## Dealing with Influential Points {.smaller}
+
+::: incremental
+-   **Don't automatically delete outliers**: they might be real and important!
+-   **Do check** if the data was entered correctly (typos, coding errors)
+-   **Do exclude** values that are impossible (voter turnout \> 100%, negative ages)
+-   **Cook's distance** is a common measure of influence — how much the regression line changes if you drop that one point
+    -   Rule of thumb: Cook's D \> 4/n is worth investigating
+-   **Report both**: run the analysis with and without influential points and see if your conclusions change
+    -   This is often called the "jacknife" approach
+:::
+
+# Part 4: Interactions
+
+## When One Size Doesn't Fit All {.smaller}
+
+So far, our models assume the effect of spending is the **same** for every school district, regardless of poverty level.
+
+. . .
+
+But what if the effect of funding **depends** on school characteristics?
+
+. . .
+
+::: incremental
+-   Maybe an extra \$1,000 matters more for a school in a high-poverty district than a wealthy one
+-   Maybe the return on funding levels off for the richest districts
+-   These are **conditional hypotheses** - we need **interaction terms** to test them
+:::
+
+## The Policy Question
+
+::: incremental
+-   How does funding affect student achievement?
+-   Does the effect differ between high-poverty and low-poverty schools?
+-   Basic regression: `Achievement ~ Funding + Poverty`
+-   But what if the effect is **not the same** across school types?
+-   **Interaction model**: `Achievement ~ Funding * Poverty`
+:::
+
+## Setting Up the Data {.smaller}
+
+```{r}
+#| echo: true
+
+library(tidyverse)
+
+set.seed(30317)
+n <- 1000
+
+funding <- rnorm(n, 5000, 1000)
+high_poverty <- rbinom(n, 1, 0.3)  # 30% of schools are high poverty
+
+sim_data <- data.frame(
+  high_poverty = high_poverty,
+  funding = funding,
+  achievement = 70 + 0.0013 * funding +      # Base funding effect
+    -20 * high_poverty +                       # Poverty penalty
+    0.0024 * funding * high_poverty +          # ADDITIONAL effect in high poverty schools
+    rnorm(n, 0, 2)
+)
+```
+
+. . .
+
+Notice what we built in: funding has a base effect (0.0013 per dollar) that is **larger** for high-poverty schools (an additional 0.0024 per dollar).
+
+## Visualizing: One Line vs. Two {.smaller}
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4
+
+p1 <- ggplot(sim_data, aes(x = funding, y = achievement)) +
+  geom_point(aes(color = factor(high_poverty)), alpha = 0.5) +
+  geom_smooth(method = "lm", se = TRUE, color = "black", linewidth = 1.2) +
+  scale_color_manual(values = c("#522D80", "#F66733"),
+                     labels = c("Low Poverty", "High Poverty"),
+                     name = "School Type") +
+  scale_x_continuous(labels = scales::dollar) +
+  labs(title = "One Line for Everyone",
+       x = "Per-pupil Funding", y = "Achievement") +
+  theme_minimal(base_size = 12)
+
+p2 <- ggplot(sim_data, aes(x = funding, y = achievement,
+                            color = factor(high_poverty))) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = TRUE, linewidth = 1.2) +
+  scale_color_manual(values = c("#522D80", "#F66733"),
+                     labels = c("Low Poverty", "High Poverty"),
+                     name = "School Type") +
+  scale_x_continuous(labels = scales::dollar) +
+  labs(title = "Separate Lines by Poverty",
+       x = "Per-pupil Funding", y = "Achievement") +
+  theme_minimal(base_size = 12)
+
+p1 + p2
+```
+
+The right panel tells a different story — funding has a **steeper slope** for high-poverty schools.
+
+## The Interaction Model in R {.smaller}
+
+```{r}
+#| echo: true
+
+# Model WITHOUT interaction
+model_no_int <- lm(achievement ~ funding + high_poverty, data = sim_data)
+
+# Model WITH interaction
+model_int <- lm(achievement ~ funding + high_poverty + funding:high_poverty,
+                data = sim_data)
+summary(model_int)
+```
+
+Note: `funding:high_poverty` is the interaction term. You can also write `funding * high_poverty`, which automatically includes both main effects and the interaction.
+
+## Interpreting the Interaction Model {.smaller}
+
+The full model:
+
+$$
+Y = \beta_0 + \beta_1 \times \text{Funding} + \beta_2 \times \text{High Poverty} + \beta_3 \times \text{Funding} \times \text{High Poverty}
+$$
+
+. . .
+
+::: incremental
+-   $\beta_0$: Achievement when funding = 0 and poverty = 0 (not very interpretable)
+-   $\beta_1$: Effect of each dollar of funding **when poverty = 0** (low-poverty schools)
+-   $\beta_2$: Difference in achievement for high-poverty schools **when funding = 0** (also not very interpretable)
+-   $\beta_3$: The **additional** effect of each dollar of funding for high-poverty schools
+:::
+
+. . .
+
+So the **total effect** of funding for high-poverty schools is $\beta_1 + \beta_3$.
+
+## What's Happening Under the Hood {.smaller}
+
+Again, you don't need calculus - but it's nice to see why the coefficients work the way they do. Start with the model:
+
+$$
+Y = \beta_0 + \beta_1 \text{Funding} + \beta_2 \text{Poverty} + \beta_3 (\text{Funding} \times \text{Poverty})
+$$
+
+. . .
+
+Now take the partial derivative with respect to Funding:
+
+$$
+\frac{\partial Y}{\partial \text{Funding}} = \beta_1 + \beta_3 \times \text{Poverty}
+$$
+
+. . .
+
+That's it. The effect of funding **depends on the value of poverty**. The $\beta_3$ term is what makes it vary: without it, we'd just get $\beta_1$ for everyone.
+
+. . .
+
+::: incremental
+-   When Poverty = 0: effect of funding = $\beta_1$ (just the base slope)
+-   When Poverty = 1: effect of funding = $\beta_1 + \beta_3$ (base + additional)
+-   The partial derivative is just formalizing what the coefficient table already told us
+:::
+
+## Don't Over-Interpret the Coefficients! {.smaller}
+
+This is the most common mistake with interaction models:
+
+$$
+Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \beta_3 X_1 X_2
+$$
+
+::: incremental
+-   $\beta_1$ is **NOT** the average effect of $X_1$ on Y
+-   $\beta_2$ is **NOT** the average effect of $X_2$ on Y
+-   Instead, $\beta_1$ is the effect of $X_1$ **when** $X_2 = 0$
+-   And $\beta_2$ is the effect of $X_2$ **when** $X_1 = 0$
+-   To get the effect at other values, you need **marginal effects**
+:::
+
+## Continuous Interactions {.smaller}
+
+Our poverty variable doesn't have to be binary. What if we use the actual poverty rate (0–100%)?
+
+```{r}
+#| echo: true
+
+set.seed(30317)
+n <- 1000
+
+funding <- rnorm(n, 5000, 1000)
+poverty <- runif(n, 0, 1)  # poverty rate from 0 to 100%
+
+sim_data_cont <- data.frame(
+  poverty = poverty,
+  funding = funding,
+  achievement = 70 + 0.001 * funding +
+    -25 * poverty +
+    0.002 * funding * poverty +
+    rnorm(n, 0, 5)
+)
+
+model_cont <- lm(achievement ~ funding * poverty, data = sim_data_cont)
+```
+
+Now the effect of funding changes **continuously** with the poverty rate:
+
+$$
+\frac{\partial Y}{\partial \text{Funding}} = \beta_1 + \beta_3 \times \text{Poverty}
+$$
+
+## Visualizing the Continuous Interaction {.smaller}
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4
+
+ggplot(sim_data_cont, aes(x = funding, y = achievement)) +
+  geom_point(aes(color = poverty), alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE, color = "black") +
+  scale_color_viridis_c(name = "Poverty Rate", labels = scales::percent) +
+  scale_x_continuous(labels = scales::dollar) +
+  labs(title = "Effect of School Funding on Achievement",
+       subtitle = "Color indicates school poverty rate",
+       x = "Per-pupil Funding", y = "Achievement Score") +
+  theme_minimal(base_size = 14)
+```
+
+The overall line hides an important story — the effect of funding varies by poverty level.
+
+## The Continuous Interaction Output {.smaller}
+
+```{r}
+#| echo: true
+summary(model_cont)
+```
+
+## When to Include Interactions {.smaller}
+
+Any time you have a **conditional hypothesis**: a theory that says the effect of X depends on some other variable:
+
+::: incremental
+-   "Funding will have a **greater impact** on student achievement when poverty is higher"
+-   "The effect of free trade agreements on voting depends on **how exposed** the voter's industry is to trade"
+-   "Campaign spending matters more in **competitive** districts than in safe ones"
+:::
+
+. . .
+
+::: callout-tip
+## Theory First
+
+Don't include interactions just because you can. Need a theory about *why* the effect should vary.
+:::
+
+# Part 5: Marginal Effects
+
+## Why We Need Marginal Effects {.smaller}
+
+In an interaction model, the regression table doesn't directly give us the effect of funding at different poverty levels. We need to calculate **marginal effects**.
+
+. . .
+
+From our model:
+
+$$\frac{\partial Y}{\partial \text{Funding}} = \beta_1 + \beta_3 \times \text{Poverty}$$
+
+. . .
+
+::: incremental
+-   At poverty = 0%: effect of funding = $\beta_1$
+-   At poverty = 50%: effect of funding = $\beta_1 + 0.5 \times \beta_3$
+-   At poverty = 100%: effect of funding = $\beta_1 + \beta_3$
+-   We can calculate this for any poverty level!
+:::
+
+## Computing Marginal Effects Manually {.smaller}
+
+```{r}
+#| echo: true
+
+# Get coefficients
+coefs <- coef(model_cont)
+
+# Calculate the effect of funding at different poverty levels
+marginal_effects <- data.frame(
+  poverty = seq(0, 1, by = 0.1)
+) |>
+  mutate(
+    effect = coefs["funding"] + coefs["funding:poverty"] * poverty
+  )
+
+marginal_effects
+```
+
+. . .
+
+As poverty increases, the effect of funding gets larger — exactly what we built into the simulation.
+
+## The `marginaleffects` Package {.smaller}
+
+Computing SEs for marginal effects by hand is tricky. The `marginaleffects` package does this for us:
+
+```{r}
+#| echo: true
+#| fig-width: 10
+#| fig-height: 3.5
+
+library(marginaleffects)
+
+# Calculate and plot marginal effects of funding across poverty levels
+plot_slopes(model_cont,
+           variables = "funding",
+           condition = "poverty") +
+  labs(title = "Marginal Effect of Funding on Achievement",
+       subtitle = "Effect increases with poverty rate",
+       x = "Poverty Rate",
+       y = "Marginal Effect of $1 in Funding") +
+  theme_minimal(base_size = 14)
+```
+
+The shaded band is a 95% confidence interval. Where the band includes zero, the effect is not statistically significant at that poverty level.
+
+## Key Rules for Marginal Effects
+
+::: incremental
+-   **Always** report marginal effects when you have interactions: don't just report the regression table
+-   Calculate them at **meaningful values** of the moderator (e.g., low/medium/high poverty, not just 0)
+-   **Include confidence intervals**: the standard errors on the coefficients alone can be misleading
+-   The `marginaleffects` package makes this easy: `plot_slopes()` for visualization, `slopes()` for tables
+:::
+
+# Wrapping Up
+
+## What We've Covered Today
+
+::: incremental
+1.  **Coefficient interpretation** goes beyond "slope": binary predictors give differences in means, continuous predictors give rates of change, and quadratic terms allow curvature
+2.  **R-squared always increases** when you add predictors, use adjusted R-squared to compare models fairly
+3.  **Omitted variable bias** inflates estimates when confounders are left out: Use DAGs to think through what to control for
+4.  **Collider bias** creates spurious relationships when you control for the wrong thing
+5.  **Interactions** let us model effects that vary + **marginal effects** are the right way to interpret them
+:::
+
+## The Bias Cheat Sheet {.smaller}
+
+| Problem | What Happened | Example | Fix |
+|------------------|-------------------|------------------|------------------|
+| **OVB** | Left out a confounder | Preschool effect without income | Include the confounder |
+| **Post-treatment** | Controlled for an outcome of treatment | Preschool effect controlling for reading scores | Don't control for post-treatment variables |
+| **Collider** | Conditioned on a shared effect | NBA height/shooting | Don't control for (or select on) colliders |
+| **Simpson's** | Aggregate hides group-level patterns | COVID vaccines by age | Analyze within groups |
+
+## Looking Ahead
+
+::: incremental
+-   So far we've been describing **associations** and trying to reduce bias through controls
+-   But the gold standard for causal inference is **research design** is structuring the study so that confounding is eliminated, not just reduced
+-   Coming up: **randomized experiments**, **difference-in-differences**, and **regression discontinuity**
+-   These tools are the backbone of rigorous policy evaluation
+:::
+
+## Your Turn: Practice Problem {.smaller}
+
+A researcher wants to know if police body cameras reduce use-of-force incidents. They run:
+
+$$\text{Force Incidents} = \beta_0 + \beta_1 \times \text{Cameras} + \beta_2 \times \text{City Size} + \epsilon$$
+
+. . .
+
+Think about:
+
+::: incremental
+1.  What confounders might be missing? (Think about what types of cities adopt cameras early)
+2.  Would you add an interaction term? If so, which one and why?
+3.  Could there be a collider problem? (What if we only look at departments under federal oversight?)
+4.  If you found that cameras *increase* force incidents, what might explain that?
+:::

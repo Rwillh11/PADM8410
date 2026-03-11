@@ -1,0 +1,82 @@
+---
+title: "PADM 8410: Assignment 3"
+format: pdf
+---
+
+# Assignment 3:
+
+**Due:** 2/24/25
+
+**Total Points:** 100
+
+**Instructions:** This assignment tests your ability to apply concepts from Lectures 3-5 to real-world policy scenarios. Show all work for full credit. For Question 3, you should answer using R. For all other questions, you may solve by hand, although it is fine (even encourage) to use R for calculations! When a question asks you to interpret or explain, write 2-3 sentences in plain language that a non-statistician policy maker could understand.
+
+---
+
+## Question 1: Committee Selection and Fairness (25 points)
+
+A city council has 12 members: 7 Democrats and 5 Republicans. The council randomly selects a 4-person committee to oversee an independent audit of the police department.
+
+**(a)** How many distinct 4-person committees can be formed from the 12 council members? (5 points)
+
+**(b)** What is the probability that all 4 selected members are Democrats? Show your calculation. (6 points)
+
+**(c)** What is the probability that *at least one* Republican is on the committee? *(Hint: use the complement rule.)* (6 points)
+
+**(d)** Suppose the committee that was actually formed turned out to be all Democrats. A Republican council member calls this "rigged." Based on your answer to (b), is this a reasonable suspicion, or could it plausibly happen by chance? Explain your reasoning. (7 points)
+
+---
+
+## Question 2: Grant Funding for a Nonprofit (25 points)
+
+A community development nonprofit applies for 5 independent federal grants. Based on past success rates, each grant has a 30% probability of being funded.
+
+**(a)** What probability distribution describes the number of grants funded? What parameters does this distribution have? (6 points)
+
+**(b)** What is the probability that *exactly 2* of the 5 grants are funded? Show your work using the probability mass function formula. (6 points)
+
+**(c)** What is the expected number of grants funded? What is the variance? (7 points)
+
+**(d)** Each grant is worth \$50,000. What is the nonprofit's expected total funding from these 5 applications? (6 points)
+
+---
+
+## Question 3: Emergency Response Times (25 points)
+
+A state agency reports that 911 response times in a metropolitan area are approximately normally distributed with a mean of $\mu = 8$ minutes and a standard deviation of $\sigma = 2$ minutes.
+
+**For this question, use R to support your answers to c-e. Describe your approach (ie, what functions did you use?)**
+
+**(a)** Using the empirical rule (68-95-99.7 rule), what range of response times covers approximately 95% of all calls? (4 points) [no R needed here]
+
+**(b)** A local news station reports that a call in one neighborhood took 12 minutes. Calculate the z-score for this response time. What does this z-score tell you about how unusual this call was? (5 points) [no R needed here]
+
+**(c)** Use R's `pnorm()` function to find the exact probability that a randomly selected call takes longer than 12 minutes. Show your code. How does this compare to what you'd estimate from the empirical rule? (6 points)
+
+**(d)** The agency promises that 90% of calls will be responded to within 11 minutes. Use R to determine the actual percentage of calls responded to within 11 minutes. Is the agency meeting its promise? Show your code. (5 points)
+
+**(e)** A city council member proposes a stricter standard: 95% of calls responded to within 10 minutes. Under the current distribution, is this standard being met? What would the mean response time need to be (keeping $\sigma = 2$) to meet this standard? Use R to find the answer.. *(Hint: think about `qnorm()`.)* (5 points)
+
+---
+
+## Question 4: Evaluating a Workforce Training Program (25 points)
+
+A state workforce agency runs a job training program. They collect data on 1,000 unemployed residents, some of whom *chose to * participate in the program and some of whom did not. Here are the results:
+
+|                         | Employed After 6 Months | Not Employed After 6 Months | **Total** |
+|-------------------------|:-----------------------:|:---------------------------:|:---------:|
+| **Participated**        | 180                     | 120                         | 300       |
+| **Did Not Participate** | 350                     | 350                         | 700       |
+| **Total**               | 530                     | 470                         | 1,000     |
+
+**(a)** What is the marginal probability of being employed after 6 months, regardless of program participation? (4 points)
+
+**(b)** Calculate the conditional probability of employment *given* participation: $P(\text{Employed} \mid \text{Participated})$. Then calculate $P(\text{Employed} \mid \text{Did Not Participate})$. (6 points)
+
+**(c)** Compute $E[\text{Employment} \mid \text{Participated}] - E[\text{Employment} \mid \text{Did Not Participate}]$. What does this difference represent? (5 points)
+
+**(d)** Write 2--3 sentences interpreting this result for a policy memo. Explain what the numbers mean in plain English. (5 points)
+
+**(e)** A colleague reads your memo and says: "Great, the program *causes* a 10+ percentage point increase in employment." Give one specific reason why this claim might not be justified. What kind of person might choose to participate, and how would that affect our interpretation? (5 points)
+
+

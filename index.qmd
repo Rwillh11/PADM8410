@@ -1,0 +1,34 @@
+---
+title: "PADM 8410: Public Data Analysis"
+subtitle: "Spring 2026 | Clemson University"
+toc: false
+---
+
+## Course Information
+
+|               |                                                    |
+|---------------|----------------------------------------------------|
+| **Instructor**| Dr. Will Horne                                     |
+| **Email**     | [rwhorne@clemson.edu](mailto:rwhorne@clemson.edu)  |
+| **Office**    | 230a Brackett Hall                                  |
+| **Office Hours** | By appointment ([schedule here](https://calendly.com/app/scheduling/meeting_types/user/me)) |
+| **Meeting**   | Tuesdays                                           |
+
+## About This Course
+
+This course introduces social science research techniques and data analysis, with a focus on methods relevant to public policy evaluation. Topics include:
+
+- Probability theory and descriptive statistics
+- Data visualization
+- Regression models (OLS and MLE)
+- Causal inference and design-based approaches (RCTs, difference-in-differences, regression discontinuity)
+
+The course takes a hands-on approach using **R** and the **tidyverse**. All lectures, problem sets, and in-class activities involve writing and running code.
+
+## Textbooks (all free!)
+
+- Wickham, Cetinkaya-Rundel & Grolemund, [R for Data Science (2e)](https://r4ds.hadley.nz/)
+- Dos-Santos Disorbo & Blitzstein, [Probability!](https://bookdown.org/probability/beta/)
+- Gelman, Hill & Vehtari, [Regression and Other Stories](https://avehtari.github.io/ROS-Examples/)
+- Huntington-Klein, [The Effect](https://theeffectbook.net/)
+- Cunningham, [Causal Inference: The Mixtape](https://mixtape.scunning.com/)

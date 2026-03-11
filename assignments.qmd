@@ -1,0 +1,45 @@
+---
+title: "Assignments"
+toc: true
+---
+
+## Problem Sets (30%)
+
+Problem sets are hands-on exercises in R. You may use generative AI to help troubleshoot code, but should not use it to write your programs from scratch.
+
+| Assignment | Topic | Materials |
+|------------|-------|-----------|
+| Problem Set 1 | Intro to R | [Prompt](Problem_Sets/Problem_Set_01/ProblemSet1_PADM.qmd) |
+| Problem Set 2 | Data wrangling & visualization | [Prompt](Problem_Sets/ProblemSet2.qmd) |
+| Problem Set 3 | Probability & distributions | [Prompt](PADM8410_Assignment3.qmd) |
+| Problem Set 4 | Regression & model interpretation | [Prompt](Problem_Sets/ProblemSet4.qmd) |
+
+## Midterm Exam (20%)
+
+The take-home midterm is assigned during Week 7 and covers material from Weeks 1--7.
+
+- [Midterm prompt](Midterm/PADM8410_Midterm.qmd)
+
+## Data Op-Ed (15%)
+
+Write a data-driven opinion piece on a policy topic of your choice.
+
+- [Assignment details](Problem_Sets/OpEd Assignment.docx)
+
+## Final Project (30%)
+
+Details to be announced.
+
+## Grading Scale
+
+| Grade | Range |
+|-------|-------|
+| A     | 93--100 |
+| A-    | 90--92.9 |
+| B+    | 87--89.9 |
+| B     | 83--86.9 |
+| B-    | 80--82.9 |
+| C+    | 77--79.9 |
+| C     | 73--76.9 |
+| C-    | 70--72.9 |
+| F     | < 70 |

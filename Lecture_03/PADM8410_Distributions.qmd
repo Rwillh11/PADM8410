@@ -1,0 +1,1148 @@
+---
+title: "Distributions"
+author: "Will Horne"
+format: revealjs
+editor: visual
+code-fold: True
+---
+
+## The Simplest Random Variable: Yes or No?
+
+Many things in life have just two outcomes:
+
+::: incremental
+-   Did the candidate win? **Yes** or **No**
+-   Did the patient recover? **Yes** or **No**
+-   Did the bill pass? **Yes** or **No**
+-   Did the coin land heads? **Yes** or **No**
+:::
+
+. . .
+
+We call these **Bernoulli random variables**—named after mathematician Jakob Bernoulli.
+
+## The Bernoulli Distribution
+
+A **Bernoulli** random variable X takes only two values:
+
+-   X = 1 (success) with probability **p**
+-   X = 0 (failure) with probability **1 - p**
+
+. . .
+
+**Examples:**
+
+| Situation       | X = 1 means...  | p might be... |
+|-----------------|-----------------|---------------|
+| Coin flip       | Heads           | 0.5           |
+| Job application | Got the job     | 0.05          |
+| Survey response | Supports policy | 0.62          |
+
+. . .
+
+**Notation:** We write X \~ Bern(p) to say "X follows a Bernoulli distribution with probability p"
+
+## From One Trial to Many: The Binomial
+
+A Bernoulli is one yes/no trial. But what if we repeat the trial multiple times?
+
+. . .
+
+**Example:** You send out 10 job applications. Each has a 20% chance of success (independent of the others). How many offers will you get?
+
+. . .
+
+This is a **Binomial** random variable:
+
+-   **n** = number of trials (10 applications)
+-   **p** = probability of success on each trial (0.20)
+-   **X** = total number of successes (job offers)
+
+**Notation:** X \~ Bin(n, p) or X \~ Bin(10, 0.2)
+
+## What Can Happen? The Binomial Distribution
+
+If you send 10 applications with 20% success rate each, you *could* get 0 offers, or 1, or 2... up to 10.
+
+But these outcomes aren't equally likely!
+
+. . .
+
+```{r}
+#| echo: false
+#| fig-height: 4
+library(ggplot2)
+plot_data <- data.frame(
+  x = 0:10,
+  probability = dbinom(0:10, size = 10, prob = 0.2)
+)
+ggplot(plot_data, aes(x = factor(x), y = probability)) +
+  geom_col(fill = "#522D80") +
+  labs(x = "Number of Job Offers", y = "Probability",
+       title = "10 Applications, 20% Success Rate Each") +
+  theme_minimal(base_size = 14)
+```
+
+Most likely: 1-2 offers. Getting 0 is pretty likely too. Getting 7+ is very rare.
+
+## The Binomial Formula (Don't Panic!)
+
+The probability of getting **exactly k** successes out of **n** trials:
+
+$$P(X = k) = \binom{n}{k} p^{k}(1-p)^{n-k}$$
+
+. . .
+
+**In plain English, this is:**
+
+$$\text{(number of ways to get k successes)} \times \text{(prob of any single sequence with k successes)}$$
+
+. . .
+
+**Good news:** You don't need to calculate this by hand! R does it for you with `dbinom()`.
+
+## Plotting a Binomial Distribution in R
+
+```{r, echo = TRUE}
+library(ggplot2)
+
+# Set up the parameters
+n <- 10        # number of trials
+p <- 0.5       # probability of success
+
+# Create a data frame with all possible outcomes (0 to n)
+# and their probabilities using dbinom()
+plot_data <- data.frame(
+  x = 0:n,
+  probability = dbinom(0:n, size = n, prob = p)
+)
+
+# Plot the distribution
+ggplot(plot_data, aes(x = factor(x), y = probability)) +
+  geom_col(fill = "steelblue") +
+  labs(x = "Number of Successes",
+       y = "Probability",
+       title = "Binomial Distribution (n=10, p=0.5)") +
+  theme_minimal()
+```
+
+## Working with Distributions in R
+
+R uses a simple naming pattern for all distributions:
+
+| Prefix | What it does | Example |
+|-------------------|--------------------------------|---------------------|
+| `d` | P(X = x) - probability of exactly x | `dbinom(3, size=10, prob=0.5)` |
+| `p` | P(X ≤ x) - probability of x or less | `pbinom(3, size=10, prob=0.5)` |
+| `r` | Generate random draws | `rbinom(100, size=10, prob=0.5)` |
+
+## Quick Examples in R
+
+```{r, echo = TRUE, eval = TRUE}
+# What is the probability of getting exactly 3 heads in 10 coin flips?
+dbinom(3, size = 10, prob = 0.5)
+
+# What is the probability of getting 3 or fewer heads?
+pbinom(3, size = 10, prob = 0.5)
+
+# Generate 5 random binomial draws (n=10, p=0.5)
+rbinom(5, size = 10, prob = 0.5)
+```
+
+## Why Does the Binomial Formula Work?
+
+Let's think through it with a simple example: 5 coin flips, what's P(exactly 2 heads)?
+
+. . .
+
+**Step 1:** How many ways can we arrange 2 heads in 5 flips?
+
+HHTTT, HTHTT, HTTHT, HTTTH, THHTT, THTHT, THTTH, TTHHT, TTHTH, TTTHH
+
+That's $\binom{5}{2} = 10$ ways
+
+. . .
+
+**Step 2:** What's the probability of any ONE of these sequences?
+
+Each flip is independent, so: $(0.5)^2 \times (0.5)^3 = 0.03125$
+
+. . .
+
+**Step 3:** Multiply!
+
+$P(\text{exactly 2 heads}) = 10 \times 0.03125 = 0.3125$
+
+. . .
+
+**This is exactly what the formula does:** $\binom{n}{k} \times p^k \times (1-p)^{n-k}$
+
+## What IS a Distribution, Exactly?
+
+A distribution tells us **how probability is spread across possible values**.
+
+. . .
+
+For any random variable, we want to answer: "What's the probability of each possible outcome?"
+
+. . .
+
+Or alternatively, "what is the probability that the variables takes on a value bigger (or smaller) than some value?"
+
+## Probability Mass Functions
+
+For **discrete** random variables, the PMF tells us the probability of each specific value.
+
+. . .
+
+**Example:** Number of job offers from 10 applications (p = 0.2)
+
+```{r}
+#| echo: false
+#| fig-height: 3
+library(ggplot2)
+plot_data <- data.frame(
+  k = 0:10,
+  prob = dbinom(0:10, size = 10, prob = 0.2)
+)
+ggplot(plot_data, aes(x = factor(k), y = prob)) +
+  geom_col(fill = "#522D80") +
+  geom_text(aes(label = round(prob, 3)), vjust = -0.5, size = 3) +
+  labs(x = "k (number of offers)", y = "P(X = k)",
+       title = "PMF of Binomial(10, 0.2)") +
+  theme_minimal(base_size = 14)
+```
+
+Each bar shows P(X = k)—the probability of getting exactly k offers.
+
+## Reading a PMF
+
+From that PMF, we can answer questions like:
+
+. . .
+
+-   **P(X = 2)** = probability of exactly 2 offers ≈ 0.302
+-   **P(X = 0)** = probability of no offers ≈ 0.107
+-   **P(X ≥ 5)** = probability of 5 or more = sum of bars from 5 to 10
+
+. . .
+
+**Key property:** All the probabilities must add up to 1!
+
+$$\sum_{k=0}^{10} P(X = k) = 1$$
+
+(The probability of *something* happening is 100%)
+
+## The PMF Formula for the Binomial
+
+We've already seen this—the PMF is just the formula that gives us P(X = k):
+
+$$P(X = k) = \binom{n}{k} p^k (1-p)^{n-k}$$
+
+. . .
+
+**In R:** `dbinom(k, size = n, prob = p)` calculates this for you
+
+```{r}
+#| echo: true
+# P(exactly 2 offers from 10 applications, 20% success rate)
+dbinom(2, size = 10, prob = 0.2)
+```
+
+The `d` in `dbinom` stands for "density"—but for discrete distributions, it's really the PMF.
+
+## Distributions Have "Stories"
+
+Different distributions arise from different real-world scenarios:
+
+| Distribution   | The Story                                         |
+|----------------|---------------------------------------------------|
+| Bernoulli      | One yes/no trial                                  |
+| Binomial       | Count successes in n independent trials           |
+| Hypergeometric | Count successes when sampling without replacement |
+| Geometric      | How many failures before first success?           |
+
+. . .
+
+**Recognizing the story helps you choose the right distribution for your data!**
+
+## When Sampling Without Replacement Matters
+
+**The scenario:** A company has 500 men and 500 women (1000 total). Each year, they pick one employee for a prestigious management training program.
+
+Over 10 years, only **1 woman** has been selected.
+
+. . .
+
+**The question:** Is this evidence of discrimination, or could it just be bad luck?
+
+. . .
+
+If selections were truly random, we'd expect about 5 women out of 10 picks. Getting only 1 seems low...but *how unlikely* is it? (Assume women have equal potential)
+
+## Binomial vs. Hypergeometric: What's the Difference?
+
+**Why can't we just use the Binomial here?**
+
+. . .
+
+The Binomial assumes each trial is **independent**—like flipping a coin.
+
+But when you're selecting people from a fixed pool **without replacement**, the trials aren't independent!
+
+-   If you pick a woman first, there are now 499 women and 500 men left
+
+. . .
+
+For large populations (like 1000 employees), this difference is tiny. But it exists!
+
+## The Hypergeometric Distribution
+
+The **Hypergeometric** distribution handles sampling without replacement:
+
+-   You have a population with two types
+-   You draw a sample without putting people back
+-   You count how many of one type you got
+
+. . .
+
+**When to use it:**
+
+-   Drawing cards from a deck
+-   Selecting committee members from a group
+-   Quality control (testing items from a batch)
+-   Any time you're sampling from a finite population without replacement
+
+. . .
+
+**In R:** `dhyper()`, `phyper()`, `rhyper()`
+
+## Back to the Discrimination Question
+
+**Recall:** 500 women and 500 men. 10 selections over 10 years. Only 1 woman selected.
+
+. . .
+
+**Let's set up the problem:**
+
+-   Population: 500 women (what we're counting) + 500 men = 1000 total
+-   Sample size: 10 selections
+-   Observed: only 1 woman
+
+. . .
+
+**The question:** If selections were truly random, how likely is it we'd see 1 or fewer women?
+
+If this probability is low, that's evidence against fair selection.
+
+## The Hypergeometric PMF
+
+The probability of getting **exactly k** successes when drawing from a finite population:
+
+$$P(X = k) = \frac{\binom{m}{k} \binom{N-m}{n-k}}{\binom{N}{n}}$$
+
+. . .
+
+**In plain English:**
+
+$$\frac{\text{(ways to choose k women)} \times \text{(ways to choose remaining picks from men)}}{\text{(total ways to choose n people from everyone)}}$$
+
+## Our Example
+
+**For our example:** What's P(exactly 1 woman)?
+
+$$P(X = 1) = \frac{\binom{500}{1} \binom{500}{9}}{\binom{1000}{10}}$$
+
+This is tedious to calculate by hand—let's use R!
+
+## Calculating in R
+
+```{r}
+#| echo: true
+
+# Hypergeometric: P(X <= 1) where X = number of women selected
+# phyper gives us P(X <= x)
+
+phyper(1,           # x = 1 or fewer women
+       m = 500,     # number of women in population
+       n = 500,     # number of men in population
+       k = 10)      # number of selections
+```
+
+. . .
+
+**Only about 1% chance** of getting 1 or fewer women if selections were truly random!
+
+This is strong evidence that something other than pure chance is happening.
+
+## Visualizing the Distribution
+
+What does the full distribution of "number of women selected" look like if selection is random?
+
+## Plot of Hypergeometric
+
+```{r, eval = F, echo = T}
+# Load the ggplot2 package
+library(ggplot2)
+
+# Set parameters for the hypergeometric distribution
+m <- 500  # Number of successes in the population
+n <- 500  # Number of failures in the population
+k <- 10   # Number of draws (sample size)
+
+# Define the range of possible successes in the sample
+x <- 0:k
+
+# Calculate the probability mass function
+probabilities <- dhyper(x, m, n, k)
+
+# Create a data frame for plotting
+df <- data.frame(Successes = x, Probability = probabilities)
+
+# Plot using ggplot2
+ggplot(df, aes(x = Successes, y = Probability)) +
+  geom_col(fill = "skyblue", width = 0.7) +
+  geom_point(color = "darkblue", size = 2) +
+  labs(title = "Hypergeometric Distribution (m=500, n=500, k=10)",
+       x = "Number of Successes",
+       y = "Probability") +
+  theme_minimal()
+
+
+```
+
+## Plot of Hypergeometric
+
+```{r}
+# Load the ggplot2 package
+library(ggplot2)
+
+# Set parameters for the hypergeometric distribution
+m <- 500  # Number of successes in the population
+n <- 500  # Number of failures in the population
+k <- 10   # Number of draws (sample size)
+
+# Define the range of possible successes in the sample
+x <- 0:k
+
+# Calculate the probability mass function
+probabilities <- dhyper(x, m, n, k)
+
+# Create a data frame for plotting
+df <- data.frame(Successes = x, Probability = probabilities)
+
+# Plot using ggplot2
+ggplot(df, aes(x = Successes, y = Probability)) +
+  geom_col(fill = "skyblue", width = 0.7) +
+  geom_point(color = "darkblue", size = 2) +
+  labs(title = "Hypergeometric Distribution (m=500, n=500, k=10)",
+       x = "Number of Successes",
+       y = "Probability") +
+  theme_minimal()
+
+
+```
+
+## Hypergeometric vs Binomial
+
+```{r, echo = T}
+
+# Number of trials (number of employees selected)
+k <- 10
+
+# Total population size (total employees)
+N <- 1000
+
+# Number of successes in the population (number of women)
+m <- 500
+
+# Probability of success in the binomial distribution
+p <- m / N  # Since the population is 50% women
+
+# Hypergeometric Distribution
+# Calculate P(X <= 1)
+P_hyper <- phyper(1, m, N - m, k)
+cat("Hypergeometric P(X <= 1):", P_hyper, "\n")
+
+# Binomial Distribution
+# Calculate P(X <= 1)
+P_binom <- pbinom(1, size = k, prob = p)
+cat("Binomial P(X <= 1):", P_binom, "\n")
+
+```
+
+HGeom and Binomial won't always be similar!
+
+## Hypergeometric vs Binomial
+
+**Small sample (k) relative to population size (n)**
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(reshape2)
+
+# Parameters
+N <- 100      # Total population size
+m <- 20       # Number of successes in the population
+k <- 5        # Sample size (small relative to N)
+p <- m / N    # Probability of success
+
+# Possible number of successes
+x_vals <- 0:min(k, m)
+
+# Hypergeometric PMF
+hyper_pmf <- dhyper(x_vals, m, N - m, k)
+
+# Binomial PMF
+binom_pmf <- dbinom(x_vals, size = k, prob = p)
+
+# Create a data frame for plotting
+df <- data.frame(
+  x = x_vals,
+  Hypergeometric = hyper_pmf,
+  Binomial = binom_pmf
+)
+
+# Melt the data frame for ggplot2
+df_melt <- melt(df, id.vars = 'x', variable.name = 'Distribution', value.name = 'Probability')
+
+# Generate the plot
+ggplot(df_melt, aes(x = factor(x), y = Probability, fill = Distribution)) +
+  geom_bar(stat = 'identity', position = 'dodge') +
+  labs(
+    title = paste('Figure 1: N =', N, ', m =', m, ', k =', k, ', p =', round(p, 2)),
+    x = 'Number of Successes',
+    y = 'Probability'
+  ) +
+  scale_fill_manual(values = c('blue', 'red')) +
+  theme_minimal()
+
+```
+
+## Hypergeometric vs Binomial
+
+**Larger sample (k=50, half of population)**
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(reshape2)
+
+# Parameters
+N <- 100
+m <- 20
+k <- 50      # Sample size is 50% of N
+p <- m / N
+
+# Possible number of successes
+x_vals <- 0:min(k, m)
+
+# Hypergeometric PMF
+hyper_pmf <- dhyper(x_vals, m, N - m, k)
+
+# Binomial PMF
+binom_pmf <- dbinom(x_vals, size = k, prob = p)
+
+# Create a data frame for plotting
+df <- data.frame(
+  x = x_vals,
+  Hypergeometric = hyper_pmf,
+  Binomial = binom_pmf
+)
+
+# Melt the data frame for ggplot2
+df_melt <- melt(df, id.vars = 'x', variable.name = 'Distribution', value.name = 'Probability')
+
+# Generate the plot
+ggplot(df_melt, aes(x = factor(x), y = Probability, fill = Distribution)) +
+  geom_bar(stat = 'identity', position = 'dodge') +
+  labs(
+    title = paste('Figure 3: N =', N, ', m =', m, ', k =', k, ', p =', round(p, 2)),
+    x = 'Number of Successes',
+    y = 'Probability'
+  ) +
+  scale_fill_manual(values = c('blue', 'red')) +
+  theme_minimal()
+
+```
+
+## Hypergeometric vs Binomial
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(reshape2)
+
+# Parameters
+N <- 100       # Total population size
+m <- 20        # Number of successes in the population
+k <- 80        # Sample size is 80% of N
+p <- m / N     # Probability of success
+
+# Possible number of successes from 0 to 30
+x_vals <- 0:30  # Extend x_vals to cover 0 to 30 successes
+
+# Hypergeometric PMF
+# For x > min(k, m), the hypergeometric PMF is zero
+hyper_pmf <- dhyper(x_vals, m, N - m, k)
+
+# Binomial PMF
+binom_pmf <- dbinom(x_vals, size = k, prob = p)
+
+# Create a data frame for plotting
+df <- data.frame(
+  x = x_vals,
+  Hypergeometric = hyper_pmf,
+  Binomial = binom_pmf
+)
+
+# Melt the data frame for ggplot2
+df_melt <- melt(df, id.vars = 'x', variable.name = 'Distribution', value.name = 'Probability')
+
+# Generate the plot with bar plot style
+ggplot(df_melt, aes(x = factor(x), y = Probability, fill = Distribution)) +
+  geom_bar(stat = 'identity', position = 'dodge') +
+  labs(
+    title = paste('Figure 4: N =', N, ', m =', m, ', k =', k, ', p =', round(p, 2)),
+    x = 'Number of Successes',
+    y = 'Probability'
+  ) +
+  scale_fill_manual(values = c('blue', 'red')) +
+  theme_minimal()
+
+
+```
+
+## Discrete Uniform
+
+Very simple story: Imagine N different items. Choose one item uniformly at random, what is the probability of choosing that item?
+
+. . .
+
+$$
+P(X = x) = \frac{1}{N}
+$$
+
+Simple - but the intuition is important and sometimes a useful *baseline*
+
+## Cumulative Distribution Functions
+
+So far we've asked: "What's the probability of getting *exactly* 3 heads?" → **PMF**
+
+. . .
+
+But often we want to ask: "What's the probability of getting *3 or fewer* heads?" → **CDF**
+
+. . .
+
+The **Cumulative Distribution Function (CDF)** answers this by adding up the PMF:
+
+$$F(x) = P(X \leq x) = P(X=0) + P(X=1) + P(X=2) + ... + P(X=x)$$
+
+## CDF Example: Job Offers Again
+
+What's the probability of getting **2 or fewer** offers from 10 applications?
+
+```{r}
+#| echo: true
+
+# Add them up
+dbinom(0, 10, 0.2) + dbinom(1, 10, 0.2) + dbinom(2, 10, 0.2)
+
+# OR just use the CDF directly!
+pbinom(2, 10, 0.2)  # P(X <= 2)
+```
+
+The CDF saves you from adding up all those PMF values manually!
+
+## PMF vs CDF: The Key Difference
+
+| Function | Question it answers | R function | Example              |
+|----------|---------------------|------------|----------------------|
+| **PMF**  | P(X = exactly k)    | `dbinom()` | P(exactly 2 offers)  |
+| **CDF**  | P(X ≤ k)            | `pbinom()` | P(2 or fewer offers) |
+
+. . .
+
+**Useful trick:** P(X \> k) = 1 - P(X ≤ k) = 1 - CDF(k)
+
+```{r}
+#| echo: true
+# P(more than 2 offers) = 1 - P(2 or fewer)
+1 - pbinom(2, 10, 0.2)
+```
+
+## Plotting PMF vs CDF
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+
+# Parameters for Binomial Distribution
+n <- 20
+p <- 0.5
+x <- 0:n
+
+# Binomial distribution
+binom_pmf <- dbinom(x, size = n, prob = p)
+binom_cdf <- pbinom(x, size = n, prob = p)
+
+# Create data frame for plotting
+binom_data <- data.frame(x = x, pmf = binom_pmf, cdf = binom_cdf)
+
+# Binomial Distribution: PMF and CDF on the same plot
+ggplot() +
+  geom_segment(aes(x = binom_data$x, xend = binom_data$x, y = 0, yend = binom_data$pmf),
+               color = "blue", linewidth = 1.2) +
+  geom_point(aes(x = binom_data$x, y = binom_data$pmf), color = "blue", size = 3) +
+  labs(title = "Binomial Distribution (n=20, p=0.5)", x = "k", y = "P(X=k) or P(X<=k)") +
+  geom_step(aes(x = binom_data$x, y = binom_data$cdf), color = "darkblue", linetype = "dashed", linewidth = 1) +
+  annotate("text", x = 15, y = 0.9, label = "CDF", color = "darkblue", size = 4) +
+  annotate("text", x = 5, y = 0.2, label = "PMF", color = "blue", size = 4)
+
+```
+
+## Plotting PMF vs CDF
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+
+# Parameters for Uniform Distribution
+n <- 20
+x <- 0:n
+
+# Uniform distribution
+uniform_pmf <- rep(1 / (n + 1), n + 1)
+uniform_cdf <- cumsum(uniform_pmf)
+
+# Create data frame for plotting
+uniform_data <- data.frame(x = x, pmf = uniform_pmf, cdf = uniform_cdf)
+
+# Uniform Distribution: PMF and CDF on the same plot
+ggplot() +
+  geom_segment(aes(x = uniform_data$x, xend = uniform_data$x, y = 0, yend = uniform_data$pmf),
+               color = "red", linewidth = 1.2) +
+  geom_point(aes(x = uniform_data$x, y = uniform_data$pmf), color = "red", size = 3) +
+  labs(title = "Uniform Distribution (n=20)", x = "k", y = "P(X=k) or P(X<=k)") +
+  geom_step(aes(x = uniform_data$x, y = uniform_data$cdf), color = "darkred", linetype = "dashed", linewidth = 1) +
+  annotate("text", x = 15, y = 0.9, label = "CDF", color = "darkred", size = 4) +
+  annotate("text", x = 5, y = 0.05, label = "PMF", color = "red", size = 4)
+
+```
+
+## What's Next?
+
+We've covered:
+
+-   Probability and conditioning
+-   Random variables and several discrete distributions
+
+. . .
+
+**But distributions have a lot of information!** Sometimes we just want a quick summary.
+
+**Next up:** Two key numbers that summarize any distribution:
+
+1.  **Expectation** (the "center")
+2.  **Variance** (the "spread")
+
+## Expected Value: The Long-Run Average
+
+**Imagine this game:** Roll a die. You win \$1 if it's a 1 or 2, and lose \$1 if it's 3, 4, 5, or 6.
+
+. . .
+
+If you played this game 1000 times, about how much would you win or lose overall?
+
+. . .
+
+-   Win \$1 about 333 times (1/3 of rolls) → +\$333
+-   Lose \$1 about 667 times (2/3 of rolls) → -\$667
+-   **Net: about -\$334**, or about **-\$0.33 per game**
+
+. . .
+
+This "long-run average" is the **expected value** of the game!
+
+## Expected Value: The Formula
+
+The expected value is just a **weighted average**—each outcome weighted by how likely it is:
+
+$$E[X] = \sum_{\text{outcomes}} (\text{value}) \times (\text{probability})$$
+
+. . .
+
+**For our dice game:**
+
+$$E[X] = (+1) \times \frac{2}{6} + (-1) \times \frac{4}{6} = \frac{2}{6} - \frac{4}{6} = -\frac{1}{3} \approx -0.33$$
+
+. . .
+
+**Key insight:** You won't win exactly -\$0.33 on any single game (impossible!), but it's what you'd average over many games.
+
+## Expected Value: Policy Example
+
+A job training program costs \$5,000 per participant. Research shows:
+
+-   60% of participants get a job within 6 months (benefit: \$20,000 in wages)
+-   40% don't find work in that time (benefit: \$0)
+
+. . .
+
+**What's the expected benefit per participant?**
+
+$$E[\text{Benefit}] = (20000 \times 0.6) + (0 \times 0.4) = \$12,000$$
+
+. . .
+
+**Expected net gain:** \$12,000 - \$5,000 = **\$7,000 per participant**
+
+This is how cost-benefit analysis works!
+
+## Expectation is the center of gravity
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(gridExtra)
+
+# Function to create binomial distribution plot
+binom_plot <- function(size, prob) {
+  x <- 0:size
+  y <- dbinom(x, size, prob)
+  mean_value <- size * prob
+  data <- data.frame(x = x, y = y)
+
+  ggplot(data, aes(x = x, y = y)) +
+    geom_bar(stat = "identity", fill = "gray", color = "black", width = 0.7) +
+    theme_minimal() +
+    labs(x = "x", y = "f(x)", title = paste("Bin(", size, ",", prob, ")")) +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+      axis.title.x = element_text(size = 12),
+      axis.title.y = element_text(size = 12)
+    ) +
+    geom_vline(xintercept = mean_value, linetype = "dashed", color = "black") +
+    geom_point(aes(x = mean_value, y = 0), shape = 24, fill = "gray", size = 5)
+}
+
+# Function to create hypergeometric distribution plot
+hgeom_plot <- function(m, n, k) {
+  x <- 0:k
+  y <- dhyper(x, m, n, k)
+  mean_value <- k * m / (m + n)
+  data <- data.frame(x = x, y = y)
+
+  ggplot(data, aes(x = x, y = y)) +
+    geom_bar(stat = "identity", fill = "gray", color = "black", width = 0.7) +
+    theme_minimal() +
+    labs(x = "x", y = "f(x)", title = "Hypergeom") +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+      axis.title.x = element_text(size = 12),
+      axis.title.y = element_text(size = 12)
+    ) +
+    geom_vline(xintercept = mean_value, linetype = "dashed", color = "black") +
+    geom_point(aes(x = mean_value, y = 0), shape = 24, fill = "gray", size = 5)
+}
+
+# Function to create uniform distribution plot
+uniform_plot <- function(size) {
+  x <- 0:size
+  y <- dunif(x, min = 0, max = size)
+  mean_value <- size / 2
+  data <- data.frame(x = x, y = y)
+
+  ggplot(data, aes(x = x, y = y)) +
+    geom_bar(stat = "identity", fill = "gray", color = "black", width = 0.7) +
+    theme_minimal() +
+    labs(x = "x", y = "f(x)", title = "Uniform") +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+      axis.title.x = element_text(size = 12),
+      axis.title.y = element_text(size = 12)
+    ) +
+    geom_vline(xintercept = mean_value, linetype = "dashed", color = "black") +
+    geom_point(aes(x = mean_value, y = 0), shape = 24, fill = "gray", size = 5)
+}
+
+# Generate the plots
+plot1 <- binom_plot(10, 0.5)   # Binomial with p = 0.5
+plot2 <- binom_plot(10, 0.25)  # Binomial with p = 0.25
+plot3 <- hgeom_plot(m = 20, n = 15, k = 10)  # Hypergeometric distribution parameters
+plot4 <- uniform_plot(10)  # Uniform distribution over {0, 1, ..., 10}
+
+# Arrange plots in a 2x2 grid
+grid.arrange(plot1, plot2, plot3, plot4, ncol = 2)
+
+
+
+```
+
+## Binomial Expectation
+
+**X** \~ (n,p). How can we find E\[X\]? Plug in the PMF to the expectation formula:
+
+. . .
+
+$$E[X] = \sum_{k=0}^{n} k \binom{n}{k} p^{k}q^{n-k}$$
+
+. . .
+
+We can simplify this - covered in the book but requires theorems and combinatorics beyond the scope of the class. But, can we use a story of what the binomial is to reason out what E\[X\] must be?
+
+. . .
+
+If X \~ Bin(n,p), E\[X\] = np.
+
+## Geometric Distribution
+
+Geom(p): Independent Bernoulli Trials. How many failures before the first success?
+
+Let **X** \~ Geom(p), q = 1-p. Then the **PMF** must be.$$ P(X = k) = pq^{k}$$
+
+Think through why that must be the PMF
+
+## Geometric Expectation
+
+From the definition of expectation, where we plug the PMF in for P(X=x):
+
+$$
+E[X] = \sum_{k = 0}^{\infty} kpq^{k}
+$$
+
+We *could* use calculus to work out how this simplifies to $\frac{q}{p}$ (see Example 4.3.6 in B&H), but the key takeaway is:
+
+$$E[X] = \frac{q}{p} = \frac{1-p}{p}$$
+
+## Trials Until First Success?
+
+**What about total trials until success?** That's failures + 1 (the success):
+
+$$E[\text{Total Trials}] = \frac{q}{p} + 1 = \frac{q + p}{p} = \frac{1}{p}$$
+
+. . .
+
+So if p = 0.2, we expect 4 failures and 5 total trials on average.
+
+## Plotting Geometric Distribution
+
+```{r, echo = TRUE}
+library(ggplot2)
+
+# Parameters
+p <- 0.3  # probability of success on each trial
+
+# Create data: possible number of failures (0, 1, 2, ..., 15)
+# and their probabilities using dgeom()
+plot_data <- data.frame(
+  failures = 0:15,
+  probability = dgeom(0:15, prob = p)
+)
+
+# Plot the distribution
+ggplot(plot_data, aes(x = factor(failures), y = probability)) +
+  geom_col(fill = "steelblue") +
+  labs(x = "Number of Failures Before First Success",
+       y = "Probability",
+       title = "Geometric Distribution (p = 0.3)") +
+  theme_minimal()
+```
+
+## Realistic Geometric RV Example
+
+In labor market studies, the geometric distribution can model the **number of applications an individual submits until they receive a job offer**.
+
+During a recession, there are many more applicants than there are jobs. Imagine that an application has a probability of success .015. How many applications would we expect an applicant to send before getting a job. If an applicant can apply to 7 jobs a week, how long will it take them to find work?
+
+. . .
+
+We want total applications until the first success, so we use $E[\text{Total Trials}] = \frac{1}{p} = \frac{1}{0.015} = 66.67$, or about 67 applications. At 7 applications a week, an average job search would take about 10 weeks.
+
+## Other Discrete Distributions
+
+There are other discrete distributions you might encounter:
+
+-   **Negative Binomial**: How many failures before n successes
+-   **Poisson**: Models count data (e.g., number of events per time period)
+
+. . .
+
+**Key Point**: The type of data generating process tells us which distribution (and statistical model) to use.
+
+## The Expectation Isn't the Whole Story
+
+**Two archers both hit the bullseye "on average"...**
+
+```{r}
+#| echo: false
+#| fig-height: 4
+library(ggplot2)
+library(patchwork)
+
+set.seed(42)
+# Consistent archer
+archer1 <- data.frame(x = rnorm(50, 0, 0.5), y = rnorm(50, 0, 0.5))
+# Inconsistent archer
+archer2 <- data.frame(x = rnorm(50, 0, 2), y = rnorm(50, 0, 2))
+
+p1 <- ggplot(archer1, aes(x, y)) +
+  geom_point(color = "#522D80", size = 2, alpha = 0.7) +
+  geom_point(aes(x = 0, y = 0), color = "#F66733", size = 4, shape = 3, stroke = 2) +
+  xlim(-6, 6) + ylim(-6, 6) +
+  labs(title = "Archer A: Consistent", subtitle = "Low variance") +
+  theme_minimal() +
+  theme(axis.title = element_blank(), axis.text = element_blank())
+
+p2 <- ggplot(archer2, aes(x, y)) +
+  geom_point(color = "#522D80", size = 2, alpha = 0.7) +
+  geom_point(aes(x = 0, y = 0), color = "#F66733", size = 4, shape = 3, stroke = 2) +
+  xlim(-6, 6) + ylim(-6, 6) +
+  labs(title = "Archer B: All Over the Place", subtitle = "High variance") +
+  theme_minimal() +
+  theme(axis.title = element_blank(), axis.text = element_blank())
+
+p1 + p2
+```
+
+Both have the same **expected value** (bullseye). But they're very different archers!
+
+## Why Spread Matters
+
+::: incremental
+-   **Archer A** is consistent: you know roughly what to expect
+
+-   **Archer B** is unpredictable: could hit bullseye or miss badly
+
+-   In policy terms: Would you rather have a program that helps everyone a little, or one that dramatically helps some and does nothing for others?
+
+    -   Not sure that there is actually an obvious answer here!
+
+-   **Variance** tells us how spread out the outcomes are around the average
+:::
+
+## Same Expectation, Different Spread
+
+```{r}
+#| echo: false
+#| fig-height: 4.5
+library(ggplot2)
+
+set.seed(123)
+dist_1 <- rnorm(1000, mean = 0, sd = 1)
+dist_2 <- rnorm(1000, mean = 0, sd = 2)
+
+df <- data.frame(
+  value = c(dist_1, dist_2),
+  group = rep(c("Low Variance (SD=1)", "High Variance (SD=2)"), each = 1000)
+)
+
+ggplot(df, aes(x = value, fill = group)) +
+  geom_histogram(alpha = 0.6, position = "identity", bins = 50) +
+  scale_fill_manual(values = c("#522D80", "#F66733")) +
+  labs(title = "Same Mean, Different Spread",
+       x = "Value", y = "Count", fill = "") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "top")
+```
+
+Both distributions are centered at 0, but the orange one is much more spread out.
+
+## Variance: Measuring Spread
+
+**Variance** measures how far values typically fall from the mean.
+
+. . .
+
+**Intuition:**
+
+1.  Take each value, measure how far it is from the mean
+2.  Square those distances (so negatives don't cancel positives)
+3.  Average them (weighted by probability)
+
+. . .
+
+$$Var[X] = E[(X - E[X])^{2}]$$
+
+"The expected squared distance from the mean"
+
+## Standard Deviation
+
+$$
+Var[X] = E[(X -E[X])^{2}]
+$$
+
+Note that the variance is the squared distance from the mean. If we want to know, on average, how far a realization of X will be from the $E[X]$, we can calculate the standard deviation
+
+$$
+SD(X) = \sqrt{Var[X]}
+$$
+
+In practice, we usually work with variance rather than standard deviation, but standard deviation is more immediately interpretable
+
+## Example: Program Outcomes {.smaller}
+
+A workforce development program tracks participant outcomes on a 1–6 satisfaction scale. Based on past cohorts, the distribution looks like:
+
+| Rating (x) | P(X = x) | Meaning           |
+|------------|----------|-------------------|
+| 1          | 0.1      | Very dissatisfied |
+| 2          | 0.15     | Dissatisfied      |
+| 3          | 0.2      | Neutral           |
+| 4          | 0.25     | Satisfied         |
+| 5          | 0.2      | Very satisfied    |
+| 6          | 0.1      | Exceptional       |
+
+Calculate the Expectation, Variance, and Standard Deviation. What does the variance tell you about how *consistently* participants experience the program?
+
+## Another Variance Example
+
+Imagine we want to know both the average (expectation) and spread (variance/standard deviation) of incomes in a community. We randomly select 10 households who have the following incomes (in thousands of US Dollars). Let **X** be the income of each respondent. We have:
+
+$$
+X = [45,50,52,47,60,55,120,28,430,73]
+$$
+
+How can we calculate the expectation, variance and standard deviation?
+
+## Properties of Variance
+
+::: incremental
+-   Var\[X + c\] = Var\[X\] for any constant
+
+-   If c is a constant, $Var[cX] = c^{2}Var[X]$
+
+-   If and only if X and Y are **independent,** Var\[X + Y\] = Var\[X\] + Var\[Y\]
+
+-   If **X** is not a constant, Var\[X\] \> 0.
+:::
+
+## Binomial Variance
+
+For a Bernoulli random variable: $$Var[X] = p(1-p)$$
+
+. . .
+
+Since a Binomial is the sum of n independent Bernoulli trials:
+
+$$Var[X] = np(1-p)$$
+
+## Taking Stock
+
+::: incremental
+-   So far: Probability Theory and Discrete Random Variables
+
+    -   You should feel comfortable about distributions of data that take on discrete values
+
+    -   You should have a good idea of what the PMF and CDF of discrete variables mean
+
+-   Now: Same idea for variables that can take on any value
+
+    -   Many variables we care about as social scientists are (approximately) continuous
+
+        -   Income, Time, Tax Rates, Vote Shares
+
+        -   Sample means of variables are also continuous
+:::

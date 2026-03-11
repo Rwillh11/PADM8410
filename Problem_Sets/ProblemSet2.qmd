@@ -1,0 +1,238 @@
+---
+title: "Mini Problem Set 2: Visualizing U.S. State Poverty Data"
+author: "Will Horne"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    code-fold: false
+    code-tools: true
+    embed-resources: true
+  pdf:
+    toc: false
+editor: visual
+---
+
+## Overview
+
+In this problem set, you will practice data visualization using `ggplot2` while exploring poverty and income data across U.S. states. This builds on the data wrangling skills from Problem Set 1, but focuses on creating clear, informative graphics.
+
+**Estimated time: 1-2 hours**
+
+## Setup Instructions
+
+1.  Download the `state_poverty_data.csv` file from the course website
+2.  Save it in the same folder as this .qmd file
+3.  Complete each question by adding your code in the provided code chunks
+
+### Load your packages and data
+
+```{r setup, message=FALSE, warning=FALSE}
+# Load required libraries
+library(tidyverse)
+
+# Load the data
+poverty_data <- read_csv("state_poverty_data.csv")
+```
+
+------------------------------------------------------------------------
+
+## Part 1: Getting to Know the Data (25 points)
+
+### Question 1.1: Explore the Data (5 points)
+
+Use `glimpse()` to examine the dataset structure. Then answer:
+
+-   How many states are included?
+-   What variables are available?
+
+```{r}
+# Your code here
+
+
+```
+
+**Your written answer:**
+
+### Question 1.2: Quick Summary (5 points)
+
+What is the mean and median poverty rate across all states? What does the difference between mean and median suggest about the distribution?
+
+*Hint: Use `summarize()` with `mean()` and `median()`*
+
+```{r}
+# Your code here
+
+
+```
+
+**Your written answer:**
+
+### Question 1.3: Filtering the Data (15 points)
+
+Let's practice using `filter()` to focus on subsets of the data.
+
+**Part A (5 points):** Create a new dataframe called `high_poverty` that contains only states where the poverty rate is above 15%. How many states meet this criterion?
+
+*Hint: Use `filter(poverty_rate > 15)`*
+
+```{r}
+# Your code here
+
+
+```
+
+**Your written answer:** How many states have poverty rates above 15%?
+
+**Part B (5 points):** Create a new dataframe called `southern_states` that contains only states in the South region.
+
+*Hint: Use `filter(region == "South")` — note the double equals sign!*
+
+```{r}
+# Your code here
+
+
+```
+
+**Part C (5 points):** Now combine what you know: filter to find Southern states that ALSO have a median income above \$60,000. Save this as `wealthy_south`.
+
+*Hint: You can combine conditions with `&` (and) or use a comma: `filter(condition1, condition2)`*
+
+```{r}
+# Your code here
+
+
+```
+
+**Your written answer:** Which Southern states have median incomes above \$60,000?
+
+------------------------------------------------------------------------
+
+## Part 2: Creating Basic Visualizations (40 points)
+
+### Question 2.1: Your First Scatter Plot (12 points)
+
+Create a scatter plot showing the relationship between `median_income` (x-axis) and `poverty_rate` (y-axis).
+
+**Requirements:**
+
+-   Use `geom_point()`
+-   Add a descriptive title with `ggtitle()`
+-   Label your axes clearly with `labs()`
+-   Apply `theme_minimal()`
+
+```{r}
+# Your code here
+
+
+```
+
+**Your written answer:** Describe the relationship you see. Does higher median income tend to be associated with higher or lower poverty rates?
+
+### Question 2.2: Adding Color (12 points)
+
+Improve your scatter plot by coloring points by `region` (Northeast, South, Midwest, West).
+
+*Hint: Add `color = region` inside `aes()`*
+
+```{r}
+# Your code here
+
+
+```
+
+**Your written answer:** Do you notice any regional patterns?
+
+### Question 2.3: A Bar Chart (16 points)
+
+Create a bar chart showing the **average poverty rate by region**.
+
+**Steps:**
+
+1.  First, calculate the mean poverty rate for each region using `group_by()` and `summarize()`
+2.  Then create a bar chart with `geom_col()`
+3.  Add appropriate labels and a title
+
+```{r}
+# Step 1: Calculate regional averages
+regional_avg <- poverty_data |>
+  group_by(region) |>
+  summarize(avg_poverty = mean(poverty_rate))
+
+# Step 2: Create the bar chart
+# Your code here
+
+
+```
+
+**Your written answer:** Which region has the highest average poverty rate?
+
+------------------------------------------------------------------------
+
+## Part 3: Making Publication-Quality Graphics (35 points)
+
+### Question 3.1: A Polished Scatter Plot (17 points)
+
+Take your scatter plot from Question 2.2 and make it publication-ready by adding:
+
+-   A trend line using `geom_smooth(method = "lm", se = FALSE)`
+-   Formatted axis labels (e.g., "Median Household Income (\$)" instead of "median_income")
+-   A centered, larger title
+-   Adjust text sizes using `theme()`
+
+*Hint: Look at the example from the slides where we formatted the penguin plot*
+
+```{r}
+# Your code here
+
+
+```
+
+### Question 3.2: Histogram of Poverty Rates (18 points)
+
+Create a histogram showing the distribution of poverty rates across all states.
+
+**Requirements:**
+
+-   Use `geom_histogram()` with `binwidth = 1`
+-   Choose a fill color you like (e.g., `fill = "steelblue"`)
+-   Add a white border to bars with `color = "white"`
+-   Add appropriate title and axis labels
+-   Use `theme_minimal()`
+
+```{r}
+# Your code here
+
+
+```
+
+**Your written answer:** Describe the shape of the distribution. Is it symmetric, left-skewed, or right-skewed? What is the typical (most common) poverty rate range?
+
+------------------------------------------------------------------------
+
+## Bonus Challenge (10 points)
+
+Create a plot of your choice that tells an interesting story about poverty in America. Be creative! You might consider:
+
+-   Comparing unemployment and poverty rates
+-   Looking at education levels and poverty
+-   Creating a faceted plot by region
+
+```{r}
+# Your code here (optional)
+
+
+```
+
+**Your written explanation (optional):** What does your visualization reveal?
+
+------------------------------------------------------------------------
+
+## Submission Instructions
+
+1.  Make sure all code chunks run without errors
+2.  Render this document to HTML or PDF
+3.  Submit both the .qmd file and the rendered output
+
+**Remember:** Good visualizations should be clear, honest, and tell a story!

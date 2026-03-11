@@ -1,0 +1,982 @@
+---
+title: "Lecture 5: Continuous Random Variables"
+author: "Will Horne"
+format:
+  revealjs:
+    incremental: true
+    code-fold: true
+editor: visual
+---
+
+## Moving to Continuous Variables
+
+So far, our random variables have had *countable* outcomes: coin flips, dice rolls, number of successes.
+
+. . .
+
+But many variables we care about can take *any* value in a range:
+
+-   Response time to a 911 call (could be 4.7283 minutes...)
+-   Per-capita income across counties, voter turnout rates
+-   Percent of a city's budget allocated to public safety
+
+. . .
+
+These are **continuous random variables** - and they require a slightly different approach.
+
+## P(X = x) for Continuous Variables
+
+Imagine X is a city's average 911 response time, somewhere between 0 and 10 minutes.
+
+What's P(response time = exactly 3.00000000... minutes)?
+
+. . .
+
+There are *infinitely many* possible values between 0 and 10. If each had any positive probability, they'd sum to infinity!
+
+. . .
+
+So for continuous variables, **P(X = any exact value) = 0**.
+
+. . .
+
+This doesn't mean a 3-minute response *can't* happen - it just means we need to ask different questions.
+
+Instead of "What's P(response time = 3)?", we ask "What's P(response time is between 2 and 4 minutes)?"
+
+## Continuous vs Discrete: The CDF
+
+The CDF still answers "What's P(X ≤ x)?" - but now it's a smooth curve instead of steps.
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4
+
+library(ggplot2)
+library(patchwork)
+
+# Continuous CDF (normal distribution)
+p1 <- ggplot(data.frame(x = c(-3, 3)), aes(x = x)) +
+  stat_function(fun = pnorm, color = "#0072B2", linewidth = 1) +
+  labs(title = "Continuous CDF (Normal)",
+       x = "x", y = "F(x)") +
+  theme_minimal(base_size = 14)
+
+# Discrete CDF (binomial distribution)
+x_discrete <- 0:10
+y_discrete <- pbinom(x_discrete, size = 10, prob = 0.5)
+
+p2 <- ggplot(data.frame(x = x_discrete, y = y_discrete), aes(x = x, y = y)) +
+  geom_step(color = "#D55E00", linewidth = 1, direction = "hv") +
+  geom_point(color = "#D55E00", size = 2) +
+  labs(title = "Discrete CDF (Binomial)",
+       x = "x", y = "F(x)") +
+  theme_minimal(base_size = 14)
+
+p1 + p2
+
+
+```
+
+. . .
+
+**Notice:** The continuous CDF has no jumps - it flows smoothly because X can take any value.
+
+## From "Exactly X" to "X in a Range"
+
+With discrete variables, we asked: "What's P(X = 3)?"
+
+. . .
+
+With continuous variables, we ask: "What's P(2 \< X \< 4)?"
+
+. . .
+
+The good news: **R handles all the math for us!**
+
+-   `pnorm(4) - pnorm(2)` gives P(2 \< X \< 4) for a normal distribution
+-   Same pattern works for any continuous distribution
+
+## The Probability Density Function (PDF)
+
+The **PDF** describes the *shape* of a continuous distribution — think of it as showing how a variable like household income or commute times is distributed across a population.
+
+. . .
+
+Key idea: **Area under the curve = probability**
+
+. . .
+
+-   Taller parts of the curve = values that are more likely to occur
+-   The total area under the whole curve = 1 (something has to happen!)
+
+. . .
+
+In R: `dnorm(x)` gives you the height of the normal PDF at point x
+
+## Visualizing the PDF
+
+```{r}
+#| fig-width: 8
+#| fig-height: 5
+
+library(ggplot2)
+
+# Create data for standard normal PDF
+x_values <- seq(-3, 3, length = 1000)
+pdf_data <- data.frame(x = x_values, y = dnorm(x_values))
+
+# Data for highlighted region
+highlight_data <- pdf_data[pdf_data$x >= 0 & pdf_data$x <= 1.5, ]
+
+# Create plot
+ggplot(pdf_data, aes(x, y)) +
+  geom_line(color = "blue", linewidth = 1) +
+  geom_area(data = highlight_data, aes(x, y),
+            fill = "orange", alpha = 0.6) +
+  annotate("text", x = 0.75, y = 0.15,
+           label = "P(score between\navg and 1.5 SD above)", size = 4) +
+  labs(title = "Distribution of Standardized Agency Performance Scores",
+       subtitle = "Shaded area = fraction of agencies in that range",
+       x = "Standardized Score", y = "Density") +
+  theme_minimal(base_size = 14)
+
+```
+
+The shaded area IS the probability — here, the fraction of agencies scoring between average and 1.5 standard deviations above average.
+
+In R: `pnorm(1.5) - pnorm(0)` calculates this area for us.
+
+## Properties of a PDF
+
+::: incremental
+-   **Area = Probability**: The area under any region of the curve equals the probability of landing in that region. (If you've taken calculus, the definite integral is the area)
+
+-   **Always non-negative**: The curve never goes below zero (no negative probabilities!)
+
+-   **Total area = 1**: The entire area under the curve equals 1
+
+-   **Height can exceed 1**: Unlike PMFs, the PDF height can be greater than 1 - only the *area* must equal 1
+:::
+
+## The Simplest Continuous Distribution: Uniform
+
+**Example:** Suppose a city bus arrives every 10 minutes on a fixed schedule. If a commuter shows up at a random time, their wait is Uniform(0, 10) — every wait time between 0 and 10 minutes is equally likely.
+
+```{r}
+#| fig-width: 8
+#| fig-height: 4
+
+library(ggplot2)
+
+ggplot(data.frame(x = c(-1, 12)), aes(x = x)) +
+  stat_function(fun = dunif, args = list(min = 0, max = 10),
+                color = "blue", linewidth = 1.2) +
+  labs(title = "Uniform(0, 10): Bus wait time",
+       x = "Wait Time (minutes)", y = "Density") +
+  ylim(0, 0.15) +
+  theme_minimal(base_size = 14)
+```
+
+## Finding Probabilities with Uniform
+
+For the uniform distribution, probability = proportion of the interval.
+
+**What's the probability a commuter waits between 2.5 and 6.5 minutes?**
+
+. . .
+
+```{r}
+#| fig-width: 8
+#| fig-height: 4
+
+library(ggplot2)
+
+ggplot(data.frame(x = c(-1, 12)), aes(x = x)) +
+  stat_function(fun = dunif, args = list(min = 0, max = 10),
+                color = "blue", linewidth = 1) +
+  annotate("rect", xmin = 2.5, xmax = 6.5, ymin = 0, ymax = 0.1,
+           alpha = 0.3, fill = "orange") +
+  annotate("text", x = 4.5, y = 0.05, label = "P = 0.40", size = 6, fontface = "bold") +
+  labs(title = "P(2.5 < Wait < 6.5) = (6.5 - 2.5) / 10 = 0.40",
+       subtitle = "It's just the proportion of the interval!",
+       x = "Wait Time (minutes)", y = "Density") +
+  ylim(0, 0.15) +
+  theme_minimal(base_size = 14)
+```
+
+. . .
+
+In R: `punif(6.5, 0, 10) - punif(2.5, 0, 10)` = 0.40
+
+## The General Uniform(a, b)
+
+For any interval (a, b), the uniform PDF is:
+
+$$f(x) = \frac{1}{b - a} \text{ for } x \in [a, b]$$
+
+. . .
+
+**Why 1/(b-a)?** The area under the curve must equal 1. If the interval is wider, the height must be lower to keep area = 1.
+
+## Graphical Intuition
+
+Different service schedules create different uniform distributions:
+
+```{r}
+#| fig-width: 10
+#| fig-height: 3.5
+
+library(ggplot2)
+library(patchwork)
+
+p1 <- ggplot(data.frame(x = c(-1, 12)), aes(x = x)) +
+  stat_function(fun = dunif, args = list(min = 0, max = 10),
+                color = "blue", linewidth = 1) +
+  labs(title = "Bus every 10 min: Uniform(0, 10)", x = "Wait Time (min)", y = "Density") +
+  ylim(0, 0.25) + theme_minimal()
+
+p2 <- ggplot(data.frame(x = c(-1, 7)), aes(x = x)) +
+  stat_function(fun = dunif, args = list(min = 0, max = 5),
+                color = "red", linewidth = 1) +
+  labs(title = "Bus every 5 min: Uniform(0, 5)", x = "Wait Time (min)", y = "Density") +
+  ylim(0, 0.25) + theme_minimal()
+
+p1 + p2
+```
+
+## Uniform Distribution in R
+
+R gives us three functions for uniform distributions:
+
+| Function             | What it does             |
+|----------------------|--------------------------|
+| `dunif(x, min, max)` | Height of PDF at x       |
+| `punif(x, min, max)` | P(X ≤ x), CDF            |
+| `runif(n, min, max)` | Generate n random values |
+
+. . .
+
+```{r, echo = TRUE}
+# What's P(wait < 7 min) for a bus that comes every 10 min?
+punif(7, min = 0, max = 10)
+```
+
+## Simulating Data in R
+
+One of the most useful things in R: **simulate data** from a distribution.
+
+. . .
+
+This helps you:
+
+-   Check if your code works correctly
+-   Understand how distributions behave
+-   Test statistical methods
+
+```{r, echo = TRUE}
+# Simulate 10 random commute times between 15 and 45 minutes
+runif(10, min = 15, max = 45)
+```
+
+## Making Simulations Reproducible
+
+Problem: Every time you run `runif()`, you get different numbers!
+
+. . .
+
+Solution: **Set a seed** before generating random numbers.
+
+```{r, echo = TRUE}
+set.seed(42)  # Any number works - just be consistent
+runif(5, min = 0, max = 10)
+```
+
+. . .
+
+```{r, echo = TRUE}
+set.seed(42)  # Same seed = same "random" numbers
+runif(5, min = 0, max = 10)
+```
+
+. . .
+
+**If you are doing anything that relies on randomness or sampling:** set a seed at the start of your analysis for reproducibility!
+
+## Expectation: What's the Average?
+
+For discrete variables, we found E\[X\] by multiplying each value by its probability and adding up.
+
+. . .
+
+For continuous variables, it's the same idea - just with integral calculus doing the "adding up" over infinitely many values.
+
+. . .
+
+**The good news:** R computes this for us! If we simulate data, `mean()` gives us the expectation.
+
+```{r, echo = TRUE}
+# Simulate 10,000 citizen satisfaction scores (0 to 10 scale)
+set.seed(123)
+x <- runif(10000, min = 0, max = 10)
+mean(x)  # Should be close to 5 (the midpoint)
+```
+
+## Expectation of Common Distributions
+
+For a **Uniform(a, b)** distribution, the expected value is just the midpoint:
+
+$$E[X] = \frac{a + b}{2}$$
+
+. . .
+
+This makes intuitive sense - if every satisfaction score between 0 and 10 is equally likely, the average should be right in the middle!
+
+. . .
+
+For a **Normal(μ, σ²)** distribution, E\[X\] = μ (the center of the bell curve).
+
+## Variance: How Spread Out?
+
+Variance measures how far values typically fall from the mean - same concept as before.
+
+. . .
+
+For **Uniform(a, b)**: $Var[X] = \frac{(b-a)^2}{12}$
+
+For **Normal(μ, σ²)**: $Var[X] = σ²$ (that's what the σ² means!)
+
+. . .
+
+In R, use `var()` and `sd()` on simulated data:
+
+```{r, echo = TRUE}
+# Citizen satisfaction scores (0 to 10 scale)
+set.seed(123)
+x <- runif(10000, min = 0, max = 10)
+var(x)   # Should be close to (10-0)^2 / 12 = 8.33
+sd(x)    # Square root of variance
+```
+
+## Why the Normal Distribution Matters
+
+The normal distribution shows up *everywhere* in policy and social science:
+
+-   Standardized test scores across school districts
+-   Agency budget forecasting errors
+-   Response times for public services
+-   Polling margins in elections
+-   City-level crime rates
+
+. . .
+
+**Why?** The Central Limit Theorem (coming soon!) tells us that when you average lots of random things together, you get a normal distribution - regardless of what you started with.
+
+## The Standard Normal: N(0, 1)
+
+The **standard normal** is centered at 0 with a standard deviation of 1.
+
+```{r}
+#| fig-width: 8
+#| fig-height: 4
+
+library(ggplot2)
+
+ggplot(data.frame(x = c(-4, 4)), aes(x = x)) +
+  stat_function(fun = dnorm, color = "blue", linewidth = 1.2) +
+  labs(title = "Standard Normal Distribution: N(0, 1)",
+       subtitle = "Centered at 0, most values within 2-3 units of center",
+       x = "Z", y = "Density") +
+  theme_minimal(base_size = 14)
+```
+
+. . .
+
+We write this as $Z \sim N(0, 1)$. Any normal can be converted to standard normal by subtracting the mean and dividing by SD.
+
+## Normal Distribution in R
+
+R gives us four functions for the normal (same pattern as uniform):
+
+| Function   | What it does               | Example               |
+|------------|----------------------------|-----------------------|
+| `pnorm(x)` | P(Z ≤ x), area to the left | `pnorm(1.96)` ≈ 0.975 |
+| `qnorm(p)` | Find x where P(Z ≤ x) = p  | `qnorm(0.95)` ≈ 1.645 |
+| `rnorm(n)` | Generate n random values   | `rnorm(100)`          |
+
+## The Empirical Rule (68-95-99.7)
+
+```{r}
+#| fig-width: 9
+#| fig-height: 5
+
+library(ggplot2)
+
+x <- seq(-4, 4, length.out = 1000)
+y <- dnorm(x)
+
+ggplot(data.frame(x, y), aes(x, y)) +
+  geom_line(color = "blue", linewidth = 1) +
+  geom_area(data = subset(data.frame(x, y), x >= -1 & x <= 1),
+            fill = "yellow", alpha = 0.5) +
+  geom_area(data = subset(data.frame(x, y), x >= -2 & x < -1),
+            fill = "orange", alpha = 0.5) +
+  geom_area(data = subset(data.frame(x, y), x > 1 & x <= 2),
+            fill = "orange", alpha = 0.5) +
+  geom_area(data = subset(data.frame(x, y), x >= -3 & x < -2),
+            fill = "red", alpha = 0.4) +
+  geom_area(data = subset(data.frame(x, y), x > 2 & x <= 3),
+            fill = "red", alpha = 0.4) +
+  geom_vline(xintercept = c(-3, -2, -1, 1, 2, 3),
+             linetype = "dashed", alpha = 0.5) +
+  annotate("segment", x = -1, xend = 1, y = 0.35, yend = 0.35, linewidth = 0.6) +
+  annotate("text", x = 0, y = 0.37, label = "68%", size = 4) +
+  annotate("segment", x = -2, xend = 2, y = 0.42, yend = 0.42, linewidth = 0.6,
+           color = "darkorange") +
+  annotate("text", x = 0, y = 0.44, label = "95%", size = 4, color = "darkorange") +
+  annotate("segment", x = -3, xend = 3, y = 0.46, yend = 0.46, linewidth = 0.6,
+           color = "red") +
+  annotate("text", x = 0, y = 0.48, label = "99.7%", size = 4, color = "red") +
+  scale_x_continuous(breaks = -3:3,
+                     labels = c("-3sd", "-2sd", "-1sd", "0", "1sd", "2sd", "3sd")) +
+  labs(title = "The Empirical Rule for Normal Distributions",
+       x = "", y = "Density") +
+  theme_minimal(base_size = 14)
+```
+
+## The Empirical Rule: What to Remember
+
+For **any** normal distribution:
+
+-   **\~68%** of values fall within **1 standard deviation** of the mean
+-   **\~95%** of values fall within **2 standard deviations** of the mean
+-   **\~99.7%** of values fall within **3 standard deviations** of the mean
+
+## The Normal Distribution in Practice
+
+**Example:** If employee performance review scores at a state agency are N(75, 10²), then:
+
+-   \~68% of employees score between 65 and 85
+-   \~95% score between 55 and 95
+-   A score below 45 or above 105 is very rare (\~0.3%)
+
+## Let's See the Normal in Action
+
+As we draw more samples, the histogram looks more like the bell curve:
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4
+
+library(ggplot2)
+library(patchwork)
+
+set.seed(42)
+
+p1 <- ggplot(data.frame(x = rnorm(20)), aes(x)) +
+  geom_histogram(aes(y = after_stat(density)), binwidth = 0.5,
+                 fill = "steelblue", color = "white") +
+  stat_function(fun = dnorm, color = "red", linewidth = 1) +
+  labs(title = "n = 20") + theme_minimal()
+
+p2 <- ggplot(data.frame(x = rnorm(200)), aes(x)) +
+  geom_histogram(aes(y = after_stat(density)), binwidth = 0.5,
+                 fill = "steelblue", color = "white") +
+  stat_function(fun = dnorm, color = "red", linewidth = 1) +
+  labs(title = "n = 200") + theme_minimal()
+
+p3 <- ggplot(data.frame(x = rnorm(2000)), aes(x)) +
+  geom_histogram(aes(y = after_stat(density)), binwidth = 0.5,
+                 fill = "steelblue", color = "white") +
+  stat_function(fun = dnorm, color = "red", linewidth = 1) +
+  labs(title = "n = 2000") + theme_minimal()
+
+p1 + p2 + p3
+```
+
+## Plotting the Data
+
+How do we generate and plot data?
+
+```{r, echo = TRUE, eval = FALSE}
+library(tidyverse)
+
+data = rnorm(100,0,1) ## 100 observations, mean = 0, sd = 1
+
+  ggplot(aes(x = data)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 binwidth = 0.3, fill = "steelblue", color = "white") +
+  stat_function(fun = dnorm, color = "red", linewidth = 1) +
+  labs(title = "1000 Draws from a Normal Distribution",
+       x = "Value", y = "Density") +
+  theme_minimal()
+```
+
+## Moving Beyond One Variable
+
+So far we've described one variable at a time — its distribution, expectation, and variance.
+
+. . .
+
+But most policy questions are about **relationships**:
+
+-   Does education affect income?
+-   Does gender predict policy support?
+-   Does poverty predict health outcomes?
+
+. . .
+
+To answer these, we need to describe how **two variables behave together**. This is where **joint distributions** come in: the foundation for everything we'll do with regression.
+
+## What Relationships Look Like
+
+```{r}
+#| fig-width: 10
+#| fig-height: 5
+
+library(ggplot2)
+library(patchwork)
+
+set.seed(123)
+n <- 100
+
+# No relationship: Agency budget vs employee satisfaction
+d1 <- data.frame(
+  x = seq(-3, 3, length.out = n),
+  y = rnorm(n, mean = 0, sd = 1.5)
+)
+
+# Positive: Education spending vs graduation rate
+d2 <- data.frame(
+  x = seq(-3, 3, length.out = n),
+  y = seq(-3, 3, length.out = n) + rnorm(n, sd = 0.8)
+)
+
+# Negative: Poverty rate vs life expectancy
+d3 <- data.frame(
+  x = seq(-3, 3, length.out = n),
+  y = -seq(-3, 3, length.out = n) + rnorm(n, sd = 0.8)
+)
+
+p1 <- ggplot(d1, aes(x, y)) +
+  geom_point(alpha = 0.6, color = "steelblue") +
+  labs(title = "No Relationship",
+       x = "Agency Budget", y = "Employee Satisfaction") +
+  theme_minimal(base_size = 12)
+
+p2 <- ggplot(d2, aes(x, y)) +
+  geom_point(alpha = 0.6, color = "steelblue") +
+  labs(title = "Positive Relationship",
+       x = "Education Spending per Pupil", y = "Graduation Rate") +
+  theme_minimal(base_size = 12)
+
+p3 <- ggplot(d3, aes(x, y)) +
+  geom_point(alpha = 0.6, color = "steelblue") +
+  labs(title = "Negative Relationship",
+       x = "Poverty Rate", y = "Life Expectancy") +
+  theme_minimal(base_size = 12)
+
+p1 + p2 + p3
+```
+
+. . .
+
+Our goal: **quantify** these relationships with numbers.
+
+## Joint Probability: Two Variables at Once
+
+A **joint distribution** tells us the probability of X *and* Y taking particular values together.
+
+. . .
+
+$$P(X = x, Y = y)$$
+
+. . .
+
+**Example:** What's the probability that someone is female AND supports a policy?
+
+This is different from asking about X or Y separately!
+
+## Example: Policy Support by Gender
+
+|           | Support (Y=1) | Oppose (Y=0) | **Row Total** |
+|-----------|:-------------:|:------------:|:-------------:|
+| Male      |     0.24      |     0.24     |     0.48      |
+| Female    |     0.34      |     0.18     |     0.52      |
+| **Total** |     0.58      |     0.42     |     1.00      |
+
+. . .
+
+-   P(Male AND Support) = 0.24
+-   P(Female AND Support) = 0.34
+-   All cells sum to 1
+
+## From Joint to Conditional Probabilities
+
+Often we want: "Given that someone is female, what's the probability they support the policy?"
+
+. . .
+
+$$P(Y = 1 | X = \text{Female}) = \frac{P(Y=1, X=\text{Female})}{P(X=\text{Female})} = \frac{0.34}{0.52} = 0.65$$
+
+. . .
+
+Compare to males: $P(Y = 1 | X = \text{Male}) = \frac{0.24}{0.48} = 0.50$
+
+. . .
+
+**The difference in conditional probabilities reveals the relationship!**
+
+## Visualizing Conditional Probabilities
+
+```{r}
+#| fig-width: 8
+#| fig-height: 5
+
+library(ggplot2)
+
+data <- data.frame(
+  Gender = c("Male", "Male", "Female", "Female"),
+  Response = c("Support", "Oppose", "Support", "Oppose"),
+  Probability = c(0.50, 0.50, 0.65, 0.35)
+)
+
+ggplot(data, aes(x = Gender, y = Probability, fill = Response)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  scale_fill_manual(values = c("Support" = "#2ecc71", "Oppose" = "#e74c3c")) +
+  labs(title = "Conditional Probability of Policy Support by Gender",
+       subtitle = "Women are more likely to support (65% vs 50%)",
+       y = "P(Response | Gender)") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "top")
+```
+
+## Continuous Joint Distributions
+
+With continuous variables, we ask about regions instead of exact values.
+
+. . .
+
+For one variable: P(a \< X \< b) = area under curve
+
+. . .
+
+For two variables: P(X in region, Y in region) = **volume** under a 3D surface
+
+## Visualizing a Joint Density
+
+```{r}
+#| fig-width: 8
+#| fig-height: 6
+
+library(plot3D)
+
+# Define the grid
+x <- seq(-2, 2, length.out = 50)
+y <- seq(-2, 2, length.out = 50)
+
+# Create a matrix of z values based on a Gaussian function
+z <- outer(x, y, function(x, y) exp(-((x^2 + y^2) / 2)))
+
+# Create the 3D wireframe plot
+persp(x, y, z,
+      theta = 45, phi = 20,
+      expand = 0.5,
+      col = "white",
+      border = "black",
+      ltheta = 120,
+      shade = 0.0,
+      ticktype = "detailed",
+      xlab = "X", ylab = "Y", zlab = expression(f[X,Y](x, y))
+)
+```
+
+The probability of (X, Y) falling in a region is the **volume** under this surface above that region. This generalizes to n variables.
+
+## Marginal Distributions: Focusing on One Variable
+
+Sometimes we have joint data but want to know about just X or just Y.
+
+. . .
+
+The **marginal distribution** "integrates out" the other variable.
+
+. . .
+
+**Intuition:** If you have a table of (X, Y) probabilities, sum across rows to get P(X) or sum down columns to get P(Y).
+
+```{r, echo = TRUE}
+# From our policy example:
+# P(Support) = P(Male, Support) + P(Female, Support)
+0.24 + 0.34  # = 0.58
+```
+
+## The Key Question: How Do Variables Move Together?
+
+We've seen that joint distributions capture relationships.
+
+. . .
+
+But we need a single **number** to summarize:
+
+-   How strongly are X and Y related?
+-   In what direction?
+
+. . .
+
+This leads us to **covariance** and **correlation** - the tools we'll use constantly in regression!
+
+## Covariance: Measuring How Variables Move Together
+
+**Covariance** captures whether X and Y tend to move in the same direction.
+
+. . .
+
+$$\text{Cov}(X,Y) = E[(X - E[X])(Y - E[Y])]$$
+
+. . .
+
+**Intuition:** For each point, multiply "how far X is from its mean" by "how far Y is from its mean". Then average.
+
+## The Quadrant Intuition
+
+Draw lines at the mean of X and the mean of Y. This creates four quadrants.
+
+```{r}
+#| fig-width: 8
+#| fig-height: 5
+
+library(ggplot2)
+set.seed(42)
+
+n <- 200
+x <- rnorm(n)
+y <- 0.7 * x + rnorm(n, sd = 0.7)
+data <- data.frame(x = x, y = y)
+
+ggplot(data, aes(x, y)) +
+  annotate("rect", xmin = 0, xmax = Inf, ymin = 0, ymax = Inf,
+           fill = "#2ecc71", alpha = 0.15) +
+  annotate("rect", xmin = -Inf, xmax = 0, ymin = -Inf, ymax = 0,
+           fill = "#2ecc71", alpha = 0.15) +
+  annotate("rect", xmin = -Inf, xmax = 0, ymin = 0, ymax = Inf,
+           fill = "#e74c3c", alpha = 0.15) +
+  annotate("rect", xmin = 0, xmax = Inf, ymin = -Inf, ymax = 0,
+           fill = "#e74c3c", alpha = 0.15) +
+  geom_point(color = "#F66733", alpha = 0.7, size = 2) +
+  geom_vline(xintercept = 0, color = "#522D80", linewidth = 1) +
+  geom_hline(yintercept = 0, color = "#522D80", linewidth = 1) +
+  annotate("text", x = 1.8, y = 2, label = "(+)(+) = +", size = 5, fontface = "bold") +
+  annotate("text", x = -1.8, y = -2, label = "(-)(-)  = +", size = 5, fontface = "bold") +
+  annotate("text", x = -1.8, y = 2, label = "(-)(+) = -", size = 5, color = "gray50") +
+  annotate("text", x = 1.8, y = -2, label = "(+)(-) = -", size = 5, color = "gray50") +
+  labs(title = "Positive Covariance: Most points in green quadrants",
+       x = "X - E[X]", y = "Y - E[Y]") +
+  theme_minimal(base_size = 14)
+```
+
+## Positive vs Negative Covariance
+
+```{r}
+#| fig-width: 10
+#| fig-height: 4
+
+library(ggplot2)
+library(patchwork)
+
+set.seed(42)
+n <- 150
+
+# Positive covariance
+x1 <- rnorm(n)
+y1 <- 0.8 * x1 + rnorm(n, sd = 0.5)
+
+# Negative covariance
+x2 <- rnorm(n)
+y2 <- -0.8 * x2 + rnorm(n, sd = 0.5)
+
+p1 <- ggplot(data.frame(x = x1, y = y1), aes(x, y)) +
+  geom_point(color = "#2ecc71", alpha = 0.7) +
+  geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) +
+  labs(title = "Positive Covariance",
+       subtitle = "X up → Y up") +
+  theme_minimal(base_size = 13)
+
+p2 <- ggplot(data.frame(x = x2, y = y2), aes(x, y)) +
+  geom_point(color = "#e74c3c", alpha = 0.7) +
+  geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) +
+  labs(title = "Negative Covariance",
+       subtitle = "X up → Y down") +
+  theme_minimal(base_size = 13)
+
+p1 + p2
+```
+
+. . .
+
+-   **Positive covariance:** Variables move in the same direction
+-   **Negative covariance:** Variables move in opposite directions
+
+## Computing Covariance in R
+
+```{r, echo = TRUE}
+# Simulating education spending and graduation rates
+set.seed(42)
+x <- rnorm(100)
+y <- 0.5 * x + rnorm(100, sd = 0.8)
+
+# Covariance: positive — more spending, higher graduation
+cov(x, y)
+```
+
+. . .
+
+```{r, echo = TRUE}
+# Simulating class size and test scores (negative relationship)
+y_neg <- -0.5 * x + rnorm(100, sd = 0.8)
+cov(x, y_neg)
+```
+
+## The Problem with Covariance
+
+Covariance depends on the **scale** of the variables.
+
+. . .
+
+If we measure agency budgets in dollars vs. millions of dollars, the covariance with performance changes - even though the underlying relationship is exactly the same!
+
+. . .
+
+**Solution:** Standardize to get **correlation**.
+
+## Correlation: A Standardized Measure
+
+$$\rho(X,Y) = \frac{\text{Cov}(X,Y)}{SD(X) \cdot SD(Y)}$$
+
+. . .
+
+**Key properties:**
+
+-   Always between -1 and +1
+-   ρ = +1: perfect positive linear relationship
+-   ρ = -1: perfect negative linear relationship
+-   ρ = 0: no linear relationship
+
+## What Different Correlations Look Like
+
+```{r}
+#| fig-width: 10
+#| fig-height: 5
+
+library(ggplot2)
+library(patchwork)
+library(MASS)
+
+set.seed(123)
+n <- 100
+
+make_cor_data <- function(r) {
+  mvrnorm(n, mu = c(0, 0), Sigma = matrix(c(1, r, r, 1), 2, 2))
+}
+
+cors <- c(0.9, 0.5, 0, -0.5, -0.9)
+plots <- lapply(cors, function(r) {
+  d <- as.data.frame(make_cor_data(r))
+  names(d) <- c("x", "y")
+  ggplot(d, aes(x, y)) +
+    geom_point(alpha = 0.6, color = "steelblue") +
+    labs(title = paste("r =", r)) +
+    theme_minimal(base_size = 12) +
+    theme(axis.title = element_blank())
+})
+
+plots[[1]] + plots[[2]] + plots[[3]] + plots[[4]] + plots[[5]] + plot_layout(nrow = 1)
+```
+
+## Computing Correlation in R
+
+```{r, echo = TRUE}
+# Median household income and voter turnout across 100 counties
+set.seed(42)
+x <- rnorm(100)
+y <- 0.7 * x + rnorm(100, sd = 0.7)
+
+# Correlation
+cor(x, y)
+```
+
+. . .
+
+**Important:** Correlation only measures **linear** relationships!
+
+A correlation of 0 doesn't mean "no relationship" - it means "no *linear* relationship."
+
+## Correlation = 0 Doesn't Mean "No Relationship"
+
+**Example:** Consider staffing levels and service quality at a public agency. Too *few* staff means poor service (understaffed). Too *many* staff can also hurt quality (coordination problems, bureaucratic bloat). The best performance is somewhere in the middle.
+
+## Visualizing the Example
+
+```{r}
+#| fig-width: 10
+#| fig-height: 5
+
+library(ggplot2)
+
+set.seed(42)
+n <- 200
+
+# Staffing level (centered at 0 for simplicity)
+staffing <- runif(n, -3, 3)
+# Service quality follows a quadratic (inverted U)
+quality <- -staffing^2 + rnorm(n, sd = 1.5)
+
+policy_data <- data.frame(staffing, quality)
+
+r_val <- round(cor(staffing, quality), 3)
+
+ggplot(policy_data, aes(x = staffing, y = quality)) +
+  geom_point(alpha = 0.6, color = "steelblue", size = 2) +
+  geom_smooth(method = "lm", se = FALSE, color = "red",
+              linetype = "dashed", linewidth = 1) +
+  geom_smooth(method = "loess", se = FALSE, color = "#522D80",
+              linewidth = 1.2) +
+  annotate("text", x = 2, y = 2,
+           label = paste0("r = ", r_val, "\n(nearly zero!)"),
+           size = 5, fontface = "bold", color = "red") +
+  annotate("text", x = -2.5, y = -4, label = "Linear fit",
+           size = 4, color = "red", fontface = "italic") +
+  annotate("text", x = -2.5, y = -7, label = "Actual pattern",
+           size = 4, color = "#522D80", fontface = "italic") +
+  labs(title = "Staffing Levels vs. Service Quality",
+       subtitle = "A real relationship exists — but it's not linear",
+       x = "Staffing Level (standardized)",
+       y = "Service Quality Rating") +
+  theme_minimal(base_size = 14)
+```
+
+## Key Takeaways
+
+::: incremental
+-   **Joint distributions** describe probabilities for multiple variables together (e.g., income AND education level)
+-   **Conditional distributions** answer "given X, what's the distribution of Y?" (e.g., given urban vs. rural, what are service wait times?)
+-   **Covariance** measures if variables move together (e.g., does spending increase with enrollment?)
+-   **Correlation** is standardized covariance, always between -1 and +1
+-   These concepts are the foundation for **regression** (coming soon!)
+:::
+
+## Looking Ahead
+
+With covariance and correlation, we can now ask:
+
+. . .
+
+-   How strong is the relationship between education spending and graduation rates?
+-   Can we predict a city's crime rate from its poverty level?
+-   How much of the variation in health outcomes is "explained" by income?
+
+. . .
+
+This leads us to **linear regression** - but first, we need to talk about **sampling distributions**!

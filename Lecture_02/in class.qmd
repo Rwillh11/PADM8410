@@ -1,0 +1,62 @@
+---
+title: "In Class 1-20"
+author: "Will Horne"
+format: html
+editor: visual
+---
+
+## Chaining Multiple Operations with the Pipe
+
+This block demonstrates how to chain multiple tidyverse operations together using the pipe operator (`|>`). We load the `palmerpenguins` dataset and then:
+
+1.  **filter()** - Keep only penguins with body mass greater than 1500g
+2.  **group_by()** - Group the data by species and sex
+3.  **summarize()** - Calculate the average bill length and count for each group
+4.  **arrange()** - Sort the results by average bill length in descending order
+
+```{r}
+library(tidyverse)
+library(palmerpenguins)
+new_penguins <- penguins |>
+  filter(body_mass_g > 1500) |>
+  group_by(species, sex) |>
+  summarize(avg_bill_length = mean(bill_length_mm, na.rm = TRUE),
+            count = n()) |>
+  arrange(desc(avg_bill_length))
+
+```
+
+## Basic Group-By and Summarize
+
+This block shows a simpler example of grouping and summarizing. We create a small data frame with names and test scores, then calculate the average score for each person. This demonstrates the core pattern: `group_by()` defines the groups, and `summarize()` collapses each group into a single summary row.
+
+```{r}
+# Example dataset
+df <- data.frame(
+  Name = c('Alice', 'Bob', 'Alice', 'Bob', 'Charlie', 'Charlie'),
+  Score = c(90, 85, 95, 88, 80, 78))
+# Grouping by Name
+result <- df |>
+  group_by(Name) |>
+  summarize(avg = mean(Score))
+
+result
+```
+
+## Applying to Survey Data (ANES)
+
+This block applies the same techniques to real survey data from the American National Election Studies (ANES). We filter to include only respondents with party affiliation less than 3 (typically Democrats and Republicans), group by their vote choice, and calculate the average feeling thermometer rating toward Biden for each voting group. The `na.rm = TRUE` argument removes missing values from the mean calculation.
+
+```{r}
+
+anes <-read_csv("anes.csv")
+
+output <- anes |>
+    filter(party < 3) |>
+    group_by(vote) |>
+    summarise(avg = mean(ft_biden, na.rm = T))
+
+output
+```
+
+## 
