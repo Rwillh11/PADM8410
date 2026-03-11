@@ -57,6 +57,7 @@ jobs:
             any::igraph
             any::reshape2
             any::infer
+            any::kableExtra
 
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
