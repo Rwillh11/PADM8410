@@ -65,13 +65,13 @@ library(kableExtra)
 ## Why Should MPAs Care?
 
 ::: incremental
--   Policy reports you read will use this language — ATE, counterfactual, selection bias
+-   Policy reports you read will use this language: ATE, counterfactual, selection bias
 
 -   Grant proposals and program evaluations require causal reasoning
 
 -   Understanding these ideas helps you be a **better consumer** of evidence, even if you never run a regression again
 
--   And if you do run regressions — this framework tells you *when to trust them*
+-   And if you do run regressions, this framework tells you *when to trust them*
 :::
 
 ## Causal Inference Readings
@@ -91,13 +91,13 @@ library(kableExtra)
 ## Today's Roadmap
 
 ::: incremental
-1.  **Counterfactuals and Potential Outcomes** — the language of causal inference
-2.  **Average Treatment Effects** — what we're trying to estimate (and why it's hard)
-3.  **Randomization Inference** — generating p-values from random assignment
-4.  **Estimands** — setting your target before you estimate
-5.  **DAGs** — drawing your causal story
-6.  **Identification** — figuring out what to control for
-7.  **Mediation** — understanding *how* causes work
+1.  Counterfactuals and Potential Outcomes
+2.  Average Treatment Effects
+3.  Randomization Inference
+4.  Estimands
+5.  DAGs
+6.  Identification
+7.  Mediation
 :::
 
 ## Semester Roadmap
@@ -107,7 +107,7 @@ library(kableExtra)
 
 -   Next week: causal inference with observational data (fixed effects)
 
--   Then — various design-based approaches to causal inference
+-   Then: various design-based approaches to causal inference
 
     -   Experiments (Natural, Survey, Lab)
 
@@ -138,14 +138,13 @@ library(kableExtra)
 
 ## The Key Idea
 
-::: {.callout-note}
-## Counterfactuals in Plain English
-A **counterfactual** is the answer to: "What would have happened if things had been different?" Every causal claim is really a comparison between what *did* happen and what *would have* happened under a different scenario.
-:::
+A **counterfactual** is the answer to: "What would have happened if things had been different?"
+
+Every causal claim is really a comparison between what *did* happen and what *would have* happened under a different scenario.
 
 . . .
 
-We can never directly observe the counterfactual — and that is the central challenge of all causal inference.
+We can never directly observe the counterfactual. That's the central challenge of all causal inference.
 
 ## What is causation?
 
@@ -170,7 +169,7 @@ We can never directly observe the counterfactual — and that is the central cha
 
     -   **For each unit, we only observe one potential outcome**
 
-    -   We either see what happened with the treatment, or without it — never both
+    -   We either see what happened with the treatment, or without it. Never both.
 
 -   So how can we make inferences about the outcome we *didn't* see?
 
@@ -214,7 +213,7 @@ Potential outcomes give structure to our counterfactuals (Neyman 1923, Rubin \~ 
 ::: {.callout-note}
 ## The Switching Equation
 $$Y_{i} = D_{i} \cdot Y_{i}(1) + (1 - D_{i}) \cdot Y_{i}(0)$$
-**In English:** We observe the potential outcome that matches your actual treatment status. If you were treated ($D_i = 1$), we see $Y_i(1)$. If not ($D_i = 0$), we see $Y_i(0)$. The other potential outcome is forever hidden from us.
+We observe the potential outcome that matches your actual treatment status. If you were treated ($D_i = 1$), we see $Y_i(1)$. If not ($D_i = 0$), we see $Y_i(0)$. The other potential outcome is hidden from us.
 :::
 
 ## The Causal Effect
@@ -225,12 +224,9 @@ $$\tau_i = Y_i(1) - Y_i(0)$$
 
 . . .
 
-::: {.callout-note}
-## In English
-The causal effect is: "How much better (or worse) off is this person because they received the treatment?" But we can **never observe this** for any individual, because we only see one of the two potential outcomes.
-:::
+How much better (or worse) off is this person because they received the treatment? We can **never observe this** for any individual, because we only see one of the two potential outcomes.
 
-## God's Table — What We Wish We Had
+## God's Table: What We Wish We Had
 
 | Voter | Age $X_{i}$ | Contact $D_i$ | Turnout $Y_i(1)$ | Turnout $Y_i(0)$ | Causal effect $Y_i(1) - Y_i(0)$ |
 |------------|------------|------------|------------|------------|------------|
@@ -255,7 +251,7 @@ The "???" cells are the fundamental problem. We never get to fill them in.
 
     -   $E[Y^{1}] = 5.6$, $E[Y^{0}] = 5$
 
-    -   So the **true ATE** $= 0.6$ years — surgery adds about 7 months on average
+    -   So the **true ATE** $= 0.6$ years, or about 7 months on average
 :::
 
 ## The Full Potential Outcomes Table
@@ -275,7 +271,7 @@ The "???" cells are the fundamental problem. We never get to fill them in.
 | 10      | 9     | 8     | 1                    |
 :::
 
-Notice: the treatment effect is **different for every patient.** Some benefit hugely from surgery, others are harmed by it.
+Notice that the treatment effect is **different for every patient.** Some benefit a lot from surgery; others are harmed by it.
 
 ## But Here's What We Actually See
 
@@ -304,10 +300,7 @@ $$ATE = E[Y_{i}(1)] - E[Y_{i}(0)]$$
 
 . . .
 
-::: {.callout-note}
-## In English
-The ATE answers: "If we could give **everyone** the treatment and also give **everyone** the control, and compare, what would the average difference be?" We can never calculate this directly — but we can try to estimate it.
-:::
+If we could give **everyone** the treatment and also give **everyone** the control, and compare, what would the average difference be? We can never calculate this directly, but we can try to estimate it.
 
 ## Average Treatment Effect on the Treated (ATT) {.smaller}
 
@@ -317,14 +310,11 @@ $$ATT = E[Y_{i}(1) - Y_{i}(0) \mid D_{i} = 1]$$
 
 . . .
 
-::: {.callout-note}
-## In English
-The ATT answers: "Among the people who actually got treated, how much did the treatment help them on average?" This is often different from the ATE — because the people who get treated aren't a random sample. Sicker patients get surgery, motivated students seek tutoring, etc.
-:::
+Among the people who actually got treated, how much did the treatment help them on average? This is often different from the ATE, because the people who get treated aren't a random sample. Sicker patients get surgery, motivated students seek tutoring, etc.
 
 . . .
 
-There's also an **ATU** (Average Treatment Effect on the Untreated) — same logic, but for those who *didn't* receive treatment.
+There's also an **ATU** (Average Treatment Effect on the Untreated). Same logic, but for those who *didn't* receive treatment.
 
 ## Why Can't We Just Compare Averages? {.smaller}
 
@@ -341,9 +331,9 @@ $$\underbrace{E[Y|D = 1] - E[Y|D = 0]}_{\text{What we observe}} = \underbrace{AT
     -   In our surgery example: sicker patients get surgery, so the surgery group would have done worse *even without surgery*
 
 -   **Heterogeneous Effect Bias**: The treatment works differently for different people, and the people who get treated aren't representative
-    -   Surgery might be most beneficial for the sickest patients — but those are the ones who got it
+    -   Surgery might be most beneficial for the sickest patients, but those are exactly the ones who got it
 
--   **The takeaway**: Naive comparisons can be wildly misleading when treatment isn't random
+-   Bottom line: naive comparisons can be wildly misleading when treatment isn't random
 :::
 
 ## The Independence Assumption
@@ -354,14 +344,11 @@ $$(Y^{1}, Y^{0}) \perp D_{i}$$
 
 . . .
 
-::: {.callout-note}
-## In English
-This means: "Who gets treated has nothing to do with how they would respond to treatment." If this holds, both bias terms vanish and the simple comparison of averages **is** the ATE.
-:::
+This means that who gets treated has nothing to do with how they would respond to treatment. If this holds, both bias terms vanish and the simple comparison of averages **is** the ATE.
 
 . . .
 
-When is this realistic? **Randomized experiments** — and that's basically it. Everything else requires more assumptions.
+When is this realistic? **Randomized experiments.** That's basically it. Everything else requires more assumptions.
 
 ## SUTVA {.smaller}
 
@@ -379,7 +366,7 @@ The other key assumption: **Stable Unit Treatment Value Assumption**
     -   A job training program helps participants but crowds out non-participants (general equilibrium)
     -   Minimum wage increases affect untreated workers through price changes
 
--   If violated, we're not hopeless — there are strategies we'll cover later
+-   If violated, we're not hopeless. There are strategies we'll cover later
 :::
 
 # Part 3: Randomization Inference
@@ -389,13 +376,13 @@ The other key assumption: **Stable Unit Treatment Value Assumption**
 ::: incremental
 -   In causal studies, we're often not trying to generalize to a larger population
 
-    -   The core uncertainty is **not based on sampling** but on the fact that **we don't know the counterfactual**
+    -   The core uncertainty is not about sampling, it's about the fact that **we don't know the counterfactual**
 
 -   **Randomization inference** generates p-values directly from the randomization itself
 
     -   Non-parametric: no assumptions about distributions
 
-    -   Logic is somewhat similar to the bootstrap
+    -   The logic is similar to the bootstrap
 :::
 
 ## The Lady Tasting Tea (Again)
@@ -504,21 +491,21 @@ print(p_value)
 ## When to Use Randomization Inference
 
 ::: incremental
--   **Use it when** treatment is truly randomized and you want exact, assumption-free p-values
+-   Works when treatment is truly randomized and you want exact, assumption-free p-values
 
--   **Especially useful** with small samples where normal approximations may fail
+-   Especially useful with small samples where normal approximations may fail
 
--   **Don't use it** for observational data — the logic depends on actual randomization
+-   Don't use it for observational data. The logic depends on actual randomization
 
--   **Limitation:** Fisher's sharp null tests whether the treatment had *zero effect on everyone* — it doesn't directly estimate the size of the effect
+-   Limitation: Fisher's sharp null tests whether the treatment had *zero effect on everyone*. It doesn't directly estimate the size of the effect
 :::
 
-# Part 4: Setting the Target — Estimands
+# Part 4: Setting the Target
 
 ## What Are You Trying to Estimate?
 
 ::: incremental
--   An **estimand** is your target quantity — the thing your study is trying to learn
+-   An **estimand** is your target quantity, the thing your study is trying to learn
 
 -   Lundberg et al (2021) argue: set your estimand *before* you pick a model
 
@@ -526,7 +513,7 @@ print(p_value)
 
     -   Define it as a quantity in the real world, then figure out how to measure it
 
--   **Two components:**
+-   Two components:
     1.  A **unit-specific quantity** (e.g., "Would this person be employed if they received job training?")
     2.  A **target population** (e.g., "All working-age adults in South Carolina")
 :::
@@ -545,7 +532,7 @@ How would you move from this theoretical estimand to something you could actuall
 
 Pager (2003) studied how race and criminal record impact employment outcomes
 
-**Design:** Real job postings are randomly assigned to pairs of applications — applicants are either Black or White, and either have a felony conviction or not.
+**Design:** Real job postings are randomly assigned to pairs of applications. Applicants are either Black or White, and either have a felony conviction or not.
 
 **Think about:** What is the unit of analysis here? What is the unit-specific quantity?
 
@@ -562,9 +549,9 @@ Pager (2003) studied how race and criminal record impact employment outcomes
 
 -   What is the target population here?
 
-    -   Not all women — only women who would be *induced* to have a third child because their first two were the same sex
+    -   Not all women. Only women who would be *induced* to have a third child because their first two were the same sex
 
--   **This matters for policy:** the effect might not generalize to all families
+-   This matters for policy: the effect might not generalize to all families
 :::
 
 ## Theoretical vs. Empirical Estimands
@@ -579,12 +566,12 @@ Pager (2003) studied how race and criminal record impact employment outcomes
 :::
 :::::
 
-# Part 5: DAGs — Mapping Your Causal Story
+# Part 5: DAGs
 
 ## What Are DAGs?
 
 ::: incremental
--   **Directed Acyclic Graphs** — a visual tool for laying out your causal model
+-   **Directed Acyclic Graphs**: a visual tool for laying out your causal model
 
     -   **Directed**: arrows show the direction of causation
 
@@ -592,7 +579,7 @@ Pager (2003) studied how race and criminal record impact employment outcomes
 
         -   If you think there's a feedback loop, you can use **time** to break the cycle
 
--   Incredibly useful for:
+-   Useful for:
     -   Making your assumptions explicit
     -   Figuring out what to control for
     -   Justifying your research design to readers and reviewers
@@ -603,8 +590,8 @@ Pager (2003) studied how race and criminal record impact employment outcomes
 Two popular packages:
 
 ::: incremental
--   `dagitty` — powerful, has a browser-based version too
--   `ggdag` — uses ggplot syntax, prettier output
+-   `dagitty`: powerful, has a browser-based version too
+-   `ggdag`: uses ggplot syntax, prettier output
 :::
 
 . . .
@@ -650,7 +637,7 @@ ggdag(dag, text = FALSE, use_labels = "name") +
 ## What Goes in a DAG?
 
 ::: incremental
--   Focus on the **important stuff** — most beginners put too much in their DAGs!
+-   Focus on the **important stuff**. Most beginners put too much in their DAGs!
 
 -   Start with **all causes of your outcome**
 
@@ -745,12 +732,12 @@ plot(dag)
 
 ::: {.callout-warning}
 ## The Collider Trap
-Research Experience → Admission ← GRE Score. Among all applicants, GRE and research experience are unrelated. But if you only look at *admitted students* (conditioning on the collider), you'll find a negative correlation — because admitted students with low GRE scores must have had great research experience, and vice versa.
+Research Experience → Admission ← GRE Score. Among all applicants, GRE and research experience are unrelated. But if you only look at *admitted students* (conditioning on the collider), you'll find a negative correlation, because admitted students with low GRE scores must have had great research experience, and vice versa.
 :::
 
 ## Unobserved Variables
 
-We use $U$ for variables we can't measure but believe exist. These are often the source of our biggest identification headaches.
+We use $U$ for variables we can't measure but believe exist. These are often the biggest headache for identification.
 
 ```{r}
 library(dagitty)
@@ -851,13 +838,13 @@ plot(dag)
 ## Simplifying DAGs
 
 ::: incremental
--   **Unimportant Variables:** If the effect sizes are likely very small, probably safe to remove
+-   If effect sizes are likely very small, probably safe to remove
 
--   **Redundancy:** If variables have the same arrows in and out, group them together
+-   If variables have the same arrows in and out, group them together
 
--   **Mediators:** If B only connects to C through A → B → C, we can simplify to A → C
+-   If B only connects to C through A → B → C, we can simplify to A → C
 
--   **Irrelevance:** If a variable isn't on any path between treatment and outcome, remove it
+-   If a variable isn't on any path between treatment and outcome, remove it
 :::
 
 ## Simplified Version
@@ -915,7 +902,7 @@ g <- graph(edges, directed = TRUE)
 plot(g, vertex.size=30, vertex.label.cex=2, edge.arrow.size=0.5)
 ```
 
-This is **not** a DAG — everything causes everything else. Solution: use **time** to break the cycle.
+This is **not** a DAG. Everything causes everything else. Solution: use **time** to break the cycle.
 
 ## Using Time to Break Cycles
 
@@ -931,7 +918,7 @@ dag <- dagitty('dag {
 plot(dag)
 ```
 
-Example from Huntington-Klein — once we add time subscripts, the cycle becomes a chain!
+Example from Huntington-Klein. Once we add time subscripts, the cycle becomes a chain!
 
 # Part 6: Using DAGs for Identification
 
@@ -969,13 +956,13 @@ How many paths are there from A to C?
 ## Front-Door and Back-Door Paths {.smaller}
 
 ::: incremental
--   **Front-door (good) paths**: Arrows flow from treatment → outcome. These represent the causal effect you want to measure.
+-   **Front-door (good) paths**: arrows flow from treatment → outcome. These represent the causal effect you want to measure.
 
     -   Direct paths and mediated paths count as front-door
 
--   **Back-door (bad) paths**: At least one arrow points *toward* the treatment. These represent confounding — alternative explanations for why treatment and outcome are correlated.
+-   **Back-door (bad) paths**: at least one arrow points *toward* the treatment. These represent confounding, i.e., alternative explanations for why treatment and outcome are correlated.
 
--   **Your goal**: Close all back-door paths (by controlling for the right variables) while leaving front-door paths open
+-   **Your goal**: close all back-door paths (by controlling for the right variables) while leaving front-door paths open
 :::
 
 ## Confounding
@@ -995,7 +982,7 @@ dag {
 plot(dag)
 ```
 
-C is a **confounder** — it causes both D and Y. If we don't control for C, the D→Y path is contaminated by the back-door path through C.
+C is a **confounder**: it causes both D and Y. If we don't control for C, the D→Y path is contaminated by the back-door path through C.
 
 ## Unobserved Confounding (The Bad Place) {.smaller}
 
@@ -1014,7 +1001,7 @@ dag {
 plot(dag)
 ```
 
-If we **can't** control for U (because we can't observe it), our estimates of D→Y will be biased. This is when we need the design-based approaches we'll learn after spring break — experiments, DiD, RDD, IV.
+If we **can't** control for U (because we can't observe it), our estimates of D→Y will be biased. This is when we need the design-based approaches we'll learn after spring break: experiments, DiD, RDD, IV.
 
 ## Confounding Example: Education and Earnings
 
@@ -1059,11 +1046,11 @@ plot(dag)
 
 . . .
 
-**Strategy 1:** Control for **O** — "adjust for all causes of the outcome"
+**Strategy 1:** Control for **O** (adjust for all causes of the outcome)
 
 . . .
 
-**Strategy 2:** Control for **C** — "balance the determinants of the treatment"
+**Strategy 2:** Control for **C** (balance the determinants of the treatment)
 
 . . .
 
@@ -1095,7 +1082,7 @@ plot(dag)
 
 . . .
 
-C is a **collider** — controlling for it would *open* a back-door path rather than close one!
+C is a **collider**. Controlling for it would *open* a back-door path rather than close one!
 
 ## A Harder Example {.smaller}
 
@@ -1139,19 +1126,19 @@ Assume **U** and **V** are unobservable. Can we identify the effect of D on Y? W
 
 . . .
 
-Drawing a DAG forces you to think about identification *before* you run a regression. It might save you from making a serious mistake — or convince you that your research design is sound.
+Drawing a DAG forces you to think about identification *before* you run a regression. It might save you from a serious mistake, or convince you that your research design is sound.
 
-# Part 7: Mediation — How Does the Cause Work?
+# Part 7: Mediation
 
 ## Mediation vs Moderation
 
 ::: incremental
--   These are often confused — let's make the distinction clear
+-   These get confused a lot
 
--   **Moderation** (= interaction effect): The *size* of the treatment effect changes depending on another variable
+-   **Moderation** (= interaction effect): the *size* of the treatment effect changes depending on another variable
     -   "School funding improves test scores **more** in high-poverty districts"
 
--   **Mediation** (= causal mechanism): The treatment works *through* an intermediate variable
+-   **Mediation** (= causal mechanism): the treatment works *through* an intermediate variable
     -   "School funding → **smaller classes** → better test scores"
     -   Part of the effect of funding flows through class size
 :::
@@ -1185,14 +1172,14 @@ plot(dag)
 
     -   The **indirect/mediated effect**: Training → Mental Health → Employment (e.g., feeling more confident leads to better interview performance)
 
--   **Why does this matter for policy?** If most of the effect flows through mental health, maybe a cheaper mental health intervention could achieve similar results!
+-   Why does this matter for policy? If most of the effect flows through mental health, maybe a cheaper mental health intervention could achieve similar results
 
--   The indirect effect is often called the **Average Causal Mediation Effect (ACME)** — it answers: "How much of the treatment's effect operates through the mediator?"
+-   The indirect effect is often called the **Average Causal Mediation Effect (ACME)**: how much of the treatment's effect operates through the mediator?
 :::
 
 ## Warning: Mediation Is Hard
 
-The mediated effect **looks at the effect on the mediator, not the treatment itself** — which creates a subtle problem.
+The mediated effect **looks at the effect on the mediator, not the treatment itself**, which creates a subtle problem.
 
 ::: incremental
 -   Even if treatment is randomly assigned, the *mediator* usually isn't
@@ -1201,7 +1188,7 @@ The mediated effect **looks at the effect on the mediator, not the treatment its
 
 -   Nailing down a causal mechanism is **harder** than nailing down a causal effect
 
--   This is why mediation analysis is always **optional** — you don't need it for causal identification
+-   This is why mediation analysis is always **optional**. You don't need it for causal identification
 :::
 
 ## Opposite-Signed Effects
@@ -1285,20 +1272,20 @@ The x-axis shows different levels of unobserved confounding ($\rho$). If the ACM
 ## What We Covered Today
 
 ::: incremental
-1.  **Counterfactuals** — causal claims are always comparisons to an unobserved alternative
-2.  **Potential outcomes** — notation for making counterfactuals precise ($Y(1)$, $Y(0)$, ATE)
-3.  **Selection bias** — why naive comparisons mislead when treatment isn't random
-4.  **Randomization inference** — generating p-values directly from random assignment
-5.  **Estimands** — define your target before you estimate
-6.  **DAGs** — visual tools for mapping causal assumptions (chains, forks, colliders)
-7.  **Identification** — using DAGs to figure out what to control for
-8.  **Mediation** — understanding *how* causes work (and why it's hard)
+1.  Counterfactuals
+2.  Potential outcomes ($Y(1)$, $Y(0)$, ATE)
+3.  Selection bias
+4.  Randomization inference
+5.  Estimands
+6.  DAGs (chains, forks, colliders)
+7.  Identification
+8.  Mediation
 :::
 
 ## What's Next
 
 ::: incremental
--   Next week: **Fixed effects** — using panel data to control for unobserved confounders
+-   Next week: **Fixed effects**, using panel data to control for unobserved confounders
 
 -   Then: **Design-based causal inference**
     -   Experiments (Natural, Survey, Lab)
