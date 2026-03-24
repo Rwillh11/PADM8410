@@ -46,6 +46,10 @@ toc-depth: 2
 
 ## Week 5: Sampling and Estimation
 
+**Optional readings:**
+
+- [Gerber, Green, and Larimer (2008), "Social Pressure and Voter Turnout"](https://doi.org/10.1017/S000305540808009X)
+
 **Materials:**
 
 - [Slides](PADM8410Lecture5_Revised.qmd)
@@ -76,6 +80,11 @@ toc-depth: 2
 
 **Readings:** Gelman, Chapters 13--15
 
+**Optional readings:**
+
+- [Kerevel (2015), "Paving the Way to the Ballot Box: Mexican Women's Legal Right to Vote"](https://doi.org/10.1177/1065912915585482)
+- [Bolton and Thrower (2016), "Legislative Capacity and Executive Unilateralism"](https://doi.org/10.1111/ajps.12189)
+
 **Materials:**
 
 - [Slides](PADM8410Lecture9_MLE.qmd)
@@ -100,6 +109,13 @@ toc-depth: 2
 
 **Readings:** [The Effect, Chapter 10](https://theeffectbook.net/)
 
+**Optional readings:**
+
+- [Duflo, Hanna, and Ryan (2012), "Incentives Work: Getting Teachers to Come to School"](https://doi.org/10.1257/aer.102.4.1241)
+- [Habyarimana et al. (2007), "Why Does Ethnic Diversity Undermine Public Goods Provision?"](https://doi.org/10.1017/S0003055407070499)
+- [Kuklinski et al. (1997), "Racial Attitudes and the 'New South'"](https://doi.org/10.1086/297954)
+- [Imai (2011), "Multivariate Regression Analysis for the Item Count Technique"](https://doi.org/10.1198/jasa.2011.ap10089)
+
 **Materials:**
 
 - [Slides](PADM8410Lecture11_Experiments.qmd)
@@ -110,6 +126,12 @@ toc-depth: 2
 
 - [The Effect, Chapter 15](https://theeffectbook.net/)
 - [Causal Inference: The Mixtape, Chapter 8](https://mixtape.scunning.com/08-panel_data)
+
+**Optional readings:**
+
+- [Kubinec, "Understanding Two-Way Fixed Effects" (blog post)](https://www.robertkubinec.com/post/fixed_effects/)
+- [McElreath (2020), *Statistical Rethinking*](https://xcelab.net/rm/statistical-rethinking/)
+- [Gelman and Hill (2006), *Data Analysis Using Regression and Multilevel/Hierarchical Models*](https://doi.org/10.1017/CBO9780511790942)
 
 **Materials:**
 
@@ -122,6 +144,12 @@ toc-depth: 2
 - [The Effect, Chapter 18](https://theeffectbook.net/ch-DifferenceinDifference.html)
 - [Causal Inference: The Mixtape, Chapter 9](https://mixtape.scunning.com/09-difference_in_differences)
 
+**Optional readings:**
+
+- [Card and Krueger (1994), "Minimum Wages and Employment"](https://doi.org/10.1257/aer.90.5.1397)
+- [Goodman-Bacon (2021), "Difference-in-Differences with Variation in Treatment Timing"](https://doi.org/10.1016/j.jeconom.2021.03.014)
+- [Callaway and Sant'Anna (2021), "Difference-in-Differences with Multiple Time Periods"](https://doi.org/10.1016/j.jeconom.2020.12.001)
+
 **Materials:**
 
 - [Slides](PADM8410Lecture13_DiD.qmd)
@@ -132,6 +160,14 @@ toc-depth: 2
 
 - [The Effect, Chapter 20](https://theeffectbook.net/)
 - [Causal Inference: The Mixtape, Chapter 6](https://mixtape.scunning.com/06-regression_discontinuity)
+
+**Optional readings:**
+
+- [Eyting et al. (2025), "Shingles Vaccination and the Risk of Dementia"](https://doi.org/10.1038/s41586-025-08800-x)
+- [Card, Dobkin, and Maestas (2008), "The Impact of Nearly Universal Insurance Coverage on Health Care Utilization"](https://doi.org/10.1257/aer.98.5.2242)
+- [Angrist and Lavy (1999), "Using Maimonides' Rule to Estimate the Effect of Class Size"](https://doi.org/10.1162/003355399556061)
+- [Lee and Lemieux (2010), "Regression Discontinuity Designs in Economics"](https://doi.org/10.1257/jel.48.2.281)
+- [Cattaneo, Idrobo, and Titiunik (2020), *A Practical Introduction to Regression Discontinuity Designs*](https://rdpackages.github.io/references/Cattaneo-Idrobo-Titiunik_2020_CUP.pdf)
 
 **Materials:**
 
