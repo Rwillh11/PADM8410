@@ -25,7 +25,7 @@ library(kableExtra)
 
 -   That will be the focus of the second half of the class
 
-    -   But first let's look at some funny xkcd comics
+    -   But first let's look at some funny comics
 :::
 
 ## Comic
@@ -97,7 +97,6 @@ library(kableExtra)
 4.  Estimands
 5.  DAGs
 6.  Identification
-7.  Mediation
 :::
 
 ## Semester Roadmap
@@ -210,10 +209,10 @@ Potential outcomes give structure to our counterfactuals (Neyman 1923, Rubin \~ 
 
 . . .
 
-::: {.callout-note}
+::: callout-note
 ## The Switching Equation
-$$Y_{i} = D_{i} \cdot Y_{i}(1) + (1 - D_{i}) \cdot Y_{i}(0)$$
-We observe the potential outcome that matches your actual treatment status. If you were treated ($D_i = 1$), we see $Y_i(1)$. If not ($D_i = 0$), we see $Y_i(0)$. The other potential outcome is hidden from us.
+
+$$Y_{i} = D_{i} \cdot Y_{i}(1) + (1 - D_{i}) \cdot Y_{i}(0)$$ We observe the potential outcome that matches your actual treatment status. If you were treated ($D_i = 1$), we see $Y_i(1)$. If not ($D_i = 0$), we see $Y_i(0)$. The other potential outcome is hidden from us.
 :::
 
 ## The Causal Effect
@@ -258,17 +257,17 @@ The "???" cells are the fundamental problem. We never get to fill them in.
 
 ::: {style="font-size: 70%;"}
 | Patient | $Y^S$ (Surgery) | $Y^C$ (Chemo) | $\delta = Y^S - Y^C$ |
-|---------|-------|-------|----------------------|
-| 1       | 7     | 1     | 6                    |
-| 2       | 5     | 6     | -1                   |
-| 3       | 5     | 1     | 4                    |
-| 4       | 7     | 8     | -1                   |
-| 5       | 4     | 2     | 2                    |
-| 6       | 10    | 1     | 9                    |
-| 7       | 1     | 10    | -9                   |
-| 8       | 5     | 6     | -1                   |
-| 9       | 3     | 7     | -4                   |
-| 10      | 9     | 8     | 1                    |
+|---------|-----------------|---------------|----------------------|
+| 1       | 7               | 1             | 6                    |
+| 2       | 5               | 6             | -1                   |
+| 3       | 5               | 1             | 4                    |
+| 4       | 7               | 8             | -1                   |
+| 5       | 4               | 2             | 2                    |
+| 6       | 10              | 1             | 9                    |
+| 7       | 1               | 10            | -9                   |
+| 8       | 5               | 6             | -1                   |
+| 9       | 3               | 7             | -4                   |
+| 10      | 9               | 8             | 1                    |
 :::
 
 Notice that the treatment effect is **different for every patient.** Some benefit a lot from surgery; others are harmed by it.
@@ -329,10 +328,8 @@ $$\underbrace{E[Y|D = 1] - E[Y|D = 0]}_{\text{What we observe}} = \underbrace{AT
 ::: incremental
 -   **Selection Bias**: The treated and untreated groups were different *before* treatment
     -   In our surgery example: sicker patients get surgery, so the surgery group would have done worse *even without surgery*
-
 -   **Heterogeneous Effect Bias**: The treatment works differently for different people, and the people who get treated aren't representative
     -   Surgery might be most beneficial for the sickest patients, but those are exactly the ones who got it
-
 -   Bottom line: naive comparisons can be wildly misleading when treatment isn't random
 :::
 
@@ -362,6 +359,7 @@ The other key assumption: **Stable Unit Treatment Value Assumption**
 -   No **general equilibrium** effects
 
 -   **Policy examples of SUTVA violations:**
+
     -   Vaccinating one person protects their neighbors (spillover)
     -   A job training program helps participants but crowds out non-participants (general equilibrium)
     -   Minimum wage increases affect untreated workers through price changes
@@ -413,6 +411,7 @@ The other key assumption: **Stable Unit Treatment Value Assumption**
 -   This lets us generate **counterfactual outcomes** by simply reshuffling who got treated
 
 -   **The procedure:**
+
     1.  Compute the observed test statistic (e.g., difference in means)
     2.  Randomly reshuffle treatment assignments many times
     3.  Recompute the test statistic for each reshuffling
@@ -514,6 +513,7 @@ print(p_value)
     -   Define it as a quantity in the real world, then figure out how to measure it
 
 -   Two components:
+
     1.  A **unit-specific quantity** (e.g., "Would this person be employed if they received job training?")
     2.  A **target population** (e.g., "All working-age adults in South Carolina")
 :::
@@ -580,6 +580,7 @@ Pager (2003) studied how race and criminal record impact employment outcomes
         -   If you think there's a feedback loop, you can use **time** to break the cycle
 
 -   Useful for:
+
     -   Making your assumptions explicit
     -   Figuring out what to control for
     -   Justifying your research design to readers and reviewers
@@ -730,8 +731,9 @@ plot(dag)
 
 . . .
 
-::: {.callout-warning}
+::: callout-warning
 ## The Collider Trap
+
 Research Experience → Admission ← GRE Score. Among all applicants, GRE and research experience are unrelated. But if you only look at *admitted students* (conditioning on the collider), you'll find a negative correlation, because admitted students with low GRE scores must have had great research experience, and vice versa.
 :::
 
@@ -1121,151 +1123,13 @@ Assume **U** and **V** are unobservable. Can we identify the effect of D on Y? W
 
 ::: callout-important
 ## Charles Manski (1994)
+
 **Negative identification** findings imply that statistical inference is fruitless: it makes no sense to try to use a sample of finite size to infer something that could not be learned even if the sample were of infinite size. **Positive identification** findings imply that one should go on...(ie, do research, collect data, pick appropriate models)
 :::
 
 . . .
 
 Drawing a DAG forces you to think about identification *before* you run a regression. It might save you from a serious mistake, or convince you that your research design is sound.
-
-# Part 7: Mediation
-
-## Mediation vs Moderation
-
-::: incremental
--   These get confused a lot
-
--   **Moderation** (= interaction effect): the *size* of the treatment effect changes depending on another variable
-    -   "School funding improves test scores **more** in high-poverty districts"
-
--   **Mediation** (= causal mechanism): the treatment works *through* an intermediate variable
-    -   "School funding → **smaller classes** → better test scores"
-    -   Part of the effect of funding flows through class size
-:::
-
-## Mediation Example: Job Training
-
-```{r}
-dag <- dagitty('
-dag {
-  Job_Training [pos="-1,0"]
-  Mental_Health [pos="-1,0.5"]
-  Employment [pos="0,1"]
-  Other_Factors [pos="-2,0.5"]
-
-  Job_Training -> Mental_Health
-  Job_Training -> Employment
-  Mental_Health -> Employment
-  Other_Factors -> Mental_Health
-  Other_Factors ->  Employment
-}
-')
-plot(dag)
-```
-
-## Decomposing the Effect {.smaller}
-
-::: incremental
--   The **total effect** of job training on employment has two components:
-
-    -   The **direct effect**: Training → Employment (e.g., learning new skills)
-
-    -   The **indirect/mediated effect**: Training → Mental Health → Employment (e.g., feeling more confident leads to better interview performance)
-
--   Why does this matter for policy? If most of the effect flows through mental health, maybe a cheaper mental health intervention could achieve similar results
-
--   The indirect effect is often called the **Average Causal Mediation Effect (ACME)**: how much of the treatment's effect operates through the mediator?
-:::
-
-## Warning: Mediation Is Hard
-
-The mediated effect **looks at the effect on the mediator, not the treatment itself**, which creates a subtle problem.
-
-::: incremental
--   Even if treatment is randomly assigned, the *mediator* usually isn't
-
--   So we need stronger assumptions than for a simple ATE
-
--   Nailing down a causal mechanism is **harder** than nailing down a causal effect
-
--   This is why mediation analysis is always **optional**. You don't need it for causal identification
-:::
-
-## Opposite-Signed Effects
-
-```{r}
-dag <- dagitty('
-dag {
-  MouthWash [pos="-1,0"]
-  AlcoholExposure [pos="-1,0.5"]
-  OralCancer [pos="0,1"]
-
-  MouthWash -> AlcoholExposure
-  MouthWash -> OralCancer
-  AlcoholExposure -> OralCancer
-}
-')
-plot(dag)
-```
-
-Mouthwash might *directly* reduce oral cancer risk (kills bacteria), but the alcohol in mouthwash might *increase* cancer risk. The direct and mediated effects go in opposite directions!
-
-## Mediation in R: The `mediation` Package {.smaller}
-
-Back to job training: Does the program increase employment, and does improved self-efficacy (job-seeking confidence) explain part of the effect?
-
-```{r}
-#| echo: true
-#| eval: false
-
-library(mediation)
-
-# Step 1: Model the mediator as a function of treatment + covariates
-model.m <- lm(job_seek ~ treat + depress1 + econ_hard
-              + sex + age + occp + marital + nonwhite + educ + income,
-              data = jobs)
-
-# Step 2: Model the outcome as a function of treatment + mediator + covariates
-model.y <- glm(work1 ~ treat + job_seek + depress1
-                  + econ_hard + sex + age + occp + marital + nonwhite + educ
-                  + income, family = binomial(link = "probit"), data = jobs)
-
-# Step 3: Estimate the mediation effect
-ACME <- mediate(model.m, model.y, sims = 1000,
-                 boot = TRUE, treat = "treat", mediator = "job_seek")
-summary(ACME)
-```
-
-## Mediation Results {.smaller}
-
-```{r}
-library(mediation)
-model.m <- lm(job_seek ~ treat + depress1 + econ_hard
-              + sex + age + occp + marital + nonwhite + educ + income,
-              data = jobs)
-
-model.y <- glm(work1 ~ treat + job_seek + depress1
-                  + econ_hard + sex + age + occp + marital + nonwhite + educ
-                  + income, family = binomial(link = "probit"), data = jobs)
-ACME <- mediate(model.m, model.y, sims = 1000,
-                 boot = TRUE, treat = "treat", mediator = "job_seek")
-summary(ACME)
-```
-
-## How Robust Are These Results? {.smaller}
-
-Since we can't be sure the mediator is "as good as random," we do a **sensitivity analysis**: what if there's an unobserved variable that affects both the mediator and the outcome?
-
-```{r}
-#| echo: true
-
-sensitivity <- medsens(ACME, rho.by = 0.05, sims = 1000)
-plot(sensitivity)
-```
-
-. . .
-
-The x-axis shows different levels of unobserved confounding ($\rho$). If the ACME crosses zero at small values of $\rho$, our mediation result is fragile. If it takes a large $\rho$ to eliminate the effect, we're on firmer ground.
 
 # Wrapping Up
 
@@ -1279,7 +1143,6 @@ The x-axis shows different levels of unobserved confounding ($\rho$). If the ACM
 5.  Estimands
 6.  DAGs (chains, forks, colliders)
 7.  Identification
-8.  Mediation
 :::
 
 ## What's Next
@@ -1288,6 +1151,7 @@ The x-axis shows different levels of unobserved confounding ($\rho$). If the ACM
 -   Next week: **Fixed effects**, using panel data to control for unobserved confounders
 
 -   Then: **Design-based causal inference**
+
     -   Experiments (Natural, Survey, Lab)
     -   Difference-in-Differences
     -   Regression Discontinuity
@@ -1296,7 +1160,8 @@ The x-axis shows different levels of unobserved confounding ($\rho$). If the ACM
 
 ## For Your Capstone
 
-::: {.callout-tip}
+::: callout-tip
 ## Think About This Now
+
 What is your **estimand**? Can you draw a **DAG** for your research question? What are the biggest threats to identification? Even if you're doing descriptive work, these tools help you think clearly about what your analysis can and can't tell us.
 :::
