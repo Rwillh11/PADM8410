@@ -84,6 +84,14 @@ toc-depth: 2
 
 **Readings:** [The Effect, Chapters 5--8](https://theeffectbook.net/)
 
+**Optional readings:**
+
+- [Holland (1986), "Statistics and Causal Inference"](https://doi.org/10.2307/2289064)
+- [Pager (2003), "The Mark of a Criminal Record"](https://doi.org/10.1086/374403)
+- [Angrist and Evans (1998), "Children and Their Parents' Labor Supply"](https://doi.org/10.1257/aer.88.3.450)
+- [Lundberg, Johnson, and Stewart (2021), "What Is Your Estimand?"](https://doi.org/10.1177/00031224211004187)
+- [Manski (1994), "The Selection Problem"](https://doi.org/10.1007/978-94-011-0188-5_7)
+
 **Materials:**
 
 - [Slides](PADM8410Lecture10_CausalInference.qmd)

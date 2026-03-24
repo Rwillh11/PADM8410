@@ -55,11 +55,55 @@ library(kableExtra)
 
         -   But...not even clear what we are estimating?
 
+-   Let's look at an example
+:::
+
+## The Kitchen Sink: Head Start {.smaller}
+
+::: incremental
+-   You want to know: does Head Start improve kids' test scores?
+
+-   Start simple: regress test scores on Head Start enrollment
+
+-   But Head Start kids come from lower-income families. Better add income as a control. Coefficient changes.
+
+-   Maybe parent education matters too. Add it. Coefficient changes again.
+
+-   Neighborhood quality? Race? Family structure? Number of siblings?
+
+-   Each time you add a variable, the coefficient moves. Which number is the "right" one?
+:::
+
+## Why Is This a Problem? {.smaller}
+
+::: incremental
+-   **Problem 1:** You have no principled way to decide what belongs in the model. You are just adding variables until the result looks reasonable (or publishable).
+
+-   **Problem 2:** Each control changes what your coefficient *means*
+
+    -   No controls: comparing Head Start kids to everyone else
+
+    -   Control for income: comparing Head Start kids to non-Head Start kids *at the same income level*
+
+    -   Control for income and parent education: now you're comparing kids whose parents have the same income *and* education
+
+    -   These are all different questions! The more controls you add, the harder it is to say what you're actually estimating.
+:::
+
+## We Need a Framework {.smaller}
+
+::: incremental
+-   Causal inference gives you a way to decide *which* variables belong in your model and *why*
+
+-   Instead of guessing, you start from a model of how the world works and let that guide your analysis
+
 -   Data + Assumptions = Conclusions
 
-    -   Causal inference is about transparency in assumptions + more robust conclusions
+    -   If you assume families enroll in Head Start randomly, a simple comparison of means is fine
 
-    -   And being more explicit about *what we estimate*
+    -   If you think lower-income families are more likely to enroll, you need a different strategy entirely
+
+    -   Same data, totally different conclusions depending on what you assume about how people end up in the program
 :::
 
 ## Why Should MPAs Care?
@@ -82,7 +126,7 @@ library(kableExtra)
 
 -   Two very user friendly books
 
-    -   honestly fun, almost breezy, reads (for academic books)
+    -   Honestly fun reads, almost breezy for academic books
 
     -   Cunningham: Grad(+) level text, Potential Outcomes
 
@@ -93,38 +137,37 @@ library(kableExtra)
 ::: incremental
 1.  Counterfactuals and Potential Outcomes
 2.  Average Treatment Effects
-3.  Randomization Inference
-4.  Estimands
-5.  DAGs
-6.  Identification
-:::
-
-## Semester Roadmap
-
-::: incremental
--   This week: notation and theory
-
--   Next week: causal inference with observational data (fixed effects)
-
--   Then: various design-based approaches to causal inference
-
-    -   Experiments (Natural, Survey, Lab)
-
-    -   Diff-in-Diff
-
-    -   RDD
-
-    -   IV
+3.  Estimands
+4.  DAGs
+5.  Identification
 :::
 
 # Part 1: Counterfactuals
 
-## What is causal inference?
+## What is causation?
 
 ::: incremental
--   Does increasing the minimum wage increase the unemployment rate?
+-   How would you define causation? How do you know that **A *causes* B?**
+
+-   Mill (1843): "If a person eats a particular dish, and dies...and would not have died had he not eaten it...the dish was the source of his death"
+
+-   Today we formalize this intuition using counterfactuals and DAGs
+
+    -   Causation can be probabilistic, not deterministic
+
+    -   Treatments can have heterogeneous effects
+:::
+
+## Counterfactual Thinking {.smaller}
+
+::: incremental
+-   Does increasing the minimum wage increase unemployment?
 
     -   We observe that after the minimum wage is raised, unemployment goes up
+
+    -   But unemployment was already trending up. And the economy was slowing down.
+
+    -   So was it the minimum wage, or would unemployment have risen anyway?
 
     -   **Counterfactual**: What *would have happened* to unemployment without the minimum wage increase?
 
@@ -145,22 +188,6 @@ Every causal claim is really a comparison between what *did* happen and what *wo
 
 We can never directly observe the counterfactual. That's the central challenge of all causal inference.
 
-## What is causation?
-
-::: incremental
--   Early steps: Mill's methods
-
-    -   "If a person eats a particular dish, and dies...and would not have died had he not eaten it...the dish was the source of his death"
-
-    -   Method of Difference: All equal but the treatment
-
--   Today: Counterfactuals and DAGs
-
-    -   Causation can be probabilistic, not deterministic
-
-    -   Treatments can have heterogeneous effects
-:::
-
 ## The Fundamental Problem of Causal Inference
 
 ::: incremental
@@ -172,7 +199,7 @@ We can never directly observe the counterfactual. That's the central challenge o
 
 -   So how can we make inferences about the outcome we *didn't* see?
 
--   We come up with strategies for identifying these effects under a more or less plausible set of assumptions
+-   The rest of this course is about strategies for solving this problem
 :::
 
 # Part 2: The Potential Outcomes Framework
@@ -207,14 +234,6 @@ Potential outcomes give structure to our counterfactuals (Neyman 1923, Rubin \~ 
 -   $Y_{i}(0)$: outcome that unit *i* **would have** if not treated
 :::
 
-. . .
-
-::: callout-note
-## The Switching Equation
-
-$$Y_{i} = D_{i} \cdot Y_{i}(1) + (1 - D_{i}) \cdot Y_{i}(0)$$ We observe the potential outcome that matches your actual treatment status. If you were treated ($D_i = 1$), we see $Y_i(1)$. If not ($D_i = 0$), we see $Y_i(0)$. The other potential outcome is hidden from us.
-:::
-
 ## The Causal Effect
 
 The **causal effect** for unit *i* is simply the difference between the two potential outcomes:
@@ -225,7 +244,7 @@ $$\tau_i = Y_i(1) - Y_i(0)$$
 
 How much better (or worse) off is this person because they received the treatment? We can **never observe this** for any individual, because we only see one of the two potential outcomes.
 
-## God's Table: What We Wish We Had
+## What We Get to See
 
 | Voter | Age $X_{i}$ | Contact $D_i$ | Turnout $Y_i(1)$ | Turnout $Y_i(0)$ | Causal effect $Y_i(1) - Y_i(0)$ |
 |------------|------------|------------|------------|------------|------------|
@@ -289,7 +308,55 @@ Notice that the treatment effect is **different for every patient.** Some benefi
 | 10      | 9   | 1   |
 :::
 
-A doctor assigns each patient to whatever treatment seems "best" for them. What would our naive estimate of the surgery effect be?
+A doctor assigns each patient to whatever treatment seems "best" for them.
+
+## Try It Yourself
+
+::: incremental
+-   Surgery patients (D=1): 7, 5, 4, 10, 9. Average = **7.0**
+
+-   Chemo patients (D=0): 6, 8, 10, 6, 7. Average = **7.4**
+
+-   Naive estimate: 7.0 - 7.4 = **-0.4**
+
+-   But the true ATE was **+0.6**. We're not just wrong, we got the *sign* wrong.
+
+-   The naive estimate says surgery *hurts*. The truth is surgery *helps*.
+
+-   What went wrong?
+:::
+
+## The Switching Equation: Intuition First {.smaller}
+
+Now that we've seen the surgery data, let's formalize what's going on. Go back to the full table and look at Patient 3. She got surgery, so $D_i = 1$.
+
+::: incremental
+-   We see her surgery outcome: $Y_i(1) = 5$ years
+
+-   We do *not* see what would have happened with chemo: $Y_i(0) = ???$
+
+-   Now look at Patient 4. He got chemo, so $D_i = 0$.
+
+-   We see his chemo outcome: $Y_i(0) = 8$ years
+
+-   We do *not* see his surgery outcome: $Y_i(1) = ???$
+:::
+
+## The Switching Equation: The Formula
+
+$$Y_{i} = D_{i} \cdot Y_{i}(1) + (1 - D_{i}) \cdot Y_{i}(0)$$
+
+. . .
+
+Plug in $D_i = 1$: $Y_i = 1 \cdot Y_i(1) + 0 \cdot Y_i(0) = Y_i(1)$. We see the surgery outcome.
+
+. . .
+
+Plug in $D_i = 0$: $Y_i = 0 \cdot Y_i(1) + 1 \cdot Y_i(0) = Y_i(0)$. We see the chemo outcome.
+
+. . .
+
+The other potential outcome is always hidden from us.
 
 ## Average Treatment Effects
 
@@ -309,11 +376,23 @@ $$ATT = E[Y_{i}(1) - Y_{i}(0) \mid D_{i} = 1]$$
 
 . . .
 
-Among the people who actually got treated, how much did the treatment help them on average? This is often different from the ATE, because the people who get treated aren't a random sample. Sicker patients get surgery, motivated students seek tutoring, etc.
+Among the people who actually got treated, how much did the treatment help them on average?
 
 . . .
 
 There's also an **ATU** (Average Treatment Effect on the Untreated). Same logic, but for those who *didn't* receive treatment.
+
+## Why ATE and ATT Can Be Very Different {.smaller}
+
+::: incremental
+-   A job training program has an ATE of \$2,000 in extra annual earnings
+
+-   But the people who actually signed up were the most motivated job seekers. For them, the effect was \$4,000. That's the ATT.
+
+-   If you expand the program to everyone, don't expect \$4,000. The less motivated participants will probably benefit less.
+
+-   This matters for policy: the effect you measure on *volunteers* may not generalize to the full population you want to serve
+:::
 
 ## Why Can't We Just Compare Averages? {.smaller}
 
@@ -323,14 +402,38 @@ What we *want* is the ATE. What we can *calculate* from data is the difference i
 
 $$\underbrace{E[Y|D = 1] - E[Y|D = 0]}_{\text{What we observe}} = \underbrace{ATE}_{\text{What we want}} + \underbrace{E[Y^{0}|D = 1] - E[Y^{0}|D = 0]}_{\text{Selection Bias}} + \underbrace{(1 - \pi)(ATT - ATU)}_{\text{Heterogeneous Effect Bias}}$$
 
-## What Do These Bias Terms Mean?
+. . .
+
+Three pieces: the thing we want, and two sources of bias that contaminate it.
+
+## Bias in the Surgery Example {.smaller}
 
 ::: incremental
--   **Selection Bias**: The treated and untreated groups were different *before* treatment
-    -   In our surgery example: sicker patients get surgery, so the surgery group would have done worse *even without surgery*
--   **Heterogeneous Effect Bias**: The treatment works differently for different people, and the people who get treated aren't representative
-    -   Surgery might be most beneficial for the sickest patients, but those are exactly the ones who got it
--   Bottom line: naive comparisons can be wildly misleading when treatment isn't random
+-   **Selection Bias**: $E[Y^{0}|D = 1] - E[Y^{0}|D = 0]$
+
+    -   The surgery patients were sicker to begin with. Even *without* surgery, they would have lived fewer years than the chemo patients.
+
+    -   $E[Y^0 | D=1] < E[Y^0 | D=0]$, so this term is negative. It drags our naive estimate down.
+
+-   **Heterogeneous Effect Bias**: $(1-\pi)(ATT - ATU)$
+
+    -   Surgery helps sick patients more than it would help healthy ones. The people who got surgery (ATT) benefit more than the people who didn't (ATU).
+
+    -   So $ATT \neq ATU$, and because treatment was assigned to a non-random group, this creates additional bias.
+
+-   Together, these two biases flipped our estimate from +0.6 to -0.4.
+:::
+
+## So How Do We Fix This?
+
+::: incremental
+-   The problem is that who gets treated is tangled up with the potential outcomes
+
+-   The doctor assigned sicker patients to surgery. So the treated group and the control group were different *before* treatment even started.
+
+-   If we could somehow make treatment assignment have nothing to do with the patients' potential outcomes, both bias terms would disappear
+
+-   When is that possible?
 :::
 
 ## The Independence Assumption
@@ -345,7 +448,7 @@ This means that who gets treated has nothing to do with how they would respond t
 
 . . .
 
-When is this realistic? **Randomized experiments.** That's basically it. Everything else requires more assumptions.
+When is this realistic? **Randomized experiments or Exogenous Variation.** That's basically it. Everything else requires assumptions.
 
 ## SUTVA {.smaller}
 
@@ -367,208 +470,152 @@ The other key assumption: **Stable Unit Treatment Value Assumption**
 -   If violated, we're not hopeless. There are strategies we'll cover later
 :::
 
-# Part 3: Randomization Inference
+# Part 3: Setting the Target
 
-## A Different Way to Think About Uncertainty
-
-::: incremental
--   In causal studies, we're often not trying to generalize to a larger population
-
-    -   The core uncertainty is not about sampling, it's about the fact that **we don't know the counterfactual**
-
--   **Randomization inference** generates p-values directly from the randomization itself
-
-    -   Non-parametric: no assumptions about distributions
-
-    -   The logic is similar to the bootstrap
-:::
-
-## The Lady Tasting Tea (Again)
+## What Are You Actually Estimating?
 
 ::: incremental
--   Biologist Muriel Bristol claimed she could tell whether tea or milk was added first to a cup.
+-   We said Head Start "works." But works for *whom*?
 
--   Statistician R.A. Fisher was skeptical, so he devised a test:
+    -   All kids? Just low-income kids? Kids in rural areas? Kids whose parents would not have sent them to any preschool otherwise?
 
-    -   Make 8 cups of tea, 4 each way
+-   The answer changes depending on who you're studying and what comparison you're making
 
-    -   Present cups in random order; ask Bristol to pick which 4 are milk-first
-
--   She picked all of them correctly.
-
--   There are $\binom{8}{4} = 70$ ways to choose 4 cups from 8, and only one way to get them all right
-
--   So the probability of guessing all correct by chance: $p = 1/70 \approx 0.014$
+-   A lot of applied research skips this step. People run a regression and interpret the coefficient without being clear about what real-world quantity it's supposed to represent.
 :::
 
-## Fisher's Sharp Null
+## The Estimand {.smaller}
 
 ::: incremental
--   Fisher's null hypothesis is **sharp**: the treatment has *no effect on any unit*
+-   An **estimand** is your target quantity. It is the thing your study is trying to learn about the world.
 
-    -   Every single person's outcome is the same regardless of treatment
+-   It has two parts:
 
--   This lets us generate **counterfactual outcomes** by simply reshuffling who got treated
+    1.  A **unit-specific quantity**: what is the causal effect for a single person or case? For example: "If this child attended Head Start, how much higher would their test score be compared to not attending?"
+    2.  A **target population**: who are you averaging over? All children in the US? Only income-eligible children? Only children in the states you have data for?
 
--   **The procedure:**
-
-    1.  Compute the observed test statistic (e.g., difference in means)
-    2.  Randomly reshuffle treatment assignments many times
-    3.  Recompute the test statistic for each reshuffling
-    4.  Compare: how often does the reshuffled statistic look as extreme as what we observed?
+-   You need to define both of these *before* you pick a model. Your research design, your controls, and your data all need to line up with your estimand. If they don't, you might get a precise answer to the wrong question.
 :::
 
-## An Example With Your Classmates {.smaller}
-
-```{r}
-#| echo: false
-knitr::kable(
-  data.frame(
-    Student = c("Kris", "Yucheng", "Mariam", "Silvia", "Mayowa", "Ade", "Esnaina", "Matt", "Amelia", "Gigi", "Kazeem", "Will", "Vaiva", "Joe", "Amira", "Natan"),
-    `Satisfaction Score` = c(7, 8, 6, 8, 8, 5, 7, 6, 9, 4, 7, 6, 9, 5, 8, 7),
-    Treatment = c("Online", "In-Person", "In-Person", "In-Person", "Online", "Online", "Online", "Online", "Online", "In-Person", "In-Person", "Online", "In-Person", "Online", "In-Person", "Online")
-  ),
-  format = "markdown"
-) %>%
-  kableExtra::kable_styling(font_size = 15)
-```
-
-Students are randomly assigned to online or in-person. Is there a real difference in satisfaction?
-
-## Randomization Inference in R {.smaller}
-
-```{r}
-#| echo: true
-
-library(tidyverse)
-
-course_data <- data.frame(
-  Student = c("Kris", "Yucheng", "Mariam", "Silvia", "Mayowa", "Ade",  "Esnaina", "Matt", "Amelia", "Gigi", "Kazeem", "Will", "Vaiva", "Joe", "Amira", "Natan"),
-  Satisfaction_Score = c(7, 8, 6, 8, 8, 5, 7, 6, 9, 4, 7, 6, 9, 5, 8, 7),
-  Treatment = c("Online", "In-Person", "In-Person", "In-Person", "Online", "Online", "Online", "Online", "Online", "In-Person", "In-Person", "Online", "In-Person", "Online", "In-Person", "Online")
-)
-
-# Step 1: Compute the observed difference in means
-observed_means <- course_data %>%
-  group_by(Treatment) %>%
-  summarise(Mean_Score = mean(Satisfaction_Score))
-
-observed_diff <- observed_means$Mean_Score[observed_means$Treatment == "Online"] -
-                 observed_means$Mean_Score[observed_means$Treatment == "In-Person"]
-```
-
-## The Permutation Loop {.smaller}
-
-```{r}
-#| echo: true
-
-set.seed(30317)  # For reproducibility
-
-# Step 2: Reshuffle treatment labels 1000 times
-num_permutations <- 1000
-random_diffs <- rep(0, num_permutations)
-
-for (i in 1:num_permutations) {
-  # Shuffle treatment labels randomly
-  shuffled_treatment <- sample(course_data$Treatment)
-
-  # Compute mean difference for shuffled data
-  shuffled_means <- course_data %>%
-    mutate(Treatment = shuffled_treatment) %>%
-    group_by(Treatment) %>%
-    summarise(Mean_Score = mean(Satisfaction_Score))
-
-  random_diffs[i] <- shuffled_means$Mean_Score[shuffled_means$Treatment == "Online"] -
-                     shuffled_means$Mean_Score[shuffled_means$Treatment == "In-Person"]
-}
-
-# Step 3: How often is the shuffled difference as extreme as what we observed?
-p_value <- mean(abs(random_diffs) >= abs(observed_diff))
-print(p_value)
-```
-
-## When to Use Randomization Inference
+## Why This Matters: Head Start Again {.smaller}
 
 ::: incremental
--   Works when treatment is truly randomized and you want exact, assumption-free p-values
+-   Suppose you want the ATE of Head Start on test scores for all income-eligible children
 
--   Especially useful with small samples where normal approximations may fail
+-   But your data only covers children in three states, and you use a regression that controls for parent education
 
--   Don't use it for observational data. The logic depends on actual randomization
+-   Now think about what you're actually estimating:
 
--   Limitation: Fisher's sharp null tests whether the treatment had *zero effect on everyone*. It doesn't directly estimate the size of the effect
+    -   Your target population is not "all income-eligible children." It's "income-eligible children in these three states."
+
+    -   By controlling for parent education, you're comparing Head Start kids to non-Head Start kids *whose parents have the same education*. That is a narrower comparison than what you started with.
+
+-   None of this is necessarily wrong, but you need to be honest about it. The estimand you *wanted* and the estimand you *got* may not be the same thing.
 :::
 
-# Part 4: Setting the Target
+## Example: Pager (2003) {.smaller}
 
-## What Are You Trying to Estimate?
+Pager (2003) studied how race and criminal record affect employment outcomes.
 
 ::: incremental
--   An **estimand** is your target quantity, the thing your study is trying to learn
+-   She sent pairs of fake job applications to real entry-level job postings in Milwaukee
 
--   Lundberg et al (2021) argue: set your estimand *before* you pick a model
+-   The applicants were either Black or White, and either had a felony conviction listed or not
 
-    -   Don't define your research question as "a coefficient in a regression"
+-   Everything else about the applications was kept the same: qualifications, work history, cover letter
 
-    -   Define it as a quantity in the real world, then figure out how to measure it
-
--   Two components:
-
-    1.  A **unit-specific quantity** (e.g., "Would this person be employed if they received job training?")
-    2.  A **target population** (e.g., "All working-age adults in South Carolina")
+-   This is called an **audit study**. Because the researcher controls what the employer sees, any difference in callbacks must be caused by what was varied on the application.
 :::
 
-## The Estimand Flowchart
+## Why Pager Is a Model Estimand {.smaller}
 
-![](images/Estimands.png){fig-align="center" width="100%"}
+::: incremental
+-   **Unit-specific quantity:** For a given job posting, does listing a felony conviction reduce the chance of getting a callback? And does the size of that penalty differ by race?
 
-## Example Estimand
+-   **Target population:** Entry-level job postings in Milwaukee
 
-![](images/Example%20Estimand.png){fig-align="center" width="100%"}
+-   **Comparison:** Black applicant with a record vs. Black applicant without one. White applicant with a record vs. White applicant without one. And then: how do those two penalties compare?
 
-How would you move from this theoretical estimand to something you could actually measure?
+-   Notice how specific this is. There is no ambiguity about what Pager is estimating, who she is estimating it for, or what comparison she is making. That is what a good estimand looks like.
 
-## Unit-Specific Quantities
+-   Also notice what she is *not* claiming. She is not saying this is the effect for all jobs in the US, or for high-skill positions, or in cities with different labor markets. The estimand matches the data.
+:::
 
-Pager (2003) studied how race and criminal record impact employment outcomes
-
-**Design:** Real job postings are randomly assigned to pairs of applications. Applicants are either Black or White, and either have a felony conviction or not.
-
-**Think about:** What is the unit of analysis here? What is the unit-specific quantity?
-
-## Pager's Results
+## Pager's Results {.smaller}
 
 ![](images/Race%20and%20Felonies.png){fig-align="center" width="100%"}
 
-## Target Populations
+Because Pager was clear about her estimand, we know exactly what these bars mean.
+
+## What Did Pager Find? {.smaller}
 
 ::: incremental
--   Angrist and Evans (1998) examined the effect of having three versus two children on women's employment
+-   A criminal record reduced callbacks for both races, but the penalty was much larger for Black applicants
 
-    -   Used having two children of the same sex as an instrument for having a third birth (more on IV later)
+-   White applicants with a felony record received callbacks about 17% of the time. White applicants without a record received callbacks about 34% of the time.
 
--   What is the target population here?
+-   Black applicants with a felony record received callbacks about 5% of the time. Black applicants without a record received callbacks about 14% of the time.
 
-    -   Not all women. Only women who would be *induced* to have a third child because their first two were the same sex
+-   Put differently: White applicants *with* a criminal record were called back at roughly the same rate as Black applicants *without* one
 
--   This matters for policy: the effect might not generalize to all families
+-   This is a striking finding, and it is only possible to interpret clearly because the estimand was so well defined. We know exactly who was studied, what was compared, and what was held constant.
+
+-   We don't overclaim. These results may not generalize to labor markets with different dynamics.
 :::
 
-## Theoretical vs. Empirical Estimands
+## Example: Angrist and Evans (1998) {.smaller}
 
-::::: columns
-::: {.column width="50%"}
-![](images/Example%20Estimand.png){fig-align="center"}
+::: incremental
+-   Question: does having a third child reduce women's labor supply?
+
+-   You might try comparing women with two kids to women with three. But the decision to have a third child is not random. Women who choose to have three kids are probably different in ways that also affect whether they work.
+
+-   So a simple comparison would mix up the effect of the third child with all the reasons some women have more children in the first place. Selection bias, just like the surgery example.
+
+-   Angrist and Evans needed a way around this. Their solution used what's called an **instrumental variable**.
 :::
 
-::: {.column width="50%"}
-![](images/Empirical.png){fig-align="center"}
+## What Is an Instrument? (30,000 ft View) {.smaller}
+
+::: incremental
+-   An **instrument** is something that pushes people toward treatment but has no direct effect on the outcome
+
+-   Think of it as a natural nudge. It changes whether someone gets treated, but it doesn't affect the outcome through any other channel.
+
+-   The idea is: find something that creates random-ish variation in who gets treated, and use that variation to estimate the causal effect.
+
+-   Angrist and Evans noticed that parents whose first two children are the same sex (two boys or two girls) are more likely to have a third child. So "same sex among first two children" is the instrument.
+
+-   It nudges families toward having a third child, but it has no direct reason to affect whether the mother works.
 :::
-:::::
 
-# Part 5: DAGs
+## How the Instrument Narrows the Estimand {.smaller}
 
-## What Are DAGs?
+::: incremental
+-   Here is the catch. The instrument only affects a specific group of families: those who would have a third child *because* their first two were the same sex, but would not have had a third child otherwise.
+
+-   Families who were always going to have three kids regardless? The instrument didn't change their behavior. Families who were never going to have a third child no matter what? Same thing.
+
+-   So the causal effect Angrist and Evans estimated only applies to that middle group, the families on the margin. In the causal inference literature, these are called **compliers**.
+
+-   That is a very specific slice of the population. If you want to use this result to design family policy, you need to ask: does the effect for these marginal families generalize to everyone else? It might not.
+
+-   The method they chose determined who they could learn about. The estimand followed from the research design, not the other way around.
+:::
+
+## The Takeaway on Estimands
+
+::: incremental
+-   Define your question as a real-world quantity first, then pick a method that can credibly answer it. Not the other way around.
+
+-   Be specific about *who* your estimate applies to. "The effect of X on Y" is not enough. The effect for whom? Compared to what?
+
+-   Your research design, your data, and your controls all shape what you end up estimating. If you're not deliberate about this, you can end up with a precise answer to a question nobody asked.
+:::
+
+# Part 4: DAGs
+
+## What Are DAGs? {.smaller}
 
 ::: incremental
 -   **Directed Acyclic Graphs**: a visual tool for laying out your causal model
@@ -576,8 +623,6 @@ Pager (2003) studied how race and criminal record impact employment outcomes
     -   **Directed**: arrows show the direction of causation
 
     -   **Acyclic**: no feedback loops (A can't cause B which causes A)
-
-        -   If you think there's a feedback loop, you can use **time** to break the cycle
 
 -   Useful for:
 
@@ -588,51 +633,28 @@ Pager (2003) studied how race and criminal record impact employment outcomes
 
 ## DAGs in R {.smaller}
 
-Two popular packages:
-
-::: incremental
--   `dagitty`: powerful, has a browser-based version too
--   `ggdag`: uses ggplot syntax, prettier output
-:::
-
-. . .
-
-```{r}
-#| echo: true
-
-library(dagitty)
-library(tidyverse)
-
-dag <- dagitty("dag {
-  Size -> Scores
-  Funding -> Size
-  Funding -> Scores
-}")
-
-plot(dag)
-```
-
-## The Same DAG With ggdag
+We'll use the `ggdag` package, which builds on ggplot syntax you already know.
 
 ```{r}
 #| echo: true
 
 library(ggdag)
 
+# dagify() takes formulas: outcome ~ cause1 + cause2
+# coords set the layout: x goes left to right, y goes bottom to top
 dag <- dagify(
   Scores ~ Size + Funding,
   Size ~ Funding,
   exposure = "Funding",
-  outcome = "Scores"
+  outcome = "Scores",
+  coords = list(
+    x = c(Funding = 1, Size = 2, Scores = 3),
+    y = c(Funding = 0, Size = 1, Scores = 0)
+  )
 )
 
 ggdag(dag, text = FALSE, use_labels = "name") +
-  theme_dag() +
-  coord_cartesian(clip = "off") +
-  theme(
-    plot.margin = margin(t = 20, r = 10, b = 10, l = 10),
-    legend.position = "none"
-  )
+  theme_dag()
 ```
 
 ## What Goes in a DAG?
@@ -647,6 +669,8 @@ ggdag(dag, text = FALSE, use_labels = "name") +
 -   You are making *assumptions* about relationships when you draw (or don't draw) an arrow
 
     -   This should be based on careful thought, theory, and prior research
+
+-   In a few slides we'll build a DAG together that has way too much in it, and then we'll practice simplifying
 :::
 
 ## The Three Building Blocks {.smaller}
@@ -674,60 +698,73 @@ A and B are independent. But if you **control for C**, you create a false associ
 ## Chain Example: Slippery Sidewalks
 
 ```{r}
-library(dagitty)
+library(ggdag)
 
-dag <- dagitty('
-dag {
-  Slippery [pos="0,2"]
-  Wet [pos="0,1"]
-  Rain [pos="-1,0"]
-  Sprinkler [pos="1,0"]
-  Season [pos="0,-1"]
+dag <- dagify(
+  Slippery ~ Wet,
+  Wet ~ Rain + Sprinkler,
+  Rain ~ Season,
+  Sprinkler ~ Season,
+  exposure = "Season",
+  outcome = "Slippery",
+  coords = list(
+    x = c(Season = 1, Rain = 2, Sprinkler = 2, Wet = 3, Slippery = 4),
+    y = c(Season = 0, Rain = 1, Sprinkler = -1, Wet = 0, Slippery = 0)
+  )
+)
 
-  Wet -> Slippery
-  Rain -> Wet
-  Sprinkler -> Wet
-  Season -> Rain
-  Season -> Sprinkler
-}
-')
-
-plot(dag)
+ggdag(dag, text = FALSE, use_labels = "name") +
+  theme_dag()
 ```
 
-## Fork Example: Mutual Dependence
+## Fork Example: Poverty as a Confounder {.smaller}
 
 ```{r}
-dag <- dagitty('
-dag {
-  A [pos="-1,0"]
-  B [pos="1,0"]
-  C [pos="0,1"]
+#| fig-width: 8
+#| fig-height: 5
+#| fig-align: center
+library(ggdag)
 
-  C -> B
-  C -> A
-}
-')
-plot(dag)
+dag <- dagify(
+  Health ~ Poverty,
+  Education ~ Poverty,
+  exposure = "Education",
+  outcome = "Health",
+  coords = list(
+    x = c(Education = 1, Poverty = 2, Health = 3),
+    y = c(Education = 0, Poverty = 1, Health = 0)
+  )
+)
+
+ggdag(dag, text = FALSE, use_labels = "name") +
+  theme_dag()
 ```
 
-A and B are not causally related, but they are **not independent** because C creates an association between them. Control for C to break the spurious link.
+Poverty causes both poor health and low educational attainment. If you don't account for poverty, it looks like education causes health. Control for poverty to break the spurious link.
 
-## Collider Example: PhD Admissions
+## Collider Example: PhD Admissions {.smaller}
 
+:::{style="text-align: center;"}
 ```{r}
-dag <- dagitty('
-dag {
-  A [pos="-1,0"]
-  B [pos="1,0"]
-  C [pos="0,1"]
+#| fig-width: 7
+#| fig-height: 3.5
+#| out-width: "70%"
+library(ggdag)
 
-  A -> C
-  B -> C
-}
-')
-plot(dag)
+dag <- dagify(
+  Admission ~ ResearchExp + GRE,
+  exposure = "ResearchExp",
+  outcome = "GRE",
+  coords = list(
+    x = c(ResearchExp = 1, Admission = 2, GRE = 3),
+    y = c(ResearchExp = 0, Admission = -1, GRE = 0)
+  )
+)
+
+ggdag(dag, text = FALSE, use_labels = "name") +
+  theme_dag()
 ```
+:::
 
 . . .
 
@@ -737,28 +774,23 @@ plot(dag)
 Research Experience → Admission ← GRE Score. Among all applicants, GRE and research experience are unrelated. But if you only look at *admitted students* (conditioning on the collider), you'll find a negative correlation, because admitted students with low GRE scores must have had great research experience, and vice versa.
 :::
 
-## Unobserved Variables
+## Unobserved Variables {.smaller}
 
-We use $U$ for variables we can't measure but believe exist. These are often the biggest headache for identification.
+We use $U$ for variables we can't measure but believe exist. These are often the biggest headache for identification. Remember our estimands discussion: if U is unobserved, you can't control for it, and what you end up estimating may not be what you intended.
 
 ```{r}
-library(dagitty)
+library(ggdag)
 
-dag <- dagitty('
-dag {
-  U [unobserved, pos="-2,-1.5"]
-  Aptitude [pos="-1,-3"]
-  Parental_Income [pos="-1,-1"]
-  Education [pos="1,-1.5"]
+dag <- dagify(
+  Aptitude ~ U,
+  ParentalIncome ~ U,
+  Education ~ Aptitude + ParentalIncome,
+  exposure = "Education",
+  outcome = "Aptitude"
+)
 
-  U -> Aptitude
-  U -> Parental_Income
-  Aptitude -> Education
-  Parental_Income -> Education
-}
-')
-
-plot(dag)
+ggdag(dag, text = FALSE, use_labels = "name") +
+  theme_dag()
 ```
 
 ## Building a DAG: Online Classes and Dropout {.smaller}
@@ -767,74 +799,29 @@ Imagine we want to know: **Does taking online classes make students more likely 
 
 What variables matter? Let's think through it together...
 
-. . .
+## Building a DAG: The Result
 
 ```{r}
-library(dagitty)
+library(ggdag)
 
-dag <- dagitty('
-dag {
-  Gender [pos="-3,2"]
-  Race [pos="-3,1"]
-  SES [pos="-2,1"]
-  Academics [pos="-2,0"]
-  WorkHours [pos="-3,3"]
-  AvailableTime [pos="-2,3"]
-  Preferences [pos="-1,2"]
-  Age [pos="-1,1"]
-  OnlineClass [pos="1,2"]
-  InternetAccess [pos="2,2"]
-  Location [pos="2,0"]
-  Dropout [pos="3,1"]
+dag <- dagify(
+  Dropout ~ Gender + Race + SES + Academics + AvailableTime + Age + OnlineClass + InternetAccess,
+  OnlineClass ~ Preferences + AvailableTime,
+  Preferences ~ Gender + Race + SES + Age,
+  AvailableTime ~ Gender + Race + SES + WorkHours + Age,
+  WorkHours ~ Gender + Race + Academics + Age,
+  InternetAccess ~ SES + Location,
+  SES ~ Age + U2 + U4 + U5,
+  Race ~ U1 + U2,
+  Academics ~ U1 + U3,
+  Gender ~ U3 + U4,
+  Location ~ U5,
+  exposure = "OnlineClass",
+  outcome = "Dropout"
+)
 
-  U1 [pos="-4,1"]
-  U2 [pos="-4,0"]
-  U3 [pos="-4,2"]
-  U4 [pos="-4,3"]
-  U5 [pos="1,-1"]
-
-  Gender -> Preferences
-  Gender -> WorkHours
-  Gender -> Dropout
-  Gender -> AvailableTime
-  Race -> Preferences
-  Race -> Dropout
-  Race -> WorkHours
-  Race -> AvailableTime
-  SES -> Dropout
-  SES -> Preferences
-  SES -> InternetAccess
-  SES -> AvailableTime
-  SES -> WorkHours
-  Academics -> Dropout
-  Academics -> WorkHours
-  Preferences -> OnlineClass
-  WorkHours -> AvailableTime
-  AvailableTime -> OnlineClass
-  AvailableTime -> Dropout
-  Age -> Dropout
-  Age -> Preferences
-  Age -> SES
-  Age -> AvailableTime
-  Age -> WorkHours
-  OnlineClass -> Dropout
-  InternetAccess -> Dropout
-  Location -> InternetAccess
-
-  U1 -> Race
-  U1 -> Academics
-  U2 -> Race
-  U2 -> SES
-  U3 -> Gender
-  U3 -> Academics
-  U4 -> Gender
-  U4 -> SES
-  U5 -> Location
-  U5 -> SES
-}
-')
-
-plot(dag)
+ggdag(dag, text = FALSE, use_labels = "name") +
+  theme_dag()
 ```
 
 ## Simplifying DAGs
@@ -852,46 +839,21 @@ plot(dag)
 ## Simplified Version
 
 ```{r}
-library(dagitty)
+library(ggdag)
 
-dag <- dagitty('
-dag {
-  U3 [pos="-4,2"]
-  U4 [pos="-4,1"]
-  U5 [pos="-1,0"]
+dag <- dagify(
+  Dropout ~ Academics + Age + OnlineClass + SES,
+  OnlineClass ~ Academics + Age + SES,
+  exposure = "OnlineClass",
+  outcome = "Dropout",
+  coords = list(
+    x = c(Academics = 1, Age = 1, SES = 1, OnlineClass = 2, Dropout = 3),
+    y = c(Academics = 1.5, Age = 0, SES = -1.5, OnlineClass = 0.5, Dropout = 0)
+  )
+)
 
-  Demographics [pos="-2.5,2"]
-  Academics [pos="-3,3"]
-  SES [pos="-2,1.5"]
-  WorkHours [pos="-1,3"]
-  Age [pos="0,3"]
-  OnlineClass [pos="1,2"]
-  Location [pos="1,0"]
-  Dropout [pos="3,1"]
-
-  U3 -> Academics
-  U3 -> Demographics
-  U4 -> Demographics
-  U4 -> SES
-  U5 -> Location
-  U5 -> SES
-
-  Academics -> WorkHours
-  Academics -> Dropout
-  WorkHours -> OnlineClass
-  Age -> Dropout
-  Age -> WorkHours
-  Age -> SES
-  Age -> OnlineClass
-  SES -> OnlineClass
-  Location -> Dropout
-  OnlineClass -> Dropout
-  Demographics -> OnlineClass
-  Demographics -> Dropout
-}
-')
-
-plot(dag)
+ggdag(dag, text = FALSE, use_labels = "name") +
+  theme_dag()
 ```
 
 ## What About Feedback Loops?
@@ -909,20 +871,21 @@ This is **not** a DAG. Everything causes everything else. Solution: use **time**
 ## Using Time to Break Cycles
 
 ```{r}
-library(dagitty)
-dag <- dagitty('dag {
-  "IPunchYou_t" -> "YouPunchMe_t+1"
-  "IPunchYou_t" -> "IPunchYou_t+1"
-  "YouPunchMe_t+1" -> "IPunchYou_t+2"
-  "IPunchYou_t+1" -> "IPunchYou_t+2"
-}')
+library(ggdag)
 
-plot(dag)
+dag <- dagify(
+  YouPunchMe_t1 ~ IPunchYou_t0,
+  IPunchYou_t1 ~ IPunchYou_t0,
+  IPunchYou_t2 ~ YouPunchMe_t1 + IPunchYou_t1
+)
+
+ggdag(dag, text = FALSE, use_labels = "name") +
+  theme_dag()
 ```
 
 Example from Huntington-Klein. Once we add time subscripts, the cycle becomes a chain!
 
-# Part 6: Using DAGs for Identification
+# Part 5: Using DAGs for Identification
 
 ## Paths
 
@@ -938,19 +901,25 @@ Example from Huntington-Klein. Once we add time subscripts, the cycle becomes a 
 
 ## How Many Paths? {.smaller}
 
+Let's practice on a simple DAG before we apply this to real examples.
+
 ```{r}
-library(dagitty)
+library(ggdag)
 
-dag <- dagitty('dag {
-  A -> B
-  B -> C
-  D -> E
-  D -> C
-  E -> A
-  E -> B
-}')
+dag <- dagify(
+  B ~ A + E,
+  C ~ B + D + E,
+  A ~ E,
+  exposure = "A",
+  outcome = "C",
+  coords = list(
+    x = c(E = 1, A = 1, B = 2, D = 3, C = 3),
+    y = c(E = 1, A = -1, B = 0, D = -1, C = 1)
+  )
+)
 
-plot(dag)
+ggdag(dag, text = FALSE, use_labels = "name") +
+  theme_dag()
 ```
 
 How many paths are there from A to C?
@@ -970,18 +939,17 @@ How many paths are there from A to C?
 ## Confounding
 
 ```{r}
-dag <- dagitty('
-dag {
-  C [pos="-1,0"]
-  D [pos="1,0"]
-  Y [pos="0,1"]
+library(ggdag)
 
-  C -> Y
-  C -> D
-  D -> Y
-}
-')
-plot(dag)
+dag <- dagify(
+  Y ~ C + D,
+  D ~ C,
+  exposure = "D",
+  outcome = "Y"
+)
+
+ggdag(dag, text = FALSE, use_labels = "name") +
+  theme_dag()
 ```
 
 C is a **confounder**: it causes both D and Y. If we don't control for C, the D→Y path is contaminated by the back-door path through C.
@@ -989,40 +957,35 @@ C is a **confounder**: it causes both D and Y. If we don't control for C, the D�
 ## Unobserved Confounding (The Bad Place) {.smaller}
 
 ```{r}
-dag <- dagitty('
-dag {
-  U [pos="-1,0"]
-  D [pos="1,0"]
-  Y [pos="0,1"]
+library(ggdag)
 
-  U -> Y
-  U -> D
-  D -> Y
-}
-')
-plot(dag)
+dag <- dagify(
+  Y ~ U + D,
+  D ~ U,
+  exposure = "D",
+  outcome = "Y"
+)
+
+ggdag(dag, text = FALSE, use_labels = "name") +
+  theme_dag()
 ```
 
-If we **can't** control for U (because we can't observe it), our estimates of D→Y will be biased. This is when we need the design-based approaches we'll learn after spring break: experiments, DiD, RDD, IV.
+If we **can't** control for U (because we can't observe it), our estimates of D→Y will be biased. This is when we need the design-based approaches we'll learn starting next week: experiments, DiD, RDD, IV.
 
 ## Confounding Example: Education and Earnings
 
 ```{r}
-dag <- dagitty('
-dag {
-  Demographics [pos="-1,0"]
-  Education [pos="1,0"]
-  Earnings [pos="0,1"]
-  Ability
+library(ggdag)
 
-  Demographics -> Education
-  Demographics -> Earnings
-  Ability -> Education
-  Education -> Earnings
-  Ability -> Earnings
-}
-')
-plot(dag)
+dag <- dagify(
+  Earnings ~ Education + SES + Ability,
+  Education ~ SES + Ability,
+  exposure = "Education",
+  outcome = "Earnings"
+)
+
+ggdag(dag, text = FALSE, use_labels = "name") +
+  theme_dag()
 ```
 
 How many paths from Education to Earnings? What should we control for to get the causal effect?
@@ -1030,20 +993,18 @@ How many paths from Education to Earnings? What should we control for to get the
 ## Two Strategies for Identification {.smaller}
 
 ```{r}
-dag <- dagitty('
-dag {
-  C [pos="-1,0"]
-  O [pos ="1,0.5"]
-  D [pos="-1,0.5"]
-  Y [pos="0,1"]
+library(ggdag)
 
-  C -> O
-  C -> D
-  D -> Y
-  O -> Y
-}
-')
-plot(dag)
+dag <- dagify(
+  Y ~ D + O,
+  O ~ C,
+  D ~ C,
+  exposure = "D",
+  outcome = "Y"
+)
+
+ggdag(dag, text = FALSE, use_labels = "name") +
+  theme_dag()
 ```
 
 . . .
@@ -1063,23 +1024,18 @@ Both close the back-door path. Different strategies, same goal.
 What do we need to condition on to get the effect of D on Y?
 
 ```{r}
-dag <- dagitty('
-dag {
-  C [pos="-1,0"]
-  U [pos ="-1.5,0.5"]
-  D [pos ="0,0"]
-  V [pos="-.5,0.5"]
-  Y [pos="0.5,1"]
+library(ggdag)
 
-  U -> Y
-  U -> C
-  V -> C
-  V -> D
-  D -> Y
-}
-')
+dag <- dagify(
+  Y ~ U + D,
+  C ~ U + V,
+  D ~ V,
+  exposure = "D",
+  outcome = "Y"
+)
 
-plot(dag)
+ggdag(dag, text = FALSE, use_labels = "name") +
+  theme_dag()
 ```
 
 . . .
@@ -1089,37 +1045,29 @@ C is a **collider**. Controlling for it would *open* a back-door path rather tha
 ## A Harder Example {.smaller}
 
 ```{r}
-dag <- dagitty('
-dag {
-  A [pos="-1.5,-1"]
-  B [pos="-1.5,1.5"]
-  C [pos="-1,2"]
-  U [pos="-2,0.5"]
-  D [pos="0,1"]
-  V [pos="-1,-1.5"]
-  Y [pos="0.5,1"]
-  F [pos="0,-1"]
-  G [pos="0.5,-2"]
+library(ggdag)
 
-  V -> F
-  V -> A
-  U -> B
-  U -> A
-  A -> D
-  B -> D
-  C -> D
-  D -> Y
-  F -> Y
-  G -> Y
-}
-')
+dag <- dagify(
+  D ~ A + B + C,
+  Y ~ D + F + G,
+  A ~ U + V,
+  B ~ U,
+  F ~ V,
+  exposure = "D",
+  outcome = "Y"
+)
 
-plot(dag)
+ggdag(dag, text = FALSE, use_labels = "name") +
+  theme_dag()
 ```
 
 Assume **U** and **V** are unobservable. Can we identify the effect of D on Y? What should we control for?
 
 ## Why Draw DAGs? {.smaller}
+
+Drawing a DAG forces you to think about identification *before* you run a regression. It might save you from a serious mistake, or convince you that your research design is sound.
+
+. . .
 
 ::: callout-important
 ## Charles Manski (1994)
@@ -1127,22 +1075,20 @@ Assume **U** and **V** are unobservable. Can we identify the effect of D on Y? W
 **Negative identification** findings imply that statistical inference is fruitless: it makes no sense to try to use a sample of finite size to infer something that could not be learned even if the sample were of infinite size. **Positive identification** findings imply that one should go on...(ie, do research, collect data, pick appropriate models)
 :::
 
-. . .
-
-Drawing a DAG forces you to think about identification *before* you run a regression. It might save you from a serious mistake, or convince you that your research design is sound.
-
 # Wrapping Up
 
-## What We Covered Today
+## Key Takeaways {.smaller}
+
+This was a dense lecture. Here are the ideas to hold onto:
 
 ::: incremental
-1.  Counterfactuals
-2.  Potential outcomes ($Y(1)$, $Y(0)$, ATE)
-3.  Selection bias
-4.  Randomization inference
-5.  Estimands
-6.  DAGs (chains, forks, colliders)
-7.  Identification
+1.  Causal claims are really about **counterfactuals**: what would have happened under a different scenario. We never observe the counterfactual directly.
+
+2.  Naive comparisons between treated and untreated groups can be badly misleading because of **selection bias**. The surgery example showed us getting the sign wrong.
+
+3.  Before you run anything, be clear about your **estimand**: the effect of what, for whom, compared to what alternative?
+
+4.  **DAGs** are a tool for making your assumptions visible and figuring out what you need to control for. Chains, forks, and colliders each have different rules.
 :::
 
 ## What's Next
@@ -1155,10 +1101,9 @@ Drawing a DAG forces you to think about identification *before* you run a regres
     -   Experiments (Natural, Survey, Lab)
     -   Difference-in-Differences
     -   Regression Discontinuity
-    -   Instrumental Variables
 :::
 
-## For Your Capstone
+## For Your Own Work
 
 ::: callout-tip
 ## Think About This Now
