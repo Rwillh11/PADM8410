@@ -37,7 +37,7 @@ Submit as a PDF, HTML or .docx file. Include your Data and Analysis as separate 
 
 ------------------------------------------------------------------------
 
-## Part 1: Introduction and Policy Question 
+## Part 1: Introduction and Policy Question
 
 Introduce your policy question. What is the intervention or policy you are studying? Why does it matter? Who is affected? What outcome are you interested in?
 
@@ -135,7 +135,7 @@ You may also discuss other threats as relevant:
 -   Simultaneity
 -   External validity (even if you found a causal effect, would it generalize?)
 
-## Part 4: A More Credible Research Design 
+## Part 4: A More Credible Research Design
 
 ### What to Write
 
@@ -201,6 +201,6 @@ Your project will be graded on the following criteria.
 
 | Level | Description |
 |------------------------------------|------------------------------------|
-| Excellent | Clear, professional writing throughout. Logical organization. All formatting requirements met. At least 5 credible sources cited consistently. Code runs without errors. Figures are polished. |
+| Excellent | Clear, professional writing throughout. Logical organization. All formatting requirements met. Credible sources, cited correctly. Code runs without errors. Figures are polished. |
 | Good | Writing is generally clear but may have some rough spots. Most formatting requirements met. Sources present but citation style may be inconsistent. |
-| Needs Work | Writing is unclear or disorganized. Major formatting issues. Fewer than 5 sources. Code does not run or is missing. |
+| Needs Work | Writing is unclear or disorganized. Major formatting issues.  Code does not run or is missing. |
