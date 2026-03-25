@@ -17,19 +17,19 @@ execute:
 
 -   If treatment is randomized, any difference in outcomes between groups can be attributed to a **causal effect**
 
-    -   Counterintuitive: give up control over who is treated to *gain* insight into causality
+-   This is counterintuitive. You might think that having control over who gets a program would be better for studying it. But the opposite is true. Giving up control over assignment is exactly what lets you make causal claims.
 :::
 
 ## Why Experiments Work
 
-::: {.callout-note}
-## Connecting to Last Week
-Remember the **independence assumption**: $(Y^1, Y^0) \perp D_i$. If treatment is independent of potential outcomes, the simple difference in means **is** the ATE. Randomization *guarantees* this — no need to worry about selection bias or confounders.
-:::
+Experiments are considered the "gold standard" for causal inference. Everything else we learn this semester is about trying to approximate what an experiment gives you for free.
 
 . . .
 
-This is why experiments are considered the "gold standard" for causal inference. Everything else we'll learn this semester is about trying to approximate what an experiment gives you for free.
+::: {.callout-note}
+## Connecting to Last Week
+Remember the **independence assumption**: $(Y^1, Y^0) \perp D_i$. Randomization guarantees this. If treatment is independent of potential outcomes, then the simple difference in means **is** the ATE. No need to worry about selection bias or confounders.
+:::
 
 ## Why Should MPAs Care?
 
@@ -38,9 +38,9 @@ This is why experiments are considered the "gold standard" for causal inference.
 
 -   Federal agencies (Education, HHS, Labor) now prefer RCTs for grant applications
 
--   Understanding experimental design helps you **evaluate evidence** in policy reports — even if you never run one yourself
+-   Understanding experimental design helps you **evaluate evidence** in policy reports, even if you never run one yourself
 
--   And if you do run one, it could be the centerpiece of your career
+-   When a contractor hands you an evaluation report, you need to know whether their evidence is any good
 :::
 
 ## Types of Experiments
@@ -60,24 +60,20 @@ This is why experiments are considered the "gold standard" for causal inference.
 
 -   **Natural Experiments:** Nature provides "as-if random" treatment assignment
 
-    -   Lotteries, arbitrary cutoffs, historical accidents
+    -   Lotteries, arbitrary cutoffs, historical accidents. Note that this last category is different from the others. Nobody designs a natural experiment. The researcher just notices that something in the world happened to create useful variation.
 :::
 
 ## The Core Tradeoff
 
-**External Validity:** Do the results generalize beyond the specific context of your experiment?
+**Internal Validity:** Did the experiment actually measure what it claims to measure? Are the treatment and control groups truly comparable? Is the outcome measured correctly?
 
 . . .
 
-If you run an RCT, does it generalize to other settings? If you run a survey experiment, do responses translate to real-world behavior?
+**External Validity:** Do the results apply beyond this specific study? If a program worked in rural India, would it work in South Carolina? If people said something in a survey, would they actually do it in real life?
 
 . . .
 
-**Internal Validity:** Does your experiment accurately capture the causal impact of the intervention?
-
-. . .
-
-Are your measurements valid? Are your treatments well-designed? Have you considered potential threats (SUTVA violations, attrition, non-compliance)?
+These two goals are often in tension. Lab experiments give you tight control (high internal validity) but may not reflect the real world (lower external validity). Field experiments are messier but more realistic.
 
 ## Today's Roadmap
 
@@ -86,8 +82,8 @@ Are your measurements valid? Are your treatments well-designed? Have you conside
 2.  **Designing an experiment** — from recruitment to analysis
 3.  **Power analysis** — making sure your study can detect real effects
 4.  **Pre-registration** — locking in your analysis before seeing results
-5.  **Field, lab, and survey experiments** — with detailed examples
-6.  **Natural experiments** — when nature does the randomizing for you
+5.  **Field and survey experiments** — with detailed examples
+6.  **Looking ahead** — what comes next when experiments are not possible
 :::
 
 # Part 1: Ethics of Experiments
@@ -95,13 +91,25 @@ Are your measurements valid? Are your treatments well-designed? Have you conside
 ## Tuskegee Syphilis Study
 
 ::: incremental
--   Between 1932–1972, the US government carried out the Tuskegee Syphilis Study
+-   Between 1932 and 1972, the U.S. Public Health Service ran a study on untreated syphilis in Macon County, Alabama
 
--   The government recruited subjects who had syphilis — all Black men — but **lied about the nature of the study**
+-   Researchers recruited 399 Black men who had syphilis and 201 who did not. Subjects were told they were receiving free treatment for "bad blood"
 
-    -   Rather than providing treatment, the study gave placebos and watched the disease progress. Over 100 subjects died.
+-   In reality, they received no treatment at all. Researchers wanted to observe how the disease progressed over time. Even after penicillin became the standard cure in the 1940s, subjects were denied it.
 
--   Clearly unethical and criminal: inspired the modern framework of *informed consent* and focus on **potential harms**
+-   By the time a whistleblower exposed the study in 1972, at least 128 subjects had died of syphilis or its complications
+:::
+
+## Tuskegee: The Aftermath
+
+::: incremental
+-   In 1974, Congress passed the **National Research Act**, which created the framework for modern research ethics in the United States
+
+-   The Act led to the **Belmont Report** (1979), which established three core principles: respect for persons, beneficence, and justice
+
+-   It also required every institution that receives federal funding to maintain an **Institutional Review Board** (IRB) to oversee human subjects research
+
+-   The study's legacy extends beyond research ethics. It contributed to deep and lasting mistrust of medical institutions among Black Americans, a pattern that researchers and public health officials still grapple with today
 :::
 
 ## Milgram Obedience Experiments
@@ -118,14 +126,14 @@ As voltage increased, actors screamed in pain, but the experimenter insisted par
 
 . . .
 
-Some participants suffered lasting psychological trauma. This sparked major debates about the ethics of deception in research. (See also: the Stanford Prison Experiment)
+Some participants suffered lasting psychological trauma. This case is important for research ethics because the harm was psychological, not physical, and because participants did not know what they were actually being studied for. Most modern ethics debates about deception in research trace back to experiments like this one.
 
 ## Informed Consent
 
 ::: incremental
 -   Subjects should be made as aware of the **purpose of the experiment as possible**
 
--   **Deception** should be kept to the feasible minimum; if used, provide a debrief afterward
+-   **Deception** (telling subjects something false) should be kept to the feasible minimum; if used, provide a debrief afterward. Most policy experiments involve **incomplete disclosure** (not telling subjects everything) rather than outright deception. A job training RCT does not lie to anyone, but control group members may not fully understand that they are being studied as a comparison.
 
 -   Participants must be informed of **potential risks**
 
@@ -141,7 +149,7 @@ Some participants suffered lasting psychological trauma. This sparked major deba
 
     -   Not there to make your life easier, but an important part of the process
 
--   Before collecting **any data with human subjects** — even observational — you must get IRB approval
+-   Before collecting **any data with human subjects**, even observational, you must get IRB approval
 
     -   Does not apply to using existing census or survey data, only if you're collecting new data (or rare other cases)
 :::
@@ -155,51 +163,108 @@ Some participants suffered lasting psychological trauma. This sparked major deba
 
     -   Example: Access to newly constructed affordable housing determined by lottery among eligible applicants
 
--   This is both fair (everyone has an equal chance) and scientifically useful (randomization → causal inference)
+-   This is both fair (everyone has an equal chance) and scientifically useful (randomization allows causal inference)
+:::
+
+## "Why Can't We Just Give It to Everyone?"
+
+::: incremental
+-   Stakeholders and policymakers often push back on randomization: if we think the program works, why withhold it from the control group?
+
+-   The answer is that we do not yet *know* it works. That is the whole point of running the study.
+
+-   Giving an unproven program to everyone might waste limited resources, or in some cases, the program might actually cause harm
+
+-   There is a long history of well-intentioned interventions that turned out to be ineffective or counterproductive once rigorously tested. The Scared Straight program is a well-known example: it was popular and widely adopted, but randomized evaluations showed it actually *increased* juvenile offending.
+
+-   Randomization is how we find out what works before we scale it up
 :::
 
 # Part 2: Designing an Experiment
 
-## Example: Does Exercise Reduce Colds? {.smaller}
+## Example: Does After-School Tutoring Improve Math Scores? {.smaller}
 
 ::: incremental
--   We studied whether exercising more frequently causes fewer colds using observational data with fixed effects
+-   A school district wants to know whether an after-school tutoring program improves math scores for struggling students
 
-    -   This might suffer from reverse causation or unobserved time-variant confounders
-
--   How could we design an experiment to test this relationship?
+-   They have funding for 100 slots but 200 eligible students. Because they cannot serve everyone, they can randomize who gets access.
 
 -   **Recruitment (n = 200):**
-    -   Inclusion: Adults aged 18–60, self-report at least fair health, no severe chronic conditions
-    -   Exclusion: No professional athletes, no one already exercising 5+ days/week, no current gym members
+    -   Inclusion: Students scoring below the 40th percentile on the state math assessment
+    -   Exclusion: Students already receiving other academic interventions (e.g., special education pull-out services)
+    -   Why these criteria? We want students who could plausibly benefit, without contaminating the treatment with other programs
 :::
 
 ## Treatment Assignment
 
 ::: incremental
--   Treatment group: free gym membership for 6 months
+-   **Treatment group (n = 100):** Access to the tutoring program, two sessions per week for one semester
 
-    -   **Treatment Monotonicity:** Getting a gym membership won't make anyone *less* likely to exercise
+    -   **Treatment monotonicity:** Offering someone tutoring will not make them *less* likely to study. Access can only help or have no effect.
 
-    -   **Appropriate Duration:** 6 months is enough time for health effects to manifest
+-   **Control group (n = 100):** Continue with their normal school day. No tutoring access during the study period.
 
--   Control group: health monitored, continue normal behavior
-
-    -   **Hawthorne Effect:** Could being observed change control group behavior?
+    -   **Hawthorne effect:** Do control group parents seek out private tutoring because their child did not get the slot? Do control group students study harder because they know they are being observed? These are real threats in education RCTs.
 :::
 
 ## What to Measure
 
 ::: incremental
--   **Treatment:** Access to free gym (0/1)
+-   **Treatment:** Offered access to tutoring (0/1)
 
--   **Dependent Variable:** Number of self-reported colds
+-   **Primary outcome:** End-of-year score on the state math assessment
+
+-   **Secondary outcomes:** Course grades, attendance, whether the student is held back
 
     -   If measuring multiple outcomes, need to adjust for multiple hypothesis testing
 
--   **Optional Mediators:** Gym usage frequency, stress levels
+-   **Covariates:** Baseline test score, free/reduced lunch status, grade level, school
+:::
 
--   **Optional Covariates:** Age, sex, race, health status
+## But Who Actually Shows Up?
+
+::: incremental
+-   We offered tutoring to 100 students. But not all of them will come.
+
+-   Some students assigned to tutoring never attend a single session. Maybe they have transportation problems, or after-school jobs, or they just do not want to go.
+
+-   Meanwhile, some students in the control group might find tutoring on their own from a parent, an older sibling, or a paid tutor.
+
+-   This creates a gap between what we *assigned* and what students actually *did*.
+:::
+
+## Compliance Types {.smaller}
+
+There are four types of people in any experiment, defined by what they would do under each assignment:
+
+. . .
+
+**Compliers:** Students who attend tutoring if offered, and do not seek it out if not offered. These are the students whose behavior is actually changed by the experiment.
+
+. . .
+
+**Always-takers:** Students who would get tutoring regardless of assignment. If offered the program they attend; if not offered, their parents hire a private tutor.
+
+. . .
+
+**Never-takers:** Students who will not attend tutoring no matter what. Even if offered a slot, they never show up.
+
+. . .
+
+**Defiers:** Students who do the opposite of their assignment. These are rare and most designs assume they do not exist.
+
+## Why Compliance Matters
+
+::: incremental
+-   We cannot observe which type each student is. We only see what they were assigned and what they did.
+
+-   This means the experiment answers a slightly different question than we might want
+
+-   **Intent-to-treat (ITT):** What is the effect of *offering* tutoring? This compares everyone assigned to treatment against everyone assigned to control, regardless of whether they showed up. This is what the simple difference in means gives you.
+
+-   **Treatment-on-the-treated (TOT):** What is the effect of *actually receiving* tutoring? This is harder to estimate because the students who show up are probably different from those who do not.
+
+-   The ITT is the safer estimate. It answers the question a policymaker actually faces: "If I offer this program, what happens on average?"
 :::
 
 ## Analysis: The ATE as a Difference in Means
@@ -209,8 +274,8 @@ In an experiment, the ATE is simply the difference in average outcomes between g
 $$ATE = E[Y | D = 1] - E[Y | D = 0]$$
 
 ::: {.callout-note}
-## In English
-Average outcome for the treatment group minus average outcome for the control group. Because treatment was randomly assigned, this simple comparison **is** the causal effect — no regression or fancy statistics needed.
+## In Plain Language
+Average outcome for the treatment group minus average outcome for the control group. Because treatment was randomly assigned, this simple comparison gives you the causal effect directly. With non-compliance, this estimates the ITT: the effect of being *offered* the program.
 :::
 
 ## Simulating the Experiment in R {.smaller}
@@ -224,20 +289,27 @@ set.seed(30317)
 n_per_group <- 100
 n <- n_per_group * 2
 
-# Fixed treatment assignment: 100 control, 100 treatment
-treatment <- sample(c(rep(0, n_per_group), rep(1, n_per_group)))
+# Random assignment: 100 control, 100 treatment
+assigned <- sample(c(rep(0, n_per_group), rep(1, n_per_group)))
 
 # Pre-treatment covariates
-sleep <- rnorm(n, mean = 7, sd = 1)
-stress <- rnorm(n, mean = 5, sd = 2)
-fitness <- rnorm(n, mean = 5, sd = 2)
+baseline_score <- rnorm(n, mean = 35, sd = 8)   # baseline math percentile
+free_lunch <- rbinom(n, 1, 0.6)                  # free/reduced lunch
+grade <- sample(6:8, n, replace = TRUE)           # grade level
 
-# Outcome: more stress → more sickness, more sleep/fitness → less
-linear_predictor <- 1.5 - 0.2 * sleep + 0.25 * stress - 0.15 * fitness - 0.5 * treatment
-lambda <- exp(linear_predictor)
-sick_count <- rpois(n, lambda = lambda)
+# Not everyone assigned to treatment actually attends
+# About 75% of those offered tutoring actually show up
+attended <- ifelse(assigned == 1, rbinom(n, 1, 0.75), 0)
 
-df <- data.frame(id = 1:n, treatment, sleep, stress, fitness, sick_count)
+# Outcome: end-of-year math score
+# Tutoring has a real effect of about 5 points for those who attend
+endyear_score <- baseline_score + 10 +
+  0.3 * baseline_score - 2 * free_lunch +
+  5 * attended +
+  rnorm(n, 0, 6)
+
+df <- data.frame(id = 1:n, assigned, attended,
+                 baseline_score, free_lunch, grade, endyear_score)
 ```
 
 ## Balance Check {.smaller}
@@ -248,8 +320,13 @@ Before looking at outcomes, verify that randomization produced similar groups:
 #| echo: true
 
 # Compare covariate means across groups
-colMeans(df[df$treatment == 0, c("sleep", "stress", "fitness")])
-colMeans(df[df$treatment == 1, c("sleep", "stress", "fitness")])
+df %>%
+  group_by(assigned) %>%
+  summarise(
+    avg_baseline = mean(baseline_score),
+    pct_free_lunch = mean(free_lunch),
+    avg_grade = mean(grade)
+  )
 ```
 
 . . .
@@ -260,25 +337,42 @@ Or more formally:
 #| echo: true
 #| eval: false
 
-t.test(sleep ~ treatment, data = df)
-t.test(stress ~ treatment, data = df)
-t.test(fitness ~ treatment, data = df)
+t.test(baseline_score ~ assigned, data = df)
+t.test(free_lunch ~ assigned, data = df)
 ```
 
-If there are significant differences, you can control for the covariate — but it also suggests your randomization may have gone wrong!
+If there are significant differences, you can control for the covariate, but it also suggests your randomization may have gone wrong!
 
-## The Simple t-Test
+## The Intent-to-Treat Estimate
 
 ```{r}
 #| echo: true
 
-t.test(sick_count ~ treatment, data = df)
+# ITT: compare by assignment, regardless of attendance
+t.test(endyear_score ~ assigned, data = df)
 ```
 
 . . .
 
 ::: callout-important
-What is the precise interpretation here? What is the causal effect we are estimating?
+This estimates the effect of *offering* tutoring. It includes the never-takers who dragged the treatment group average down. The true effect on students who actually attended is larger.
+:::
+
+## ITT vs. Naive TOT {.smaller}
+
+```{r}
+#| echo: true
+
+# Naive TOT: compare attenders vs. non-attenders (BIASED!)
+df %>%
+  group_by(attended) %>%
+  summarise(avg_score = mean(endyear_score), n = n())
+```
+
+. . .
+
+::: callout-warning
+This is **not** a valid causal estimate. Students who showed up to tutoring are probably more motivated, have more parental support, etc. Comparing attenders to non-attenders reintroduces selection bias. This is exactly the problem randomization was supposed to solve.
 :::
 
 ## Should We Include Covariates? {.smaller}
@@ -314,7 +408,7 @@ What is the precise interpretation here? What is the causal effect we are estima
 ```{r}
 #| echo: true
 
-model_with <- lm(sick_count ~ treatment + sleep + stress + fitness, data = df)
+model_with <- lm(endyear_score ~ assigned + baseline_score + free_lunch + grade, data = df)
 summary(model_with)
 ```
 
@@ -323,13 +417,13 @@ summary(model_with)
 ```{r}
 #| echo: true
 
-model_without <- lm(sick_count ~ treatment, data = df)
+model_without <- lm(endyear_score ~ assigned, data = df)
 summary(model_without)
 ```
 
 . . .
 
-The standard error is about 30% bigger without covariates — maybe the "include covariates" folks are on to something!
+Notice how the standard error on `assigned` shrinks when we include covariates, especially baseline score. Controlling for where students started gives us a more precise estimate of how much the program moved them.
 
 # Part 3: Power Analysis
 
@@ -340,11 +434,11 @@ The standard error is about 30% bigger without covariates — maybe the "include
 
 -   Before running an experiment, you need to ensure you have enough power to detect an effect of a reasonable size
 
-    -   "Reasonable" should be defined by theory and prior work — not by what's convenient
+    -   "Reasonable" should be defined by theory and prior work, not by what's convenient
 
 -   **Key terms:**
     -   **Significance ($\alpha$):** Probability of a false positive. Usually set at 0.05.
-    -   **Power ($1 - \kappa$):** Usually set at 0.80 (meaning 20% chance of missing a real effect)
+    -   **Power ($1 - \beta$):** Usually set at 0.80 (meaning a 20% chance of missing a real effect)
     -   **Minimum Detectable Effect (MDE):** The smallest effect you can reliably detect given your sample size
 :::
 
@@ -402,22 +496,41 @@ ggplot(df_power, aes(x = x, y = density, color = group)) +
         axis.ticks.y = element_blank())
 ```
 
-The green shaded area is your **power** — the probability of correctly detecting the effect. If the true effect ($\beta$) is small or your sample is small, this area shrinks.
+The green shaded area is your **power**: the probability of correctly detecting the effect. If the true effect is small or your sample is small, this area shrinks. Think of it this way: a small effect means the two curves nearly overlap, and it becomes very hard to tell them apart.
 
 ## The MDE Formula {.smaller}
 
 Given a fixed sample size, the minimum detectable effect is:
 
-$$MDE = (t_{1-\kappa} + t_{\alpha/2})\sqrt{\frac{1}{P(1-P)}} \times \frac{\sigma}{\sqrt{N}}$$
+$$MDE = (t_{1-\beta} + t_{\alpha/2})\sqrt{\frac{1}{P(1-P)}} \times \frac{\sigma}{\sqrt{N}}$$
 
-::: {.callout-note}
-## In English
-The MDE gets **smaller** (better) when you have a **bigger sample** ($N$), **less noisy outcomes** ($\sigma$), and **equal treatment/control splits** ($P = 0.5$). You can also flip this formula around to solve for the sample size you need to detect a given effect.
-:::
+The intuition is straightforward. Look at the right side of the formula and notice what makes the MDE smaller (i.e., lets you detect smaller effects):
+
+. . .
+
+-   **Bigger sample** ($N$ is in the denominator, so more observations shrinks the MDE)
+-   **Less noisy outcomes** ($\sigma$ is in the numerator, so less variation in your outcome makes effects easier to spot)
+-   **Equal treatment/control splits** ($P = 0.5$ minimizes $P(1-P)$, so a 50/50 split is the most efficient use of your sample)
+
+. . .
+
+You can also flip this formula around: pick the smallest effect you care about detecting, and solve for the sample size you need. In practice, most people use software to do this (R's `pwr` package, for instance).
 
 . . .
 
 Things get more complicated with block/cluster randomization, but the intuition is the same.
+
+## Connecting This to Our Tutoring Example
+
+::: incremental
+-   Suppose prior research suggests tutoring programs improve math scores by about 3 to 5 points on the state test
+
+-   The standard deviation of math scores in the district is about 15 points
+
+-   Before running the study, we would ask: with 100 students per group and this level of noise, can we detect an effect of 3 points? What about 5 points?
+
+-   If our MDE turns out to be 7 points, we have a problem. We would need the program to have an unrealistically large effect for our study to find it. We would either need a bigger sample or a less noisy outcome measure.
+:::
 
 ## Type S and Type M Errors {.smaller}
 
@@ -425,28 +538,28 @@ Small samples create two underappreciated problems beyond low power:
 
 . . .
 
-**Type S (Sign) Error:** The probability that your estimated effect has the **wrong sign** — you find a positive effect when the truth is negative, or vice versa.
+**Type S (Sign) Error:** The probability that your estimated effect has the **wrong sign**. You find a positive effect when the truth is negative, or vice versa.
 
 . . .
 
-**Type M (Magnitude) Error:** The **exaggeration ratio** — how much your significant estimates overstate the true effect. In small samples, only the most extreme estimates pass the significance threshold.
+**Type M (Magnitude) Error:** The **exaggeration ratio**. How much your significant estimates overstate the true effect. In small samples, only the most extreme estimates pass the significance threshold.
 
 ## Example: Why This Matters {.smaller}
 
 ::: incremental
--   Imagine the true effect of a program is **+2 points** on a test score
+-   Imagine the true effect of the tutoring program is **+3 points** on the math test
 
--   In a small study you might estimate **+10 points** with p = 0.04
+-   In a study with only 30 students per group, you might estimate **+12 points** with p = 0.04
 
-    -   Wow, a big effect and statistically significant!
+    -   Looks great. A big effect and statistically significant.
 
-    -   But it's a **Type M error** — the estimate is 5x the truth
+    -   But it is a **Type M error**: the estimate is 4x the truth. If the district scales up the program expecting 12 points of improvement, they will be disappointed.
 
--   Run the same study again and you might get **–5 points**
+-   Run the same small study again and you might get **-4 points**
 
-    -   A **Type S error** — you got the direction wrong entirely
+    -   A **Type S error**: you concluded tutoring *hurts* math scores when it actually helps
 
--   Traditional focus on p-values and Type I error **completely misses** these problems
+-   The traditional focus on p-values and Type I error completely misses these problems. This is why power analysis matters before you collect any data.
 :::
 
 # Part 4: Pre-Registration
@@ -460,23 +573,23 @@ Small samples create two underappreciated problems beyond low power:
 
 -   But you could still collect many outcomes and run multiple tests until you find something significant
 
-    -   Don't do this!
+    -   This is a real problem. If you measure math scores, reading scores, attendance, grades, and behavioral referrals, the odds of finding *something* significant by chance go up fast.
 
--   Most good journals now require pre-registration of experimental analyses
-
-    -   *APSR, AJPS,* all *AEA* journals, and many more
+-   When you read an evaluation report, one of the first things to check is whether the analysts committed to their approach ahead of time. If they did not, you should be more skeptical of the results.
 :::
 
-## Registered Reports
+## Pre-Registration in Practice
 
 ::: incremental
--   Many journals now accept **registered reports**: a pre-analysis plan plus the literature and theory sections, but **no results**
+-   Organizations that fund or review program evaluations increasingly expect pre-analysis plans
 
--   The journal commits to publish regardless of whether results are significant
+    -   The What Works Clearinghouse (IES) gives higher ratings to studies with pre-registered designs
+    -   J-PAL and MDRC, two of the largest evaluation organizations, require pre-analysis plans for their RCTs
+    -   Major foundations (Arnold Ventures, Gates Foundation) expect them as part of grant applications
 
--   This de-incentivizes fishing for significance — make the case that the question is important and the design is sound!
+-   The Foundations for Evidence-Based Policymaking Act (2018) requires federal agencies to develop evaluation plans and use rigorous evidence. Pre-registration is part of that culture.
 
--   Accepted at: *APSR, Journal of Experimental Political Science, Journal of Development Economics,* etc.
+-   If you are ever in a position to commission or review an evaluation, ask whether the evaluators committed to an analysis plan before they saw the data
 :::
 
 ## What Goes in a Pre-Analysis Plan
@@ -490,7 +603,9 @@ Small samples create two underappreciated problems beyond low power:
 
     -   Deviations from the plan are OK if transparent, but try to avoid them
 
--   Example: <https://osf.io/prk2t/?view_only=bf72ec263e764bab82a3c9817f96f84d>
+-   For our tutoring study, the plan would specify that we are comparing end-of-year math scores by assignment using a t-test, and that we will also look at attendance and grades as secondary outcomes.
+
+-   Example of a real pre-analysis plan: <https://osf.io/prk2t/?view_only=bf72ec263e764bab82a3c9817f96f84d>
 :::
 
 ## Assignment Strategies {.smaller}
@@ -513,9 +628,9 @@ Small samples create two underappreciated problems beyond low power:
 library(gt)
 
 data.frame(
-  `Fitness Level` = c("High", "Low"),
-  Treatment = c(10, 10),
-  Control = c(10, 10)
+  `Lunch Status` = c("Free/Reduced", "Full Price"),
+  Treatment = c(30, 20),
+  Control = c(30, 20)
 ) %>%
   gt() %>%
   tab_header(title = "Stratified Randomization Example")
@@ -523,7 +638,7 @@ data.frame(
 
 . . .
 
-Without stratification, you might end up with 15 high-fitness participants in treatment and only 5 in control.
+Without stratification, you might end up with 40 free-lunch students in treatment and only 20 in control, making it hard to tell whether differences in outcomes are due to tutoring or to socioeconomic background.
 
 # Part 5: Field Experiments
 
@@ -571,8 +686,6 @@ Without stratification, you might end up with 15 high-fitness participants in tr
 -   Duflo and co-authors partnered with Seva Mandir — a very common approach for field experiments
 
     -   Sometimes a way to find funding: provide free analysis for an NGO
-
-    -   But don't outsource the work to the NGO. See the recent GDRI scandal in Bangladesh.
 
 -   120 total schools, randomized. Some **attrition**: 3 treatment schools and 4 control schools closed during the study.
 :::
@@ -625,7 +738,7 @@ Without stratification, you might end up with 15 high-fitness participants in tr
 
 ![](images/Fig%201.png){fig-align="center"}
 
-This is simply the difference in % of schools open when randomly checked. Experiments allow for very simple inference!
+This is simply the difference in the percentage of schools open when randomly checked. Because treatment was randomized, this comparison is all you need.
 
 ## Results: Magnitudes
 
@@ -636,7 +749,7 @@ This is simply the difference in % of schools open when randomly checked. Experi
 
 -   Standard errors clustered by school (since treatment assigned at school level)
 
-    -   Using parametric inference, but randomization inference would also work — should be specified in pre-registration!
+    -   The choice of inference method should be specified in the pre-registration
 :::
 
 ## The Incentive Structure in Action
@@ -650,19 +763,29 @@ Black line = teachers already "in the money." Red line = teachers not yet at the
 ::: incremental
 -   What are the **precise treatment effects** measured here?
 
-    -   I count at least three distinct effects in this study
+    -   I count at least three distinct effects in this study. Think about the camera, the financial incentive, and the threat of dismissal.
 
 -   Are there potential threats to **internal validity**?
 
--   What about **external validity** — where might these results generalize? Where should we be skeptical?
+-   What about **external validity**? Where might these results generalize? Where should we be skeptical?
+:::
+
+## What Happened Next?
+
+::: incremental
+-   Seva Mandir adopted the camera-based monitoring system across its schools after the evaluation ended
+
+-   The study became one of the most cited examples of how financial incentives can improve public service delivery in developing countries
+
+-   But note the external validity question: would the same incentive structure work for teachers in the U.S., where wages are higher and monitoring systems already exist? The answer is not obvious.
 :::
 
 ## Field Experiments: Pros and Cons
 
 ::: incremental
--   **Benefits:** Very high external validity; involves real interventions with real consequences
+-   **Benefits:** High external validity. Involves real interventions with real consequences for real people.
 
--   **Drawbacks:** Less control over treatments; more potential for internal validity issues; reliance on third parties; expensive (though funding exists)
+-   **Drawbacks:** Less control over treatments. More potential for internal validity issues. Reliance on partner organizations. Expensive, though funding exists.
 
 -   **Resources:**
     -   <https://www.povertyactionlab.org/research-resources?view=toc>
@@ -670,96 +793,7 @@ Black line = teachers already "in the money." Red line = teachers not yet at the
     -   Work with faculty! We have experience applying for grants and may lend credibility to applications
 :::
 
-# Part 6: Lab Experiments
-
-## What Are Lab Experiments?
-
-::: incremental
--   Can be true "lab" experiments or "lab-in-the-field" experiments
-
--   Recruit subjects to participate in a controlled experiment
-
--   Often involve games (see Fehr on Canvas; also "Why Does Ethnic Diversity Undermine Public Goods Provision?" by Habyarimana et al)
-
--   Greater control over treatments than field experiments, but less external validity
-:::
-
-## Example: Racial Group Norms and Political Behavior {.smaller}
-
-White and co-authors wanted to test how much **social group norms** explain Black support for the Democratic Party.
-
-. . .
-
-::: callout-note
-## Their Expectation
-*We expect that Blacks are constrained from following strict self-interest by the social costs incurred when other Blacks question their commitment to or standing within the group. Moreover, we argue that such social pressure can be internalized, creating an individual belief in Black solidarity that is also constraining.*
-:::
-
-## Experiment 1: Financial Incentives vs. Social Visibility
-
-::: incremental
--   **Sample:** 150 students from an HBCU
-
--   **Control:** Asked to donate $100 to Obama or Romney (or split)
-
--   **T1:** Same choice, but receive $1 for every $10 donated to Romney
-
--   **T2:** Same as T1, but name will appear in a newspaper as a Romney donor
-
--   Note: Due to state law, no money was actually allocated. Students were debriefed after. Is this deception acceptable?
-:::
-
-## Experiment 1 Results
-
-![](images/White%20E1.png){fig-align="center"}
-
-## Experiment 2: Race of Observer
-
-::: incremental
--   **Sample:** 106 Black students at a predominantly white university in the Midwest
-
-    -   Why is varying the location useful?
-
--   Each student given $10 in dollar bills. Each dollar donated matched 10:1, or keep the money.
-
--   **T1:** Paired with a Black actor (same sex) who pretended to be a participant
-
--   **T2:** Paired with a White actor (same sex) who pretended to be a participant
-:::
-
-## Experiment 2 Results
-
-![](images/E2.png){fig-align="center"}
-
-## Experiment 3: Norm Violation by a Co-Ethnic
-
-::: incremental
--   **Sample:** 56 Black students at a predominantly white school
-
--   Told that for every $10 donated to Romney, they'd receive $1
-
--   Always a Black actor present — in control the actor gives to Obama; in treatment the actor gives to Romney
-
--   What is this testing?
-:::
-
-## Experiment 3 Results
-
-![](images/E3.png){fig-align="center"}
-
-## What Did We Learn?
-
-::: incremental
--   What are the **precise treatment effects** estimated across these three experiments?
-
--   Who is the sample — how might results generalize?
-
--   What are potential threats to inference?
-
--   The **WEIRD problem**: subjects are often Western, Educated, Industrialized, Rich, and Democratic — university students especially
-:::
-
-# Part 7: Survey Experiments
+# Part 6: Survey Experiments
 
 ## Why Survey Experiments?
 
@@ -768,470 +802,218 @@ White and co-authors wanted to test how much **social group norms** explain Blac
 
 -   Obvious limitations: restricted to text, images, and (if interactive) videos or web apps
 
--   **Cheapest** way to run an experiment
+-   The **cheapest** way to run an experiment
 
--   Being embedded in a survey lets you collect lots of background data
+-   Being embedded in a survey lets you collect lots of background data on respondents
 
--   External validity is the main concern — do survey responses match real behavior?
+-   External validity is the main concern: do survey responses match real behavior?
 
--   Mechanics: Code in Qualtrics (free through Clemson), pay for a sample. If you're serious about this, come talk to me!
+-   Mechanics: code in Qualtrics (free through Clemson), pay for a sample. If you are serious about this, come talk to me.
 :::
 
-## List Experiments: Measuring Sensitive Attitudes
+## Conjoint Experiments
 
 ::: incremental
--   List experiments are useful for **eliciting sensitive or embarrassing information**
+-   Many policy-relevant decisions are **multidimensional**
 
-    -   Reduces chance of identification
+    -   What features of a program matter most to potential participants? What drives enrollment? What drives satisfaction?
 
-    -   Allows respondents to indirectly reveal sensitive information
+-   It would be nice to vary **many dimensions simultaneously and randomly**, and figure out which ones actually matter
 
--   Imai et al have a nice R package (`list`) for analysis
+-   This is what **conjoint experiments** do. Respondents see two profiles side by side, with attributes randomly assigned, and choose one. Because the profiles are random, any systematic preference reveals a causal effect.
 :::
 
-## The Basic Idea {.smaller}
+## Example: Designing a Job Training Program {.smaller}
 
-Imagine you wanted to measure racial prejudice. You can't (or *shouldn't*) just ask someone directly.
-
-. . .
-
-Instead, embed the sensitive question in a **list** and ask respondents how many items they agree with — *not which ones*.
+A workforce development agency wants to know which features of a training program matter most to potential participants. They survey 500 adults who are eligible for the program.
 
 . . .
 
-**Control group** sees $n - 1$ items (without the sensitive question). **Treatment group** sees all $n$ items. The difference in means = the proportion who agree with the sensitive item.
-
-## Control Condition (from Imai 2012)
-
-Now I'm going to read you **three** things that sometimes make people angry or upset. After I read all three, just tell me **HOW MANY** of them upset you. (I don't want to know which ones, just how many.)
-
-(1) the federal government increasing the tax on gasoline
-
-(2) professional athletes getting million-dollar-plus salaries
-
-(3) large corporations polluting the environment
-
-How many, if any, of these things upset you?
-
-## Treatment Condition (from Imai 2012)
-
-Now I'm going to read you **four** things that sometimes make people angry or upset. After I read all four, just tell me **HOW MANY** of them upset you. (I don't want to know which ones, just how many.)
-
-(1) the federal government increasing the tax on gasoline
-
-(2) professional athletes getting million-dollar-plus salaries
-
-(3) large corporations polluting the environment
-
-**(4) a Black family moving next door to you**
-
-How many, if any, of these things upset you?
-
-## Identification {.smaller}
-
-![](images/ID.png){fig-align="center"}
-
-. . .
-
-The treatment effect estimate is:
-
-$$\widehat{\tau} = \frac{1}{N_{1}}\sum_{i = 1}^{N}T_{i}Y_{i} - \frac{1}{N_{0}}\sum_{i = 1}^{N}(1 - T_{i})Y_{i}$$
-
-::: {.callout-note}
-## In English
-This is just the **difference in average count** between the treatment group and the control group. Since the only difference between the lists is the sensitive item, this difference equals the **proportion of people who agree with the sensitive item** — without anyone having to reveal *which* items they chose.
-:::
-
-## Design Tips for List Experiments
-
-Don't use items that are highly correlated with each other *or* with the sensitive item. Avoid items that *everyone* or *no one* will agree with.
-
-. . .
-
-**Key Assumption 1:** Including the sensitive item doesn't change respondents' answers to the other items
-
-. . .
-
-**Key Assumption 2:** Respondents don't lie about the sensitive item (even with the protection of the list format)
-
-## Application: Racial Attitudes in the American South
-
-Kuklinski et al (1997): By the 1990s, survey data suggested that racial attitudes among northern and southern whites were converging — racism in the South had massively declined. But **can we believe the survey data?**
-
-. . .
-
-They used a list experiment to tackle this question.
-
-## Results
-
-![](images/T1.png){fig-align="center"}
-
-Anything suspicious here?
-
-## Ceiling Effects
-
--   Some people (particularly in the control) say **all items** made them angry
-
-    -   If so, they couldn't safely reveal additional anti-Black bias in the treatment condition
-
-    ![](images/Ceiling.png)
-
-    This would lead to **underestimation** of the true proportion
-
-## Dealing With Ceiling Effects
+Each respondent sees pairs of hypothetical programs and picks the one they would be more likely to enroll in. The attributes are randomly varied:
 
 ::: incremental
--   We need an additional assumption: respondents' answers to the sensitive item are independent of their answers to control items, conditional on covariates
-
--   Under this assumption, we can use pre-treatment covariates to predict who would have hit the ceiling and correct for it
-
--   The estimation method is complex (uses an EM algorithm — beyond our scope), but the intuition isn't too different from MLE
-
--   See Blair and Imai (2012) on Canvas for the full treatment
-:::
-
-## Conjoint Experiments {.smaller}
-
-::: incremental
--   Many policy-relevant preferences are **multidimensional**
-
-    -   What makes for a good political candidate? A good policy? A good neighborhood?
-
--   It would be nice to vary **many dimensions simultaneously and randomly**, and recover the causal effect of each one
-
--   This is what **conjoint experiments** do — and they're surprisingly powerful
-:::
-
-## Example Setup
-
-Imagine designing the "perfect" political candidate. We could vary:
-
-::: incremental
--   Age (25, 35, 45, 55, 65)
--   Race/Ethnicity (Black, White, Hispanic, Asian, Middle Eastern)
--   Ideology (very left, center left, center, center right, very right)
--   Prior Occupation (Lawyer, Business Person, Activist, Teacher, etc.)
+-   **Duration:** 4 weeks, 8 weeks, 16 weeks
+-   **Format:** In-person, Online, Hybrid
+-   **Childcare provided:** Yes, No
+-   **Transportation stipend:** Yes, No
+-   **Credential:** None, Certificate of completion, Industry certification
+-   **Schedule:** Daytime, Evening, Weekend
 :::
 
 ## A Conjoint Profile
 
-| Attribute        | Candidate A | Candidate B        |
-|------------------|-------------|--------------------|
-| Ideology         | Progressive | Conservative       |
-| Race             | Black       | White              |
-| Age              | 45          | 60                 |
-| Prior Occupation | Teacher     | Business Executive |
+| Attribute        | Program A              | Program B              |
+|------------------|------------------------|------------------------|
+| Duration         | 8 weeks                | 16 weeks               |
+| Format           | Hybrid                 | In-person              |
+| Childcare        | Yes                    | No                     |
+| Transport stipend| Yes                    | No                     |
+| Credential       | Industry certification | Certificate            |
+| Schedule         | Evening                | Daytime                |
 
-The respondent "votes" for one candidate. Profiles are **randomly generated**, so any systematic preference reveals causal effects.
+The respondent picks one. Because profiles are **randomly generated**, any systematic preference for one attribute level over another is a causal effect.
 
-## The AMCE: Average Marginal Component Effect
-
-::: {.callout-note}
-## In English
-The AMCE tells you: "Holding all other attributes at their randomly assigned values, how much does changing **this one attribute** (say, from White to Black) change the probability that a candidate is chosen?" It's the average effect of one component, marginalizing over all the other profile features.
-:::
-
-. . .
-
-The formal notation exists but is dense — the key insight is that because profiles are fully randomized, you can estimate causal effects for each attribute with a simple regression.
-
-## Conjoint Assumptions
+## What Can We Learn From This?
 
 ::: incremental
--   **Stability:** Same profiles → same choice (no random clicking)
--   **No profile order effects:** Respondents don't get fatigued across profile pairs
--   **Randomization of profiles:** All possible profiles have a non-zero chance of appearing
+-   The **Average Marginal Component Effect (AMCE)** tells you: holding all other attributes at their randomly assigned values, how much does changing one attribute change the probability that a program is chosen?
+
+-   For example: "Offering childcare increases the probability that a program is chosen by 12 percentage points, compared to not offering childcare."
+
+-   Because the profiles are fully randomized, you can estimate these effects with a simple regression. Each attribute gets its own coefficient, just like a regular regression model.
+
+-   This gives the agency direct guidance on where to spend limited resources. If childcare matters more than schedule flexibility, that tells you something concrete about program design.
 :::
 
-## Immigration Conjoint Example
+## Simulating a Conjoint in R {.smaller}
 
-![](images/cjoint.png){fig-align="center"}
+```{r}
+#| echo: true
 
-## Immigration Results
+set.seed(30317)
+n_resp <- 500
+n_tasks <- 5  # each respondent sees 5 pairs
+n_rows <- n_resp * n_tasks * 2  # two profiles per task
 
-![](images/cjoint%20imm.png){fig-align="center"}
+conjoint_df <- tibble(
+  respondent = rep(1:n_resp, each = n_tasks * 2),
+  task = rep(rep(1:n_tasks, each = 2), n_resp),
+  profile = rep(c("A", "B"), n_resp * n_tasks),
+  duration = sample(c("4 weeks", "8 weeks", "16 weeks"), n_rows, replace = TRUE),
+  format = sample(c("In-person", "Online", "Hybrid"), n_rows, replace = TRUE),
+  childcare = sample(c("Yes", "No"), n_rows, replace = TRUE),
+  transport = sample(c("Yes", "No"), n_rows, replace = TRUE),
+  credential = sample(c("None", "Certificate", "Industry cert"), n_rows, replace = TRUE),
+  schedule = sample(c("Daytime", "Evening", "Weekend"), n_rows, replace = TRUE)
+)
+```
 
-## Conjoint Considerations
+## Simulating Choices {.smaller}
 
-::: incremental
--   Pretty amazing that you get that many causal effects from one experiment!
+```{r}
+#| echo: true
 
--   But some important caveats:
-    -   Everything is conditional on the profiles presented and their probabilities
-    -   Everything is relative to a **reference category** within each attribute
-    -   What *precisely* are we estimating? The effect of seeing an attribute in a survey — not necessarily real-world behavior
+# Generate utility for each profile based on attribute effects
+conjoint_df <- conjoint_df %>%
+  mutate(
+    utility =
+      -0.10 * (duration == "16 weeks") +
+       0.05 * (duration == "4 weeks") +
+      -0.08 * (format == "Online") +
+       0.03 * (format == "Hybrid") +
+       0.12 * (childcare == "Yes") +
+       0.07 * (transport == "Yes") +
+       0.15 * (credential == "Industry cert") +
+       0.05 * (credential == "Certificate") +
+      -0.04 * (schedule == "Weekend") +
+       0.02 * (schedule == "Evening") +
+      rnorm(n_rows, 0, 0.3)
+  )
 
--   External validity remains the key question
-:::
+# Within each task, the profile with higher utility is chosen
+conjoint_df <- conjoint_df %>%
+  group_by(respondent, task) %>%
+  mutate(chosen = as.integer(utility == max(utility))) %>%
+  ungroup()
+```
 
-## Subgroup Analysis
+## Estimating the AMCE {.smaller}
 
-::: incremental
--   Since everything is relative to a reference group, subgroup analysis is relative to a reference group *within* a subgroup
+```{r}
+#| echo: true
 
-    -   This can be hard to interpret!
+# Simple linear probability model
+amce_model <- lm(chosen ~ duration + format + childcare +
+                   transport + credential + schedule,
+                 data = conjoint_df)
+summary(amce_model)
+```
 
--   Two strategies:
-    -   Pick the most meaningful subgroup, be clear in interpretation
-    -   Present **marginal means** instead — not relative to any baseline
-:::
-
-## Subgroup Results
-
-![](images/AMCE%20FULL.jpeg){fig-align="center"}
-
-# Part 8: Natural Experiments
-
-## When Experiments Are Impossible
-
-::: incremental
--   Often in the social sciences, we either **cannot manipulate** our treatment variable, or doing so would be unethical
-
--   With observational data, we face omitted variable bias, reverse causality, and unmeasured confounders
-
--   Sometimes, **nature provides the randomization** we need
-
-    -   Lotteries, arbitrary cutoffs, close elections, historical accidents
-
--   The strength of these designs depends on the plausibility of treatment being **"as if random"**
-:::
-
-## The First Natural Experiment?
-
-::: incremental
--   Cholera was a common and usually fatal disease in 19th century Europe
-
--   Experts believed it spread by **miasma** — bad air particles
-
-    -   Quarantine-based treatments were largely ineffective
-
--   Physician **John Snow** noticed anomalies: one building devastated, the next door untouched. Sailors only got sick if they took on food and water.
-
--   He hypothesized that contaminated water from the Thames was to blame
-
-    -   But how to prove it?
-:::
-
-## Snow's Research Design {.smaller}
-
-::: incremental
--   Imagine you were a dictator with unlimited power. What would you do to test this?
-
-    -   Force people to drink Thames water or not → **clearly unethical**
-
--   Instead, Snow found **natural variation** in water supply
-
--   In 1850, the **Lambeth** water company moved its intake pipes upstream from London (theoretically uncontaminated)
-
--   Rival company **Southwark and Vauxhall** kept its pipes in contaminated water
-
--   Can we compare cholera rates between the two companies' customers?
-
-    -   What would we need to verify?
-:::
-
-## Establishing Exogeneity
-
-Snow wrote an entire book documenting similarities between the two companies' households. Their service areas cut irregular paths through neighborhoods — sometimes even through the same apartment building — such that households on either side were very similar. The only difference was which company supplied their water.
-
-. . .
-
-This is exactly the **independence assumption** from our causal inference framework: treatment (water source) is independent of potential outcomes (health).
-
-## Results
-
-**Table 9.1: Modified Table XII (Snow 1854)**
-
-| Company name           | 1849 | 1854 |
-|------------------------|------|------|
-| Southwark and Vauxhall | 135  | 147  |
-| Lambeth                | 85   | 19   |
-
-. . .
-
-After Lambeth moved its pipes upstream, cholera deaths dropped dramatically — while Southwark and Vauxhall's customers continued dying at high rates. Compelling evidence that contaminated water, not bad air, caused cholera.
-
-## A Modern Natural Experiment: Shingles and Dementia {.smaller}
-
-::: incremental
--   Scientists hypothesized that shingles might contribute to dementia through neurological inflammation
-
--   We can't give people shingles and wait to see if they develop dementia!
-
--   Instead, look for something **as-if random** that affects shingles vaccination rates
-:::
-
-. . .
-
-In 2013, Wales made everyone born before September 2, 1933 eligible for a new shingles vaccine. People born just after the cutoff were ineligible.
-
-. . .
-
-People born a few weeks apart are essentially identical — but one group got access to the vaccine and the other didn't. This is a **regression discontinuity** design (more detail in a future lecture).
-
-## Step 1: Eligibility → Vaccination {.smaller}
+## Plotting the Results {.smaller}
 
 ```{r}
 #| echo: false
 
 library(ggplot2)
-library(dplyr)
-library(patchwork)
+library(broom)
 
-set.seed(30317)
+amce_results <- tidy(amce_model, conf.int = TRUE) %>%
+  filter(term != "(Intercept)") %>%
+  mutate(
+    attribute = case_when(
+      grepl("duration", term) ~ "Duration",
+      grepl("format", term) ~ "Format",
+      grepl("childcare", term) ~ "Childcare",
+      grepl("transport", term) ~ "Transport",
+      grepl("credential", term) ~ "Credential",
+      grepl("schedule", term) ~ "Schedule"
+    ),
+    level = gsub("duration|format|childcare|transport|credential|schedule", "", term),
+    term_label = paste0(attribute, ": ", level)
+  )
 
-weeks <- seq(-156, 156, by = 4)
-
-panel_a <- tibble(
-  week = weeks,
-  y = ifelse(week < 0,
-             30 + rnorm(length(week), 0, 2),
-             77 + rnorm(length(week), 0, 2)),
-  panel = "a",
-  outcome = "Ever had shingles vaccine (%)"
-)
-
-panel_b <- tibble(
-  week = weeks,
-  y = 10 + rnorm(length(week), 0, 1.5),
-  panel = "b",
-  outcome = "Had shingles before program start (%)"
-)
-
-panel_c <- tibble(
-  week = weeks,
-  y = 15 - 0.005 * week + rnorm(length(week), 0, 0.1),
-  panel = "c",
-  outcome = "Had dementia within 7 years before program start (%)"
-)
-
-df_panels <- bind_rows(panel_a, panel_b, panel_c)
-
-plot_panel <- function(data, panel_label, coef_text) {
-  ggplot(data, aes(x = week, y = y)) +
-    geom_point(color = "grey30", alpha = 0.8) +
-    geom_smooth(data = filter(data, week < 0), method = "lm", se = FALSE, color = "black") +
-    geom_smooth(data = filter(data, week >= 0), method = "lm", se = FALSE, color = "black") +
-    geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
-    labs(title = paste0("Panel ", panel_label),
-         x = "Week of birth (relative to 2 Sep 1933)",
-         y = unique(data$outcome)) +
-    annotate("text", x = -120, y = max(data$y) - 2,
-             label = coef_text, hjust = 0, size = 3.2)
-}
-
-p_a <- plot_panel(panel_a, "a", "Coef. 47.2\n95% CI = 46.1 to 48.7")
-p_b <- plot_panel(panel_b, "b", "Coef. 0.1\n95% CI = -0.5 to 0.6")
-p_c <- plot_panel(panel_c, "c", "Coef. -0.2\n95% CI = -0.8 to 0.4")
-
-p_a + p_b + p_c + plot_layout(nrow = 1)
+ggplot(amce_results, aes(x = estimate, y = reorder(term_label, estimate))) +
+  geom_point(size = 3) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray50") +
+  labs(x = "Change in probability of being chosen",
+       y = NULL,
+       title = "Which program features drive enrollment?") +
+  theme_minimal(base_size = 14)
 ```
 
-Panel A: Huge jump in vaccination at the cutoff. Panels B & C: No jump in pre-existing shingles or dementia — confirming groups are comparable.
+## What Does This Tell the Agency? {.smaller}
 
-## Step 2: Vaccination → Shingles {.smaller}
+::: incremental
+-   The plot shows how much each attribute level changes the probability of a program being chosen, relative to a reference category
 
-```{r}
-#| echo: false
+-   In our simulated data, **industry certification** and **childcare** are the biggest drivers of enrollment. Program duration and online format reduce interest.
 
-library(ggplot2)
-library(dplyr)
-library(grid)
+-   This gives administrators concrete, evidence-based guidance: if you have limited budget, investing in childcare and a recognized credential will do more to boost enrollment than, say, offering weekend scheduling.
 
-set.seed(30317)
+-   The key limitation remains external validity. People say they prefer childcare in a survey, but would they actually enroll? Survey responses and real behavior do not always match.
+:::
 
-weeks <- seq(-156, 156, by = 8)
-n <- length(weeks)
-y <- ifelse(weeks < 0,
-            4.5 + 0.005 * weeks + rnorm(n, 0, 0.3),
-            4.5 + 0.005 * weeks - 1 + rnorm(n, 0, 0.3))
+## Looking Ahead: When Experiments Are Not Possible
 
-df_shingles <- tibble(week = weeks, y = y)
+::: incremental
+-   Often in policy research, we **cannot** randomize the treatment. We cannot randomly assign poverty, or school quality, or exposure to pollution.
 
-ggplot(df_shingles, aes(x = week, y = y)) +
-  geom_point(color = "gray30", size = 2) +
-  geom_smooth(data = filter(df_shingles, week < 0), method = "lm", se = FALSE, color = "black") +
-  geom_smooth(data = filter(df_shingles, week >= 0), method = "lm", se = FALSE, color = "black") +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "darkred") +
-  annotate("text", x = -120, y = 6.5, hjust = 0, size = 3.5, color = "darkred",
-           label = "Effect of being eligible, -1.0\n95% CI = -1.7 to -0.2\nP = 0.01") +
-  annotate("text", x = -130, y = 7.2, label = "Older age", size = 3.2, color = "gray40") +
-  annotate("text", x = 130, y = 7.2, label = "Younger age", size = 3.2, color = "gray40") +
-  annotate("segment", x = -156, xend = -10, y = 7, yend = 7, arrow = arrow(type = "closed", length = unit(0.15, "cm")), color = "gray60") +
-  annotate("segment", x = 156, xend = 10, y = 7, yend = 7, arrow = arrow(type = "closed", length = unit(0.15, "cm")), color = "gray60") +
-  labs(title = "Effect of being eligible for zoster vaccination on shingles",
-       x = "Week of birth (relative to 2 Sep 1933)",
-       y = "Probability of at least one shingles diagnosis\nover a seven-year follow-up period (%)") +
-  theme_minimal(base_size = 12)
-```
+-   In these cases, we need designs that use **observational data** but get us closer to causal inference than a simple regression
 
-## Step 3: Vaccination → Dementia {.smaller}
+-   Over the next few weeks we will cover three of these designs:
 
-```{r}
-#| echo: false
-
-library(ggplot2)
-library(dplyr)
-library(grid)
-
-set.seed(30317)
-
-weeks <- seq(-156, 156, by = 8)
-n <- length(weeks)
-y <- ifelse(weeks < 0,
-            18 - 0.025 * weeks + rnorm(n, 0, 0.6),
-            18 - 0.025 * weeks - 2 + rnorm(n, 0, 0.6))
-
-df_dementia <- tibble(week = weeks, y = y)
-
-ggplot(df_dementia, aes(x = week, y = y)) +
-  geom_point(color = "gray30", size = 2) +
-  geom_smooth(data = filter(df_dementia, week < 0), method = "lm", se = FALSE, color = "black") +
-  geom_smooth(data = filter(df_dementia, week >= 0), method = "lm", se = FALSE, color = "black") +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "darkred") +
-  annotate("text", x = 100, y = 20.5, hjust = 0, size = 3.5, color = "darkred",
-           label = "Effect of being eligible, -1.3\n95% CI = -2.7 to -0.2\nP = 0.022") +
-  annotate("text", x = -130, y = 22, label = "Older age", size = 3.2, color = "gray40") +
-  annotate("text", x = 130, y = 22, label = "Younger age", size = 3.2, color = "gray40") +
-  annotate("segment", x = -156, xend = -10, y = 21.5, yend = 21.5,
-           arrow = arrow(type = "closed", length = unit(0.15, "cm")), color = "gray60") +
-  annotate("segment", x = 156, xend = 10, y = 21.5, yend = 21.5,
-           arrow = arrow(type = "closed", length = unit(0.15, "cm")), color = "gray60") +
-  labs(title = "Effect of being eligible for zoster vaccination on dementia",
-       x = "Week of birth (relative to 2 Sep 1933)",
-       y = "Probability of a new dementia diagnosis\nover a seven-year follow-up period (%)") +
-  theme_minimal(base_size = 12)
-```
-
-Being eligible for the shingles vaccine reduced new dementia diagnoses by about 1.3 percentage points — suggesting a causal link between shingles and dementia.
+    -   **Fixed effects and panel data:** use repeated observations of the same units to control for things we cannot measure
+    -   **Difference-in-differences:** compare trends before and after a policy change between affected and unaffected groups
+    -   **Regression discontinuity:** exploit arbitrary cutoffs (age thresholds, test score cutoffs, geographic boundaries) where treatment is essentially random for people near the line
+:::
 
 # Wrapping Up
 
-## What We Covered Today
+## What We Covered Today {.smaller}
 
 ::: incremental
-1.  **Why experiments work** — randomization guarantees the independence assumption
-2.  **Ethics** — informed consent, IRB, the legacy of Tuskegee and Milgram
-3.  **Designing experiments** — from recruitment to analysis, including balance checks
-4.  **Power analysis** — make sure your study can actually detect the effect
-5.  **Pre-registration** — lock in your analysis plan to avoid fishing for significance
-6.  **Field experiments** — real-world interventions (Duflo teacher incentives)
-7.  **Lab experiments** — controlled settings, creative designs (White et al)
-8.  **Survey experiments** — list experiments and conjoints
-9.  **Natural experiments** — when nature provides the randomization (Snow, shingles/dementia)
+1.  **Why experiments work**: randomization guarantees the independence assumption
+2.  **Ethics**: informed consent, IRB, the legacy of Tuskegee and Milgram
+3.  **Designing experiments**: from recruitment to analysis, with a tutoring program example
+4.  **Compliance**: compliers, never-takers, and the difference between ITT and TOT
+5.  **Power analysis**: making sure your study can detect the effect you care about
+6.  **Pre-registration**: committing to your analysis plan before seeing results
+7.  **Field experiments**: real-world interventions (Duflo teacher incentives)
+8.  **Survey experiments**: conjoint analysis for program design
 :::
 
 ## What's Next
 
 ::: incremental
--   **Difference-in-Differences** — comparing trends before and after a policy change
--   **Regression Discontinuity** — exploiting arbitrary cutoffs (like the shingles example)
--   **Instrumental Variables** — finding exogenous sources of variation
+-   **Fixed effects and panel data**: controlling for unobserved differences between units
+-   **Difference-in-differences**: comparing trends before and after a policy change
+-   **Regression discontinuity**: exploiting arbitrary cutoffs in policy rules
 :::
 
-## For Your Capstone
+## For Your Final Project
 
 ::: {.callout-tip}
 ## Think About This Now
-Could your research question benefit from experimental evidence? Even if you can't run an experiment, could you find a **natural experiment** — a lottery, a policy cutoff, a sudden rule change? Understanding these designs helps you identify opportunities that others miss.
+Could your research question benefit from experimental evidence? Even if you cannot run an experiment yourself, think about what an ideal experiment would look like. What would you randomize? Who would be in your sample? What would you measure? Thinking through the experimental ideal helps clarify what your observational analysis is trying to approximate.
 :::

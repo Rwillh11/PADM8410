@@ -111,10 +111,10 @@ toc-depth: 2
 
 **Optional readings:**
 
+- [Brandt (1978), "Racism and Research: The Case of the Tuskegee Syphilis Study"](https://doi.org/10.2307/3561468)
+- [Milgram (1963), "Behavioral Study of Obedience"](https://doi.org/10.1037/h0040525)
 - [Duflo, Hanna, and Ryan (2012), "Incentives Work: Getting Teachers to Come to School"](https://doi.org/10.1257/aer.102.4.1241)
-- [Habyarimana et al. (2007), "Why Does Ethnic Diversity Undermine Public Goods Provision?"](https://doi.org/10.1017/S0003055407070499)
-- [Kuklinski et al. (1997), "Racial Attitudes and the 'New South'"](https://doi.org/10.1086/297954)
-- [Imai (2011), "Multivariate Regression Analysis for the Item Count Technique"](https://doi.org/10.1198/jasa.2011.ap10089)
+- [Hainmueller, Hopkins, and Yamamoto (2014), "Causal Inference in Conjoint Analysis"](https://doi.org/10.1093/pan/mpt024)
 
 **Materials:**
 
