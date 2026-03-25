@@ -28,7 +28,9 @@ Write a data-driven opinion piece on a policy topic of your choice.
 
 ## Final Project (30%)
 
-Details to be announced.
+Design a causal study around a policy question that interests you.
+
+- [Assignment details](assignments/final_project.qmd)
 
 ## Grading Scale
 

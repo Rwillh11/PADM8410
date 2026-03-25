@@ -14,7 +14,7 @@ format:
 editor: visual
 ---
 
-**If you get stuck, please reach out to me! Come to office hours, send me an email, or post on the discussion board. I would much rather help you work through a problem than have you spend hours frustrated. That is what I am here for.**
+**If you get stuck, please reach out to me! Come to office hours, send me an email, send smoke signals, etc. I would much rather help you get unstuck than have you frustrated for hours.**
 
 ## Overview
 
@@ -148,11 +148,11 @@ Log-odds are hard to interpret. Let's get a more useful quantity:
 
 **Your written answer:**
 
-## Question 4: Assumptions, Causality, and Bias (20 points)
+## Question 4: Assumptions, Causality, and Bias (25 points)
 
 No code is required for this question. Answer in complete sentences.
 
-### 4a. (7 points)
+### 4a. (8 points)
 
 In our data, program participation was **not randomly assigned**. People chose whether to participate (or were referred by caseworkers based on their circumstances). Draw or describe a DAG (Directed Acyclic Graph) that shows at least one plausible confounder in the relationship between `program` and `quarterly_earnings`. Explain why the variable you chose is a confounder (i.e., how it relates to both the treatment and the outcome).
 
@@ -166,7 +166,7 @@ Program → Earnings
 
 **Your written answer:**
 
-### 4b. (7 points)
+### 4b. (10 points)
 
 Suppose someone who had not taken this class looked at your regression from Question 2a and said: "The program increases earnings, so the state should expand it." What would you tell them? Your answer should address:
 
@@ -174,7 +174,7 @@ Suppose someone who had not taken this class looked at your regression from Ques
 -   What specific threat to causal inference (omitted variable bias, selection bias, etc.) is most concerning here
 -   What kind of study design would allow a causal interpretation
 
-### 4c. (6 points)
+### 4c. (7 points)
 
 In Question 3, we included `region` as a control variable. Suppose we also had data on `commute_time` (the person's commute to their job after the program). Should we include `commute_time` as a control in the logistic regression? Why or why not? Name the specific type of bias that would result if we did include it.
 
@@ -182,31 +182,9 @@ In Question 3, we included `region` as a control variable. Suppose we also had d
 
 ------------------------------------------------------------------------
 
-## Question 5: Interpreting Other MLE Models (15 points)
+## Question 5: Interpreting Other MLE Models (10 points)
 
-You do not need to run any code for this question. The output is provided for you.
-
-### 5a. Poisson Regression (8 points)
-
-A researcher studies what predicts the **number of 311 (non-emergency) calls** that city council districts receive per month. They fit a Poisson regression and get the following output:
-
-| Term                 | Coefficient | Std. Error | p-value  |
-|----------------------|-------------|------------|----------|
-| (Intercept)          | 3.120       | 0.205      | \< 0.001 |
-| population_thousands | 0.018       | 0.003      | \< 0.001 |
-| median_income_10k    | -0.095      | 0.031      | 0.002    |
-| pct_renters          | 0.012       | 0.004      | 0.003    |
-| has_311_app          | 0.223       | 0.078      | 0.004    |
-
-Answer the following:
-
-1.  Poisson regression uses a **log link**. This means the coefficients are on the log-count scale. If we exponentiate the coefficient on `has_311_app`, we get $e^{0.223} \approx 1.25$. Interpret this number in one sentence. What does it mean in terms of the expected number of 311 calls?
-2.  The coefficient on `median_income_10k` is negative. What does this tell us about the relationship between income and 311 calls? Compute the incidence rate ratio ($e^{-0.095} \approx 0.91$) and interpret it.
-3.  What is one reason the researchers might worry about **overdispersion** in this data? If overdispersion is present, what happens to the standard errors from the Poisson model, and what model should they use instead?
-
-**Your written answer:**
-
-### 5b. Ordered Logit (7 points)
+### Ordered Logit (10 points)
 
 A different researcher surveys residents about their **satisfaction with city services** on a 1--5 scale (1 = Very Dissatisfied, 5 = Very Satisfied). They fit an ordered logit model and report the following predicted probabilities for a key variable:
 

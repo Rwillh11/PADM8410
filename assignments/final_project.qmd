@@ -1,0 +1,206 @@
+---
+title: "Final Project: Designing a Causal Study of a Policy Intervention"
+author: "Will Horne"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    embed-resources: true
+editor: visual
+---
+
+## Overview
+
+For your final project, you will design a research study around a **policy question** that interests you. The goal is to bring together everything you have learned this semester: descriptive analysis, regression, causal inference frameworks, and quasi-experimental designs. You will work with real data to investigate a policy-relevant relationship, think critically about what your analysis can and cannot tell us, and then propose a more credible causal design that could, in principle, provide stronger evidence.
+
+This project is your chance to show that you can think like a policy analyst who understands both the power and the limitations of data.
+
+**If you get stuck at any point, please reach out! Come to office hours, send me an email, or flag me after class. I would much rather help you work through a challenge than have you frustrated for days.**
+
+### What To Do
+
+1.  **Choose a policy question** and find real data to investigate it.
+2.  **Run an observational analysis** (correlation or regression) using that data.
+3.  **Critically evaluate** your observational results: what could go wrong? What are the threats to a causal interpretation?
+4.  **Propose a causal research design** (difference-in-differences, regression discontinuity, or a randomized controlled trial) that could more credibly answer your question. You do not need to actually run this design. You just need to describe it carefully.
+
+### Length
+
+The project should be approximately **5,000 words**, or really "as long as it needs to be." A thorough, well-organized project that comes in at 4,000 words is better than an overstuffed prject at 6,000. Use your judgment. Every section below should be substantive, but do not add filler.
+
+### Due Date
+
+**April 29**
+
+Submit as a PDF, HTML or .docx file. Include your Data and Analysis as separate files. You can write all of this as a .qmd, but if you are more comfortable in a word processing software, that is fine.
+
+------------------------------------------------------------------------
+
+## Part 1: Introduction and Policy Question 
+
+Introduce your policy question. What is the intervention or policy you are studying? Why does it matter? Who is affected? What outcome are you interested in?
+
+Ground your question in existing research. You should cite **at least 3 academic sources** (journal articles, policy reports from credible organizations, or books) that establish why this question is important, what prior research has found, and where gaps remain. This is not a full literature review, but you need to show that your question connects to a real body of knowledge.
+
+End this section with a **clear, specific research question**. For example: "Does expanding Medicaid eligibility reduce emergency department visits among low-income adults?"
+
+### Tips
+
+-   Your question should involve a **treatment** (a policy, program, or intervention) and an **outcome** (something measurable that the treatment might affect).
+-   Be specific. "Does education policy affect outcomes?" is too broad. "Did the introduction of universal pre-K in City X affect third-grade reading scores?" is much better.
+-   Think about questions where you can actually find data. Some interesting questions are hard to study because the data does not exist or is not publicly available. That is okay to acknowledge, but you do need data for Part 2.
+-   Google Scholar is your friend for finding academic sources. Policy-focused journals like *Journal of Policy Analysis and Management*, *Public Administration Review*, and *Journal of Public Economics* are good places to start.
+
+### Examples of Good Policy Questions
+
+These are meant to spark ideas, not limit you. Your question can come from any policy area.
+
+-   Does body-worn camera adoption by police departments reduce use-of-force incidents?
+-   Did the expansion of the Earned Income Tax Credit reduce child poverty rates?
+-   Do state-level minimum wage increases affect teen employment?
+-   Does access to public transit reduce commute times for low-income workers?
+-   Did the introduction of ranked-choice voting in City X affect voter turnout?
+
+------------------------------------------------------------------------
+
+## Part 2: Data and Observational Analysis
+
+### What to Write
+
+Describe the data you are using. Where did it come from? What is the unit of observation (individuals, counties, states, years)? What variables are available? Provide summary statistics (means, standard deviations, or frequency tables) for your key variables.
+
+Then run a **simple observational analysis**. This can be:
+
+-   A comparison of means between a treated and untreated group
+-   A correlation or scatterplot showing the relationship between your treatment and outcome
+-   A simple linear regression (bivariate or with a small number of controls)
+
+Present your results clearly. Include a table or figure. Interpret the coefficients or correlations in plain language. What does your analysis suggest about the relationship between the treatment and the outcome?
+
+### Tips
+
+-   You need to use **real data**. Good sources include:
+    -   U.S. Census Bureau / American Community Survey ([data.census.gov](https://data.census.gov))
+    -   Bureau of Labor Statistics ([bls.gov](https://www.bls.gov))
+    -   CDC and public health data ([cdc.gov/data](https://www.cdc.gov/data))
+    -   FBI Uniform Crime Reports or NIBRS
+    -   State and local open data portals
+    -   ICPSR ([icpsr.umich.edu](https://www.icpsr.umich.edu))
+    -   Harvard Dataverse ([dataverse.harvard.edu](https://dataverse.harvard.edu))
+-   Your R code should be included as a separate `.qmd` file. Please also upload your data file.
+
+### What to Include
+
+-   A description of the dataset (source, size, key variables)
+-   Summary statistics for your treatment, outcome, and any important covariates
+-   At least one regression or comparison of means
+-   At least one figure (scatterplot, bar chart, or similar)
+-   A clear, non-causal interpretation of the results
+
+------------------------------------------------------------------------
+
+## Part 3: Threats to Causal Inference (approximately 1,250 words)
+
+**3a. Confounders and Omitted Variables**
+
+Identify at least **three specific confounders** that could bias your estimate of the treatment effect. For each one, explain:
+
+-   What the variable is
+-   Why it is related to *both* the treatment and the outcome (i.e., why it opens a backdoor path)
+-   Which direction the bias would go (would it make the treatment look more effective or less effective than it really is?)
+
+Do not just list variables. Explain the *logic* of why each confounder is a problem for your specific question.
+
+**Draw a DAG**
+
+Draw a **directed acyclic graph (DAG)** that represents the causal relationships among your treatment, outcome, and the confounders you identified. Use the `ggdag` package in R, you can save the output as a .png or .jpeg.
+
+Your DAG should show:
+
+-   The causal arrow from treatment to outcome
+-   Backdoor paths through confounders
+-   Any other relationships you think are important
+
+Briefly explain what the DAG tells us about what we would need to control for (and what we should *not* control for) to identify the causal effect.
+
+**3c. Selection Bias and Other Threats**
+
+Discuss whether **selection bias** is a concern in your setting. Why might the treated and untreated groups differ in ways that affect the outcome, even apart from the confounders you listed? Think about the potential outcomes framework: is treatment assignment independent of potential outcomes?
+
+You may also discuss other threats as relevant:
+
+-   Reverse causality (does the outcome affect the treatment?)
+-   Measurement error (is the treatment or outcome measured with noise?)
+-   Simultaneity
+-   External validity (even if you found a causal effect, would it generalize?)
+
+## Part 4: A More Credible Research Design 
+
+### What to Write
+
+Now propose a research design that could provide **more credible causal evidence** for your question. Choose one of the following:
+
+-   **Randomized Controlled Trial (RCT)**
+-   **Difference-in-Differences (DiD)**
+-   **Regression Discontinuity Design (RDD)**
+
+You are **not** expected to actually run this design. Instead, describe in detail how it would work for your specific question.
+
+**For any design, explain:**
+
+1.  **What the design is and how it works.** Briefly describe the logic of the method. Connect it to the concepts from class (potential outcomes, counterfactuals, identification).
+2.  **How you would apply it to your question.** Be specific. If you propose an RCT, who gets randomized, what is the treatment, what is the control condition, and what outcome do you measure? If you propose DiD, what is the treatment group, what is the control group, what is the pre-treatment period and post-treatment period, and why is parallel trends plausible? If you propose RDD, what is the running variable, where is the cutoff, and why would we expect units just above and below the cutoff to be comparable?
+3.  **What assumptions are required.** Every causal design relies on assumptions. Name them and discuss whether they are plausible in your setting.
+4.  **What could still go wrong.** No design is bulletproof. Discuss potential limitations: threats to internal validity, practical challenges (cost, ethics, feasibility), or reasons the assumptions might fail.
+
+### Tips
+
+-   Pick the design that makes the most sense for your question. Not every question lends itself to every design. An RDD only works if there is a meaningful cutoff. DiD only works if there is a plausible control group and treatment timing. An RCT might be ideal but ethically or practically impossible.
+-   You are allowed (and encouraged) to propose a design that would be difficult to carry out in practice, as long as you acknowledge those difficulties. The point is to show that you understand how the design works and what it would require.
+-   Cite at least one academic source that uses the design you are proposing (ideally in a related policy area). This shows you understand how the method is applied in practice.
+-   Connect your design back to the problems you identified in Part 3. Explain *why* this design would address (or at least reduce) the specific threats you identified earlier.
+
+## Grading Criteria
+
+Your project will be graded on the following criteria.
+
+### 1. Policy Question and Motivation (10%)
+
+| Level | Description |
+|------------------------------------|------------------------------------|
+| Excellent | Question is specific, policy-relevant, and well-motivated. Literature review demonstrates understanding of prior work and clearly identifies a gap or open question. At least 3 credible academic sources. |
+| Good | Question is clear and relevant. Some engagement with literature, but may be surface-level or missing a source. |
+| Needs Work | Question is vague or too broad. Little to no engagement with prior research. Fewer than 3 sources. |
+
+### 2. Observational Analysis (20%)
+
+| Level | Description |
+|------------------------------------|------------------------------------|
+| Excellent | Uses real data with clear documentation. Summary statistics, regression or comparison of means, and at least one figure. Results interpreted correctly and without causal language. Code is clean and commented. |
+| Good | Analysis is present and mostly correct but may have minor issues (unclear interpretation, missing figure, or minimal documentation of data). |
+| Needs Work | Analysis is incomplete, uses causal language inappropriately, or code does not run. |
+
+### 3. Threats to Causal Inference (25%)
+
+| Level | Description |
+|------------------------------------|------------------------------------|
+| Excellent | Identifies at least 3 specific, well-reasoned confounders with clear explanations of direction of bias. DAG is appropriate and well-explained. Discussion of selection bias is specific to the research question. Uses course concepts correctly. |
+| Good | Identifies confounders but explanations may be generic or missing direction of bias. DAG is present but may have issues. Some use of course concepts. |
+| Needs Work | Confounders are vague or generic. No DAG, or DAG is incorrect. Little engagement with course concepts. |
+
+### 4. Proposed Causal Design (25%)
+
+| Level | Description |
+|------------------------------------|------------------------------------|
+| Excellent | Design is appropriate for the question and described in detail. Clearly explains how the design addresses threats from Part 3. Assumptions are named and their plausibility is discussed. At least 1 citation to a study using this method. Limitations are acknowledged. |
+| Good | Design is reasonable but description may lack specificity. Assumptions mentioned but not fully discussed. May be missing a citation or limitations discussion. |
+| Needs Work | Design is inappropriate for the question, poorly described, or missing key elements (assumptions, connection to Part 3, limitations). |
+
+### 5. Writing, Citations, and Presentation (20%)
+
+| Level | Description |
+|------------------------------------|------------------------------------|
+| Excellent | Clear, professional writing throughout. Logical organization. All formatting requirements met. At least 5 credible sources cited consistently. Code runs without errors. Figures are polished. |
+| Good | Writing is generally clear but may have some rough spots. Most formatting requirements met. Sources present but citation style may be inconsistent. |
+| Needs Work | Writing is unclear or disorganized. Major formatting issues. Fewer than 5 sources. Code does not run or is missing. |
