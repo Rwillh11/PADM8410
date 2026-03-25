@@ -11,13 +11,15 @@ execute:
 ## Panel Data
 
 ::: incremental
--   **Panel data** (or longitudinal data) tracks the same units over multiple time periods
+-   You download education data from the state. You notice the same schools appear year after year. You have **panel data**.
 
-    -   A panel survey where the same individuals are re-interviewed each year
+-   Panel data (or longitudinal data) tracks the same units over multiple time periods
 
     -   Test scores for schools measured annually
 
     -   State-level unemployment rates over decades
+
+    -   A survey where the same individuals are re-interviewed each year
 
 -   Because the same units appear multiple times, our standard OLS assumption of independent errors is violated
 
@@ -49,21 +51,20 @@ execute:
 
     -   Health data has patients in hospitals in regions (hierarchical)
 
--   If you ignore this structure, you will get **wrong answers** — sometimes dramatically wrong
+-   If you ignore this structure, you will get wrong answers, sometimes dramatically wrong
 
--   Today we learn the workhorse tool for dealing with this: **fixed effects**. And we'll preview a useful alternative: **multilevel models**.
+-   Today we learn the workhorse tool for dealing with this: **fixed effects**
 :::
 
 ## Today's Roadmap
 
 ::: incremental
-1.  **The fixed effects idea** — controlling for the unit
-2.  **Visual walkthrough** — seeing FE in action
-3.  **The mechanics** — equations, `fixest` in R, gapminder
-4.  **Policy example** — housing prices across cities
-5.  **Assumptions and caveats** — what FE can't do
-6.  **Two-way fixed effects** — and why it's tricky
-7.  **Beyond FE** — random effects and multilevel models
+1.  **The fixed effects idea** -- controlling for the unit
+2.  **Visual walkthrough** -- seeing FE in action
+3.  **The mechanics** -- equations, `fixest` in R, gapminder
+4.  **Policy example** -- housing prices across cities
+5.  **Assumptions and caveats** -- what FE can't do
+6.  **Two-way fixed effects** -- and why it's tricky
 :::
 
 # Part 1: The Fixed Effects Idea
@@ -124,7 +125,7 @@ plot(g, text = FALSE, use_labels = "name")
 
 -   Controlling for "France" implicitly controls for France's proximity to Germany, its resource endowments, its political culture, and its history with Germany
 
-    -   All of those confounders — absorbed in one move!
+    -   All of those confounders, handled with a single control
 :::
 
 ## The Clean DAG
@@ -172,37 +173,12 @@ Fixed effects let you ask: "For the **same country**, in years when the chancell
 
 # Part 2: Visual Walkthrough
 
-## Simple Example: Exercise and Colds {.smaller}
-
-Imagine we tracked two people and looked at how many hours per week they exercised and how many colds they got every year:
-
-```{r}
-#| echo: true
-
-library(tidyverse)
-
-df <- data.frame(
-  Individual = c("Esnaina", "Esnaina", "Mariam", "Mariam"),
-  Year       = c(2024, 2025, 2024, 2025),
-  Exercise   = c(5, 7, 4, 3)
-)
-
-df_table <- df %>%
-  group_by(Individual) %>%
-  mutate(
-    MeanExercise   = mean(Exercise),
-    WithinExercise = Exercise - MeanExercise
-  )
-
-df_table
-```
-
-The "within" column is the deviation from each person's own average. This is what fixed effects use.
-
 ## Pooled Data {.smaller}
 
 ```{r}
 #| echo: false
+
+library(tidyverse)
 
 df <- tibble(
   Individual = rep(c("Esnaina", "Mariam"), each = 5),
@@ -220,7 +196,7 @@ ggplot(df, aes(x = Exercise, y = Colds, color = Individual, shape = Individual))
   theme_minimal(base_size = 14)
 ```
 
-What is the relationship between exercise and colds? It looks... positive?
+At first glance, the relationship looks positive.
 
 ## Pooled Regression
 
@@ -340,12 +316,13 @@ Now the relationship is **negative** — in years when a person exercises more t
 
 ## The Intuition
 
+::: {.callout-important}
+## The tradeoff
+By using fixed effects, we lose the ability to use between-group variation. If you are interested in between-group comparisons, you cannot use FE.
+:::
+
 ::: incremental
 -   We removed all between-person variation by subtracting each person's mean
-
--   By using fixed effects, **we lose the ability to use between-group variation**
-
-    -   If you're interested in between-group comparisons, you can't use FE!
 
 -   By controlling for an individual, we also control for all **time-invariant** features of that person
 
@@ -431,7 +408,7 @@ ggplot(df_gap, aes(x = gdpPercap, y = lifeExp, color = country)) +
   scale_x_log10(labels = scales::dollar_format(prefix = "$")) +
   labs(
     title = "Life Expectancy vs. GDP per Capita (Fixed Effects)",
-    subtitle = "Same slope, different intercepts: India starts ~15 years higher at any GDP level",
+    subtitle = "Same slope, different intercepts: Brazil has higher life expectancy at any GDP level",
     x = "GDP per Capita (log scale)",
     y = "Life Expectancy (years)",
     color = "Country"
@@ -455,12 +432,10 @@ summary(m_fe)
 
 ::: {.callout-note}
 ## How to Interpret This
-"In a year where GDP per capita is **one log-unit higher than it typically is for that country**, we expect life expectancy to be about **9.8 years longer than it typically is for that country**." Everything is relative to the unit's own average — that's the fixed effect at work.
+"When a country's GDP per capita roughly doubles compared to its own average, we expect life expectancy to be about **9.8 years higher than it typically is for that country**." Everything is relative to the unit's own average. That is the fixed effect at work.
 :::
 
-Note: `fixest` also works with GLMs for non-continuous outcomes.
-
-# Part 4: Policy Example — Housing Prices
+# Part 4: Policy Example -- Housing Prices
 
 ## The Question
 
@@ -469,15 +444,17 @@ Note: `fixest` also works with GLMs for non-continuous outcomes.
 
 -   We'd want to control for crime, school quality, amenities...
 
--   But housing prices and new construction are both driven by **unobservable, city-specific factors** — desirability, zoning culture, land availability
+-   But housing prices and new construction are both driven by unobservable, city-specific factors: desirability, zoning culture, land availability
 
 -   We can control away those city-specific factors with fixed effects (as long as they don't vary over time)
 :::
 
 ## Simulated Data {.smaller}
 
+We simulated data for 13 US cities where popular cities both build more housing and have higher prices. The true causal effect of new construction on prices is **negative** (-$450 per new house built).
+
 ```{r}
-#| echo: true
+#| echo: false
 
 library(tidyverse)
 set.seed(30317)
@@ -488,15 +465,13 @@ cities <- c("Atlanta", "Chicago", "Houston", "Boston", "New York",
 
 n_obs_per_city <- 100
 
-# City "popularity" drives both prices and construction
 city_popularity <- runif(length(cities), min = -1, max = 1)
 city_intercepts <- 850000 + 650000 * city_popularity
 mean_new_houses <- 50 + 20 * city_popularity
 
-# True within-city effects
 beta_crime      <- -300
 beta_edu        <-  1500
-beta_new_houses <- -450  # More supply → lower prices WITHIN a city
+beta_new_houses <- -450
 
 sim_data <- data.frame()
 for (i in seq_along(cities)) {
@@ -569,19 +544,16 @@ ggplot(sim_data, aes(x = new_houses, y = price)) +
 ```{r}
 #| echo: true
 
-# Pooled (naive) model
-naive_model <- lm(price ~ new_houses + crime + edu_quality, data = sim_data)
-summary(naive_model)
-```
-
-## Fixed Effects Model {.smaller}
-
-```{r}
-#| echo: true
-
 library(fixest)
+
+# Pooled (naive) model
+naive_model <- feols(price ~ new_houses + crime + edu_quality, data = sim_data)
+
+# Fixed effects model
 fe_model <- feols(price ~ new_houses + crime + edu_quality | city, data = sim_data)
-summary(fe_model)
+
+# Compare side by side
+etable(naive_model, fe_model, headers = c("Pooled", "City FE"))
 ```
 
 ## Why the Naive Model Gets It Wrong
@@ -602,23 +574,17 @@ summary(fe_model)
 
     -   A model of police spending will predict that more police *causes* more crime. Why? Because cities hire more police *in response to* crime.
 
--   Cannot handle **time-variant** unobserved heterogeneity
+-   Cannot handle time-varying unobserved confounders
 
--   Time-invariant variables must have **time-invariant effects** (see Ren and Allison on Canvas)
+-   Time-invariant variables must have **time-invariant effects**. For example, if you use state fixed effects but the effect of education spending on test scores has been growing over time, the fixed effect will not capture that change. See Ren (2025) in the optional readings for more on this.
 :::
 
-## Should You Cluster Your Standard Errors?
+## A Note on Clustering Standard Errors
 
 ::: incremental
--   Standard errors assume independence, but **clustered data** violates this
+-   With panel data, observations within the same unit are not independent. Standard errors need to account for this.
 
--   Conventional wisdom: cluster at the level of your fixed effects. `fixest` does this automatically.
-
--   But clustering is only necessary if:
-    -   You have **treatment effect heterogeneity** across clusters
-    -   Or your **treatment assignment is clustered** (e.g., a whole classroom gets treated)
-
--   See the Abadie et al paper on Canvas for much more detail
+-   The good news: `fixest` clusters standard errors at the fixed effect level by default, so you do not need to do anything extra.
 :::
 
 # Part 6: Two-Way Fixed Effects
@@ -626,242 +592,76 @@ summary(fe_model)
 ## Can We Control for Multiple Dimensions? {.smaller}
 
 ::: incremental
--   Can we get greedy and control for both individuals *and* the city they live in?
+-   Can we control for both the unit *and* the time period?
 
--   Yes! But now we only use variation that is within-individual *and* within-city
+-   For example, **state fixed effects** to absorb everything about South Carolina that does not change, plus **year fixed effects** to absorb anything that affected all states in a given year, like a recession
 
-    -   Individuals who **never move** don't contribute to the regression — they have no variation on city, so their effect is "absorbed"
+-   This is called **two-way fixed effects** (TWFE), and it was extremely popular in applied research
 :::
 
-## Two-Way FE With Time
+## The Problem with Two-Way FE
 
 ::: incremental
--   It would be very nice to adjust for both unit-specific *and* time-specific unobserved confounders
+-   It would be very nice to adjust for both unit-specific and time-specific unobserved confounders at once
 
--   This was extremely popular in development economics papers
+-   But Imai and Kim (2021) show that you cannot simultaneously and non-parametrically adjust for both unit-specific and time-specific unobserved confounders under this framework
 
--   But Imai and Kim show that: *"It is impossible to simultaneously and non-parametrically adjust for unit-specific and time-specific unobserved confounders under the two-way fixed effects framework"*
-
-    -   Robert Kubinec has a good blog post on TWFE issues: <https://www.robertkubinec.com/post/fixed_effects/>
+-   See [Kubinec's overview of TWFE issues](https://www.robertkubinec.com/post/fixed_effects/) for a clear walkthrough of why this matters
 
 -   We will return to these points when we cover **Diff-in-Diff**
 :::
 
-# Part 7: Beyond Fixed Effects — Random Effects and Multilevel Models
+# A Brief Note on Multilevel Models
 
-## Three Ways to Handle Grouped Data {.smaller}
-
-We've now seen two extremes. There's a middle ground:
+## Beyond Fixed Effects: The Shrinkage Idea {.smaller}
 
 ::: incremental
-1.  **Complete pooling** — ignore groups entirely. One regression line for everyone.
-    -   Problem: ignores group-level differences → biased estimates
+-   Fixed effects give each group its own intercept. But what if some groups are very small?
 
-2.  **No pooling / Fixed Effects** — give each group its own intercept. No borrowing across groups.
-    -   Problem: small groups get noisy, extreme estimates
+-   Imagine you are rating schools by test scores. A school with 500 students and a 95% pass rate: you trust that number. But a school with 8 students and a 100% pass rate? That is probably just luck.
 
-3.  **Partial pooling / Random Effects** — group intercepts are drawn from a distribution. Small groups get "shrunk" toward the overall mean.
-    -   Borrows strength from other groups to stabilize estimates
+-   **Multilevel models** (also called hierarchical or random effects models) pull small groups' estimates back toward the overall average. The less data a group has, the more it gets "shrunk" toward the grand mean.
+
+-   For causal questions, fixed effects are the safer choice. But for description, prediction, and ranking, multilevel models can give more honest answers.
 :::
 
-## What Is Partial Pooling?
-
-::: {.callout-note}
-## The Shrinkage Idea
-Imagine you're rating schools by test scores. A school with 500 students and a 95% pass rate — you trust that number. But a school with 8 students and a 100% pass rate? That's probably just luck. **Partial pooling** pulls that small school's estimate back toward the overall average. The less data a group has, the more it gets "shrunk" toward the grand mean.
-:::
-
-. . .
-
-This is the core idea behind **random effects** and **multilevel/hierarchical models**.
-
-## Schools in Districts: Simulated Data {.smaller}
-
-```{r}
-#| echo: true
-
-library(tidyverse)
-set.seed(30317)
-
-# 30 schools across 5 districts, with varying sizes
-n_schools <- 30
-n_districts <- 5
-
-school_data <- tibble(
-  school_id   = 1:n_schools,
-  district_id = sample(1:n_districts, n_schools, replace = TRUE),
-  # School-level "quality" — this is what FE/RE will estimate
-  school_effect = rnorm(n_schools, mean = 0, sd = 10),
-  # Number of students per school (some small, some large)
-  n_students = sample(c(15, 25, 50, 100, 200), n_schools, replace = TRUE)
-)
-
-# Generate student-level data
-students <- school_data %>%
-  uncount(n_students) %>%
-  group_by(school_id) %>%
-  mutate(
-    student_id = row_number(),
-    # Class size varies within schools
-    class_size = rnorm(n(), mean = 25, sd = 5),
-    # Test score depends on class size + school quality + noise
-    test_score = 70 + school_effect - 0.8 * class_size + rnorm(n(), 0, 8)
-  ) %>%
-  ungroup()
-
-students %>% select(school_id, district_id, student_id, class_size, test_score) %>% head(8)
-```
-
-## Complete Pooling: Ignore Schools
-
-```{r}
-#| echo: true
-
-# One regression line — pretend schools don't exist
-pooled_model <- lm(test_score ~ class_size, data = students)
-summary(pooled_model)$coefficients
-```
-
-. . .
-
-This gives us *a* number, but it ignores that students in the same school share unobserved factors.
-
-## No Pooling: School Fixed Effects
-
-```{r}
-#| echo: true
-
-library(fixest)
-
-# Each school gets its own intercept
-fe_model <- feols(test_score ~ class_size | school_id, data = students)
-summary(fe_model)$coefficients
-```
-
-. . .
-
-Unbiased — but small schools will have very noisy intercepts.
-
-## Partial Pooling: Random Effects With lme4 {.smaller}
-
-```{r}
-#| echo: true
-
-library(lme4)
-
-# Random intercept for school: (1 | school_id)
-re_model <- lmer(test_score ~ class_size + (1 | school_id), data = students)
-summary(re_model)$coefficients
-```
-
-. . .
-
-::: {.callout-note}
-## In English
-The `(1 | school_id)` syntax says: "Let each school have its own intercept, but assume those intercepts come from a normal distribution." Schools with lots of students keep their own estimate. Schools with few students get pulled toward the overall average.
-:::
-
-## Seeing the Shrinkage {.smaller}
-
-```{r}
-#| echo: true
-
-# Extract school intercepts from FE and RE
-fe_intercepts <- fixef(fe_model)$school_id  # Extract school-level fixed effects
-re_intercepts <- ranef(re_model)$school_id$`(Intercept)`
-
-# Get school sizes for the plot
-school_sizes <- students %>%
-  group_by(school_id) %>%
-  summarise(n = n()) %>%
-  arrange(school_id)
-
-# Build comparison dataframe
-compare_df <- tibble(
-  school = 1:n_schools,
-  n_students = school_sizes$n,
-  FE = as.numeric(fe_intercepts[1:n_schools]),
-  RE = as.numeric(re_intercepts[1:n_schools])
-) %>%
-  pivot_longer(cols = c(FE, RE), names_to = "Model", values_to = "Intercept")
-
-ggplot(compare_df, aes(x = factor(school), y = Intercept, color = Model, size = n_students)) +
-  geom_point(alpha = 0.7, position = position_dodge(width = 0.5)) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
-  scale_size_continuous(range = c(1, 5)) +
-  labs(title = "FE vs. RE School Intercepts: Shrinkage in Action",
-       subtitle = "Small schools (small dots) get pulled toward zero in the RE model",
-       x = "School", y = "School-Specific Intercept",
-       size = "# Students") +
-  theme_minimal(base_size = 14) +
-  theme(axis.text.x = element_text(size = 8))
-```
-
-## The Key Tradeoff: FE vs. RE
+## Where You Will See Multilevel Models in Policy {.smaller}
 
 ::: incremental
--   **Fixed Effects:** Unbiased even if school quality is correlated with class size (the safe choice for **causal inference**)
+-   **School report cards:** Small schools get extreme pass rates by chance. Multilevel models give more honest rankings by shrinking those estimates toward the average.
 
--   **Random Effects:** More efficient (smaller SEs), but assumes school effects are **uncorrelated** with your predictors
-
-    -   This is often implausible in causal settings — better schools might also have smaller classes
-
--   **Rule of thumb:** For causal questions, use FE. For prediction and description (especially with many small groups), RE/multilevel can be better.
-
--   There's a formal test (the **Hausman test**) that checks whether FE and RE give meaningfully different answers. If they do, FE is the safer choice.
-:::
-
-## When Do Multilevel Models Shine in Policy? {.smaller}
-
-::: incremental
--   **School report cards:** Small schools get extreme pass rates by chance. Multilevel models give more honest rankings by shrinking small-school estimates toward the average.
-
--   **Hospital quality ratings:** CMS star ratings use hierarchical models for exactly this reason — a hospital with 10 surgeries and zero deaths isn't necessarily the best hospital.
+-   **Hospital quality ratings:** CMS star ratings use hierarchical models for exactly this reason. A hospital with 10 surgeries and zero deaths is not necessarily the best hospital.
 
 -   **Small-area poverty estimation:** The Census Bureau uses multilevel models to estimate poverty rates for small geographic areas where sample sizes are tiny.
 
--   **Any time you have many groups with few observations each** — partial pooling prevents you from over-interpreting noise as signal.
-:::
-
-## Further Reading
-
-::: incremental
--   McElreath's *Statistical Rethinking* (2020) — the best intuitive introduction to multilevel models
-
--   Gelman and Hill (2006) — the classic applied reference
-
--   For this class: fixed effects are the main tool you need. But knowing that multilevel models exist (and when they're useful) makes you a more sophisticated consumer of evidence.
+-   You do not need to learn to run these models in this class, but knowing they exist makes you a better consumer of evidence when you encounter rankings and ratings in policy reports.
 :::
 
 # Wrapping Up
 
-## What We Covered Today
+## What We Covered Today {.smaller}
 
 ::: incremental
-1.  **Panel and hierarchical data** — most policy data has this structure
-2.  **Fixed effects** — control for the unit, use only within-unit variation
-3.  **The visual intuition** — pooled regression can get the sign wrong; FE fixes it
-4.  **fixest in R** — the practical tool for FE regression
-5.  **Housing prices** — a full policy simulation showing why pooled estimates mislead
-6.  **Assumptions** — FE can't fix reverse causality or time-varying confounders
-7.  **Two-way FE** — powerful but with important limitations
-8.  **Random effects / multilevel models** — partial pooling for when you have many small groups
+1.  **Panel and hierarchical data** -- most policy data has this structure
+2.  **Fixed effects** -- control for the unit, use only within-unit variation
+3.  **The visual intuition** -- pooled regression can get the sign wrong; FE fixes it
+4.  **fixest in R** -- the practical tool for FE regression
+5.  **Housing prices** -- a full policy simulation showing why pooled estimates mislead
+6.  **Assumptions** -- FE cannot fix reverse causality or time-varying confounders
+7.  **Two-way FE** -- powerful but with important limitations
 :::
 
 ## What's Next
 
 ::: incremental
--   **Experiments** — the gold standard for causal inference
+-   **Difference-in-Differences** -- comparing changes over time between treated and untreated groups
 
--   Then **design-based causal inference:**
-    -   Difference-in-Differences
-    -   Regression Discontinuity
-    -   Instrumental Variables
+-   **Regression Discontinuity** -- exploiting arbitrary cutoffs for causal inference
 :::
 
-## For Your Capstone
+## For Your Final Project
 
 ::: {.callout-tip}
 ## Think About This Now
-Does your data have a panel or hierarchical structure? If you're looking at schools, hospitals, states, or any repeated observations — you almost certainly need fixed effects. And if you're trying to rank or rate small units, multilevel models might give you more honest answers than raw averages.
+Does your data have a panel or hierarchical structure? If you are looking at schools, hospitals, states, or any repeated observations, you almost certainly need fixed effects.
 :::

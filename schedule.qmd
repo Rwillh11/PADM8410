@@ -130,9 +130,9 @@ toc-depth: 2
 
 **Optional readings:**
 
+- [Ren (2025), "Time-Invariant Variables' Time-Varying Effects: Misinterpretations of the Fixed-Effects Model"](https://doi.org/10.1111/soc4.70113)
+- [Abadie et al. (2023), "When Should You Adjust Standard Errors for Clustering?"](https://doi.org/10.1093/qje/qjac038)
 - [Kubinec, "Understanding Two-Way Fixed Effects" (blog post)](https://www.robertkubinec.com/post/fixed_effects/)
-- [McElreath (2020), *Statistical Rethinking*](https://xcelab.net/rm/statistical-rethinking/)
-- [Gelman and Hill (2006), *Data Analysis Using Regression and Multilevel/Hierarchical Models*](https://doi.org/10.1017/CBO9780511790942)
 
 **Materials:**
 
