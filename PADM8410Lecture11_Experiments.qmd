@@ -26,8 +26,9 @@ Experiments are considered the "gold standard" for causal inference. Everything 
 
 . . .
 
-::: {.callout-note}
+::: callout-note
 ## Connecting to Last Week
+
 Remember the **independence assumption**: $(Y^1, Y^0) \perp D_i$. Randomization guarantees this. If treatment is independent of potential outcomes, then the simple difference in means **is** the ATE. No need to worry about selection bias or confounders.
 :::
 
@@ -40,12 +41,11 @@ Remember the **independence assumption**: $(Y^1, Y^0) \perp D_i$. Randomization 
 
 -   Understanding experimental design helps you **evaluate evidence** in policy reports, even if you never run one yourself
 
--   When a contractor hands you an evaluation report, you need to know whether their evidence is any good
+-   When you are handed an evaluation report, you need to know whether the evidence is any good
 :::
 
-## Types of Experiments
-
-::: incremental
+## Types of Experiments {.smaller}
+::: {.incremental}
 -   **Lab Experiments:** Controlled settings, often involving games or tasks
 
     -   High internal validity, but may not reflect the real world
@@ -81,7 +81,7 @@ These two goals are often in tension. Lab experiments give you tight control (hi
 1.  **Ethics** — what we owe experimental subjects
 2.  **Designing an experiment** — from recruitment to analysis
 3.  **Power analysis** — making sure your study can detect real effects
-4.  **Pre-registration** — locking in your analysis before seeing results
+4.  **Pre-registration** — finalizing your analysis before seeing results
 5.  **Field and survey experiments** — with detailed examples
 6.  **Looking ahead** — what comes next when experiments are not possible
 :::
@@ -100,7 +100,7 @@ These two goals are often in tension. Lab experiments give you tight control (hi
 -   By the time a whistleblower exposed the study in 1972, at least 128 subjects had died of syphilis or its complications
 :::
 
-## Tuskegee: The Aftermath
+## Tuskegee: The Aftermath {.smaller}
 
 ::: incremental
 -   In 1974, Congress passed the **National Research Act**, which created the framework for modern research ethics in the United States
@@ -112,7 +112,7 @@ These two goals are often in tension. Lab experiments give you tight control (hi
 -   The study's legacy extends beyond research ethics. It contributed to deep and lasting mistrust of medical institutions among Black Americans, a pattern that researchers and public health officials still grapple with today
 :::
 
-## Milgram Obedience Experiments
+## Milgram Obedience Experiments {.smaller}
 
 Psychologist Stanley Milgram wanted to study obedience to authority in light of WW2 atrocities.
 
@@ -128,12 +128,13 @@ As voltage increased, actors screamed in pain, but the experimenter insisted par
 
 Some participants suffered lasting psychological trauma. This case is important for research ethics because the harm was psychological, not physical, and because participants did not know what they were actually being studied for. Most modern ethics debates about deception in research trace back to experiments like this one.
 
-## Informed Consent
+## Informed Consent {.smaller}
 
 ::: incremental
 -   Subjects should be made as aware of the **purpose of the experiment as possible**
 
--   **Deception** (telling subjects something false) should be kept to the feasible minimum; if used, provide a debrief afterward. Most policy experiments involve **incomplete disclosure** (not telling subjects everything) rather than outright deception. A job training RCT does not lie to anyone, but control group members may not fully understand that they are being studied as a comparison.
+-   **Deception** (telling subjects something false) should be kept to the feasible minimum; if used, provide a debrief afterward. 
+    - Most policy experiments involve **incomplete disclosure** (not telling subjects everything)  rather than outright deception. A job training RCT does not lie to anyone, but control group members may not fully understand that they are being studied as a comparison.
 
 -   Participants must be informed of **potential risks**
 
@@ -149,7 +150,7 @@ Some participants suffered lasting psychological trauma. This case is important 
 
     -   Not there to make your life easier, but an important part of the process
 
--   Before collecting **any data with human subjects**, even observational, you must get IRB approval
+-   Before collecting **any data with human subjects**, you must get IRB approval
 
     -   Does not apply to using existing census or survey data, only if you're collecting new data (or rare other cases)
 :::
@@ -166,7 +167,7 @@ Some participants suffered lasting psychological trauma. This case is important 
 -   This is both fair (everyone has an equal chance) and scientifically useful (randomization allows causal inference)
 :::
 
-## "Why Can't We Just Give It to Everyone?"
+## "Why Can't We Just Give It to Everyone?" {.smaller}
 
 ::: incremental
 -   Stakeholders and policymakers often push back on randomization: if we think the program works, why withhold it from the control group?
@@ -175,9 +176,61 @@ Some participants suffered lasting psychological trauma. This case is important 
 
 -   Giving an unproven program to everyone might waste limited resources, or in some cases, the program might actually cause harm
 
--   There is a long history of well-intentioned interventions that turned out to be ineffective or counterproductive once rigorously tested. The Scared Straight program is a well-known example: it was popular and widely adopted, but randomized evaluations showed it actually *increased* juvenile offending.
+-   There is a long history of well-intentioned interventions that turned out to be ineffective or counterproductive once rigorously tested. Let's look at a case study.
 
 -   Randomization is how we find out what works before we scale it up
+:::
+
+## Scared Straight: A Case Study {.smaller}
+
+::: incremental
+-   In the 1970s, a program called "Scared Straight" brought juvenile offenders into prisons to meet inmates and see the reality of incarceration firsthand
+
+-   The idea was intuitive: show kids where they'll end up if they keep breaking the law, and they'll be 'scared straight'
+
+-   A 1978 documentary about the program at Rahway State Prison in New Jersey won an Academy Award. It claimed a 94% success rate among the kids who went through the program
+
+-   Policymakers loved it. The program spread rapidly across the United States and internationally. By the 1990s, versions of it were running in dozens of states
+:::
+
+## Why Everyone Believed It Worked {.smaller}
+
+::: incremental
+-   The 94% success rate came from a simple before-and-after comparison: most kids who went through the program did not reoffend afterward
+
+-   What is the counterfactual? What would have happened to those same kids if they had *not* gone through the program?
+
+-   Most juvenile offenders age out of crime on their own. Many of the kids in the program were first-time offenders who were unlikely to reoffend regardless
+
+-   Without a control group, there was no way to separate the effect of the program from the natural decline in offending that happens with age
+
+-   The 94% number was not evidence that the program worked. It was evidence that most kids stop getting in trouble as they become adults
+:::
+
+## What the Experiments Actually Showed {.smaller}
+
+::: incremental
+-   Starting in the 1960s, researchers ran nine randomized controlled trials of Scared Straight and similar programs across eight US states
+
+-   In each study, eligible youth were randomly assigned to either attend the program or to a control group that received no intervention
+
+-   The results were surprising: across all nine studies, the kids who went through the program were *more* likely to reoffend than the control group
+
+-   A meta-analysis by Petrosino et al. (2013) found that the programs increased offending by somewhere between 1% and 28% compared to doing nothing at all
+
+-   One explanation is that exposing at-risk youth to hardened criminals, prison culture, and aggressive confrontation actually normalized criminal behavior rather than deterring it
+:::
+
+## Lessons for Public Administrators {.smaller}
+
+::: incremental
+-   Scared Straight is not an unusual case. Many popular programs have turned out to be ineffective or harmful when subjected to rigorous evaluation. D.A.R.E. is another well-known example
+
+-   The program was adopted because the logic seemed sound, the anecdotes were compelling, and the before-and-after numbers looked impressive
+
+-   But none of that is a substitute for a well-designed study with a credible counterfactual
+
+-   As public administrators, you will regularly encounter programs with enthusiastic advocates, compelling stories, and no rigorous evidence. Your job is to ask the harder question: compared to what?
 :::
 
 # Part 2: Designing an Experiment
@@ -190,12 +243,13 @@ Some participants suffered lasting psychological trauma. This case is important 
 -   They have funding for 100 slots but 200 eligible students. Because they cannot serve everyone, they can randomize who gets access.
 
 -   **Recruitment (n = 200):**
+
     -   Inclusion: Students scoring below the 40th percentile on the state math assessment
     -   Exclusion: Students already receiving other academic interventions (e.g., special education pull-out services)
     -   Why these criteria? We want students who could plausibly benefit, without contaminating the treatment with other programs
 :::
 
-## Treatment Assignment
+## Treatment Assignment {.smaller}
 
 ::: incremental
 -   **Treatment group (n = 100):** Access to the tutoring program, two sessions per week for one semester
@@ -218,7 +272,7 @@ Some participants suffered lasting psychological trauma. This case is important 
 
     -   If measuring multiple outcomes, need to adjust for multiple hypothesis testing
 
--   **Covariates:** Baseline test score, free/reduced lunch status, grade level, school
+-   **Covariates:** Optional! Randomization already gives us balance between treatment and control
 :::
 
 ## But Who Actually Shows Up?
@@ -253,7 +307,7 @@ There are four types of people in any experiment, defined by what they would do 
 
 **Defiers:** Students who do the opposite of their assignment. These are rare and most designs assume they do not exist.
 
-## Why Compliance Matters
+## Why Compliance Matters {.smaller}
 
 ::: incremental
 -   We cannot observe which type each student is. We only see what they were assigned and what they did.
@@ -273,8 +327,9 @@ In an experiment, the ATE is simply the difference in average outcomes between g
 
 $$ATE = E[Y | D = 1] - E[Y | D = 0]$$
 
-::: {.callout-note}
+::: callout-note
 ## In Plain Language
+
 Average outcome for the treatment group minus average outcome for the control group. Because treatment was randomly assigned, this simple comparison gives you the causal effect directly. With non-compliance, this estimates the ITT: the effect of being *offered* the program.
 :::
 
@@ -343,7 +398,7 @@ t.test(free_lunch ~ assigned, data = df)
 
 If there are significant differences, you can control for the covariate, but it also suggests your randomization may have gone wrong!
 
-## The Intent-to-Treat Estimate
+## The Intent-to-Treat Estimate {.smaller}
 
 ```{r}
 #| echo: true
@@ -382,7 +437,6 @@ This is **not** a valid causal estimate. Students who showed up to tutoring are 
     -   Increases precision and statistical power
     -   Accounts for any residual imbalance
     -   Allows exploration of heterogeneous effects
-
 -   **Arguments against:**
     -   Simplicity of interpretation is better without covariates
     -   Randomization already handles confounding
@@ -437,8 +491,9 @@ Notice how the standard error on `assigned` shrinks when we include covariates, 
     -   "Reasonable" should be defined by theory and prior work, not by what's convenient
 
 -   **Key terms:**
-    -   **Significance ($\alpha$):** Probability of a false positive. Usually set at 0.05.
-    -   **Power ($1 - \beta$):** Usually set at 0.80 (meaning a 20% chance of missing a real effect)
+
+    -   **Significance (**$\alpha$): Probability of a false positive. Usually set at 0.05.
+    -   **Power (**$1 - \beta$): Usually set at 0.80 (meaning a 20% chance of missing a real effect)
     -   **Minimum Detectable Effect (MDE):** The smallest effect you can reliably detect given your sample size
 :::
 
@@ -516,11 +571,7 @@ The intuition is straightforward. Look at the right side of the formula and noti
 
 You can also flip this formula around: pick the smallest effect you care about detecting, and solve for the sample size you need. In practice, most people use software to do this (R's `pwr` package, for instance).
 
-. . .
-
-Things get more complicated with block/cluster randomization, but the intuition is the same.
-
-## Connecting This to Our Tutoring Example
+## Connecting This to Our Tutoring Example {.smaller}
 
 ::: incremental
 -   Suppose prior research suggests tutoring programs improve math scores by about 3 to 5 points on the state test
@@ -564,7 +615,7 @@ Small samples create two underappreciated problems beyond low power:
 
 # Part 4: Pre-Registration
 
-## Why Pre-Register?
+## Why Pre-Register? {.smaller}
 
 ::: incremental
 -   One advantage of experiments is that they are harder to p-hack or fish for significance
@@ -578,7 +629,7 @@ Small samples create two underappreciated problems beyond low power:
 -   When you read an evaluation report, one of the first things to check is whether the analysts committed to their approach ahead of time. If they did not, you should be more skeptical of the results.
 :::
 
-## Pre-Registration in Practice
+## Pre-Registration in Practice {.smaller}
 
 ::: incremental
 -   Organizations that fund or review program evaluations increasingly expect pre-analysis plans
@@ -589,7 +640,7 @@ Small samples create two underappreciated problems beyond low power:
 
 -   The Foundations for Evidence-Based Policymaking Act (2018) requires federal agencies to develop evaluation plans and use rigorous evidence. Pre-registration is part of that culture.
 
--   If you are ever in a position to commission or review an evaluation, ask whether the evaluators committed to an analysis plan before they saw the data
+
 :::
 
 ## What Goes in a Pre-Analysis Plan
@@ -638,8 +689,7 @@ data.frame(
 
 . . .
 
-Without stratification, you might end up with 40 free-lunch students in treatment and only 20 in control, making it hard to tell whether differences in outcomes are due to tutoring or to socioeconomic background.
-
+Without stratification, you might end up with 40 free-lunch students in treatment and only 20 in control. Most important if you care about the effects on some small subgroup
 # Part 5: Field Experiments
 
 ## Incentives Work: Getting Teachers to Come to School {.smaller}
@@ -693,9 +743,9 @@ Without stratification, you might end up with 40 free-lunch students in treatmen
 ## Treatment Details
 
 ::: incremental
--   Initial teacher wage: Rs. 1,000 (~$160 PPP) for a minimum of 20 days of work
+-   Initial teacher wage: Rs. 1,000 (\~\$160 PPP) for a minimum of 20 days of work
 
-    -   Treatment: Rs. 50 bonus (~$8 PPP) for each day over 20; Rs. 50 fine for each day under 20, fines capped at Rs. 500
+    -   Treatment: Rs. 50 bonus (\~\$8 PPP) for each day over 20; Rs. 50 fine for each day under 20, fines capped at Rs. 500
 
 -   Control group receives the initial wage with no incentive structure
 
@@ -710,12 +760,14 @@ Without stratification, you might end up with 40 free-lunch students in treatmen
 -   Study done with J-PAL, one of the main funders of field experiments. They handled data collection.
 
 -   Teacher attendance measured through **two unannounced visits per month:**
+
     -   How many students present? Anything on the blackboard? Was the teacher talking to children?
     -   Why are these good measures?
 
 -   Seva Mandir provided camera and payment data
 
 -   Three student exams administered: pretest, midtest, post-test
+
     -   Basic math and vocabulary
     -   Students who could not write received 0 on written portions
 :::
@@ -780,7 +832,7 @@ Black line = teachers already "in the money." Red line = teachers not yet at the
 -   But note the external validity question: would the same incentive structure work for teachers in the U.S., where wages are higher and monitoring systems already exist? The answer is not obvious.
 :::
 
-## Field Experiments: Pros and Cons
+## Field Experiments: Pros and Cons {.smaller}
 
 ::: incremental
 -   **Benefits:** High external validity. Involves real interventions with real consequences for real people.
@@ -788,6 +840,7 @@ Black line = teachers already "in the money." Red line = teachers not yet at the
 -   **Drawbacks:** Less control over treatments. More potential for internal validity issues. Reliance on partner organizations. Expensive, though funding exists.
 
 -   **Resources:**
+
     -   <https://www.povertyactionlab.org/research-resources?view=toc>
     -   <https://www.povertyactionlab.org/page/handbook-field-experiments>
     -   Work with faculty! We have experience applying for grants and may lend credibility to applications
@@ -842,18 +895,18 @@ Each respondent sees pairs of hypothetical programs and picks the one they would
 
 ## A Conjoint Profile
 
-| Attribute        | Program A              | Program B              |
-|------------------|------------------------|------------------------|
-| Duration         | 8 weeks                | 16 weeks               |
-| Format           | Hybrid                 | In-person              |
-| Childcare        | Yes                    | No                     |
-| Transport stipend| Yes                    | No                     |
-| Credential       | Industry certification | Certificate            |
-| Schedule         | Evening                | Daytime                |
+| Attribute         | Program A              | Program B   |
+|-------------------|------------------------|-------------|
+| Duration          | 8 weeks                | 16 weeks    |
+| Format            | Hybrid                 | In-person   |
+| Childcare         | Yes                    | No          |
+| Transport stipend | Yes                    | No          |
+| Credential        | Industry certification | Certificate |
+| Schedule          | Evening                | Daytime     |
 
 The respondent picks one. Because profiles are **randomly generated**, any systematic preference for one attribute level over another is a causal effect.
 
-## What Can We Learn From This?
+## What Can We Learn From This? .{smaller}
 
 ::: incremental
 -   The **Average Marginal Component Effect (AMCE)** tells you: holding all other attributes at their randomly assigned values, how much does changing one attribute change the probability that a program is chosen?
@@ -974,7 +1027,7 @@ ggplot(amce_results, aes(x = estimate, y = reorder(term_label, estimate))) +
 -   The key limitation remains external validity. People say they prefer childcare in a survey, but would they actually enroll? Survey responses and real behavior do not always match.
 :::
 
-## Looking Ahead: When Experiments Are Not Possible
+## Looking Ahead: When Experiments Are Not Possible .{smaller}
 
 ::: incremental
 -   Often in policy research, we **cannot** randomize the treatment. We cannot randomly assign poverty, or school quality, or exposure to pollution.
@@ -1013,7 +1066,8 @@ ggplot(amce_results, aes(x = estimate, y = reorder(term_label, estimate))) +
 
 ## For Your Final Project
 
-::: {.callout-tip}
+::: callout-tip
 ## Think About This Now
+
 Could your research question benefit from experimental evidence? Even if you cannot run an experiment yourself, think about what an ideal experiment would look like. What would you randomize? Who would be in your sample? What would you measure? Thinking through the experimental ideal helps clarify what your observational analysis is trying to approximate.
 :::

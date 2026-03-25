@@ -113,6 +113,7 @@ toc-depth: 2
 
 - [Brandt (1978), "Racism and Research: The Case of the Tuskegee Syphilis Study"](https://doi.org/10.2307/3561468)
 - [Milgram (1963), "Behavioral Study of Obedience"](https://doi.org/10.1037/h0040525)
+- [Petrosino et al. (2013), "Scared Straight and Other Juvenile Awareness Programs for Preventing Juvenile Delinquency: A Systematic Review"](https://doi.org/10.4073/csr.2013.5)
 - [Duflo, Hanna, and Ryan (2012), "Incentives Work: Getting Teachers to Come to School"](https://doi.org/10.1257/aer.102.4.1241)
 - [Hainmueller, Hopkins, and Yamamoto (2014), "Causal Inference in Conjoint Analysis"](https://doi.org/10.1093/pan/mpt024)
 
