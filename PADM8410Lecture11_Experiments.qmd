@@ -750,16 +750,26 @@ Without stratification, you might end up with 40 free-lunch students in treatmen
 -   Pay in treatment schools was tied to attendance: Rs. 500 for the month if the teacher attended fewer than 10 days, plus Rs. 50 for each additional day beyond 10. The **56 comparison schools** kept the flat Rs. 1,000 monthly pay
 :::
 
-## Why This Design Is Clever
+## Why This Design Is Clever {.smaller}
 
 ::: incremental
--   The cameras solve the **monitoring problem**. Unannounced visits are expensive and infrequent. The camera gives daily, verifiable data on attendance at low cost
+-   The treatment vs. control comparison tells us "did the program work?" But the authors wanted to answer a harder question: **how much of the effect is from monitoring, and how much is from the financial incentive?**
 
--   The nonlinear pay structure is designed so that teachers who barely show up get a pay cut (Rs. 500 instead of Rs. 1,000), while teachers who attend regularly earn more than before (20 days at Rs. 50 each above 10 = Rs. 1,000 bonus on top of Rs. 500 = Rs. 1,500 total)
+-   The key insight is that the nonlinear pay structure creates variation in incentives *within* the treatment group. A teacher who has worked 9 days with 2 days left faces a huge incentive to show up one more day (crossing the 10-day threshold means Rs. 500 more). A teacher who has already worked 15 days faces a smaller marginal incentive (just Rs. 50)
+
+-   By tracking daily attendance decisions and matching them to where each teacher stood relative to the threshold on each day, the authors can estimate how responsive teachers are to money vs. simply being watched
+
+-   This lets them predict what *other* pay structures would do, without running a new experiment. They calculated that Seva Mandir could achieve the same attendance for 22% less money by adjusting the threshold and bonus amount
+:::
+
+## Design Details {.smaller}
+
+::: incremental
+-   The cameras solve the monitoring problem. Unannounced visits are expensive and infrequent. The camera gives daily, verifiable data at low cost
 
 -   The five-hour and eight-student rules prevent gaming. You cannot just show up, snap a photo, and leave
 
--   Is this ethical? What are the considerations? Note that these are para-teachers on renewable contracts, not government employees with union protections
+-   Is this ethical? These are para-teachers on renewable contracts, not government employees with union protections. The control group kept their existing pay. No one was made worse off by the experiment
 :::
 
 ## Preview of Results
@@ -950,7 +960,7 @@ Each respondent sees pairs of hypothetical programs and picks the one they would
 
 The respondent picks one. Because profiles are **randomly generated**, any systematic preference for one attribute level over another is a causal effect.
 
-## What Can We Learn From This? .{smaller}
+## What Can We Learn From This? {.smaller}
 
 ::: incremental
 -   The **Average Marginal Component Effect (AMCE)** tells you: holding all other attributes at their randomly assigned values, how much does changing one attribute change the probability that a program is chosen?
@@ -1071,7 +1081,7 @@ ggplot(amce_results, aes(x = estimate, y = reorder(term_label, estimate))) +
 -   The key limitation remains external validity. People say they prefer childcare in a survey, but would they actually enroll? Survey responses and real behavior do not always match.
 :::
 
-## Looking Ahead: When Experiments Are Not Possible .{smaller}
+## Looking Ahead: When Experiments Are Not Possible {.smaller}
 
 ::: incremental
 -   Often in policy research, we **cannot** randomize the treatment. We cannot randomly assign poverty, or school quality, or exposure to pollution.
