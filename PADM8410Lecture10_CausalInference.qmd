@@ -1094,13 +1094,11 @@ This was a dense lecture. Here are the ideas to hold onto:
 ## What's Next
 
 ::: incremental
--   Next week: **Fixed effects**, using panel data to control for unobserved confounders
+-   Next: **Experiments**, how randomization solves the causal inference problem
 
--   Then: **Design-based causal inference**
+-   Then: **Panel data and fixed effects**, using repeated observations to control for unobserved confounders
 
-    -   Experiments (Natural, Survey, Lab)
-    -   Difference-in-Differences
-    -   Regression Discontinuity
+-   Then: **Difference-in-Differences** and **Regression Discontinuity**
 :::
 
 ## For Your Own Work
