@@ -720,7 +720,7 @@ data.frame(
 . . .
 
 Without stratification, you might end up with 40 free-lunch students in treatment and only 20 in control. Most important if you care about the effects on some small subgroup
-# Part 5: Field Experiments
+# Part 5: Case Study: Incentives Work (Duflo, Hanna, and Ryan 2012)
 
 ## Incentives Work: Getting Teachers to Come to School {.smaller}
 
