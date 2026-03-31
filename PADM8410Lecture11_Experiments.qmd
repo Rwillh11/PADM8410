@@ -673,7 +673,7 @@ Small samples create two underappreciated problems beyond low power:
 
 :::
 
-## What Goes in a Pre-Analysis Plan
+## What Goes in a Pre-Analysis Plan {.smaller}
 
 ::: incremental
 -   Complete information on the experimental design: treatments, recruitment, etc.
