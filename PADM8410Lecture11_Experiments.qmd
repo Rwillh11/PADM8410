@@ -573,15 +573,45 @@ You can also flip this formula around: pick the smallest effect you care about d
 
 ## Connecting This to Our Tutoring Example {.smaller}
 
-::: incremental
--   Suppose prior research suggests tutoring programs improve math scores by about 3 to 5 points on the state test
+Suppose prior research suggests tutoring programs improve math scores by about 3 to 5 points on the state test. The standard deviation of math scores in the district is about 15 points. We have 100 students per group. Let's plug in the numbers:
 
--   The standard deviation of math scores in the district is about 15 points
+```{r}
+#| echo: true
 
--   Before running the study, we would ask: with 100 students per group and this level of noise, can we detect an effect of 3 points? What about 5 points?
+# Our study parameters
+N <- 200          # total sample (100 per group)
+P <- 0.5          # 50/50 split
+sigma <- 15       # SD of math scores
+t_power <- 0.84   # t-value for 80% power
+t_alpha <- 1.96   # t-value for 5% significance (two-sided)
 
--   If our MDE turns out to be 7 points, we have a problem. We would need the program to have an unrealistically large effect for our study to find it. We would either need a bigger sample or a less noisy outcome measure.
-:::
+MDE <- (t_power + t_alpha) * sqrt(1 / (P * (1 - P))) * (sigma / sqrt(N))
+round(MDE, 1)
+```
+
+. . .
+
+Our MDE is about `r round(MDE, 1)` points. That means we can only detect effects of roughly 6 points or larger. If the true effect is 3 points (the low end of what prior research suggests), this study will miss it most of the time. We would either need a bigger sample or a less noisy outcome measure.
+
+## What If We Had More Students? {.smaller}
+
+```{r}
+#| echo: true
+
+# Try different sample sizes
+sample_sizes <- c(100, 200, 400, 600, 1000)
+mdes <- (t_power + t_alpha) * sqrt(1 / (P * (1 - P))) * (sigma / sqrt(sample_sizes))
+
+data.frame(
+  `Total N` = sample_sizes,
+  `Per Group` = sample_sizes / 2,
+  MDE = round(mdes, 1)
+)
+```
+
+. . .
+
+To detect a 3-point effect, we would need about 800 students total (400 per group). This is why power analysis matters: running a study that is too small wastes everyone's time and money.
 
 ## Type S and Type M Errors {.smaller}
 
