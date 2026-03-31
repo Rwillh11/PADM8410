@@ -736,16 +736,30 @@ Without stratification, you might end up with 40 free-lunch students in treatmen
     -   **Secondary Question:** Does higher teacher attendance improve student outcomes?
 :::
 
-## The Intervention
+## The Intervention {.smaller}
 
 ::: incremental
--   Seva Mandir gave 57 randomly selected teachers **cameras**, with instructions to have students take date-stamped photos with the teacher at the start and end of each day
+-   Seva Mandir runs single-teacher nonformal education centers (NFEs) in rural villages in Rajasthan. These are not government schools, and the teachers are "para-teachers" on short, renewable contracts, not civil servants
 
--   Teachers received Rs. 500 if they attended fewer than 10 days, plus Rs. 50 for each additional day
+-   At baseline (August 2003), the teacher absence rate was about **35 percent**. Teachers were paid a flat Rs. 1,000 per month regardless of attendance. Seva Mandir tried to reduce absences by threatening dismissal, but this was not enforced
 
-    -   What is the logic of this payment structure?
+-   In September 2003, teachers in **57 randomly selected schools** were given tamper-proof cameras with date and time stamps. A student took a photo of the teacher and classmates at the start and end of the day
 
--   Is this ethical? What are the considerations?
+-   A "valid" day required that the two photos were at least **five hours apart** and both showed **at least eight children** present
+
+-   Pay in treatment schools was tied to attendance: Rs. 500 for the month if the teacher attended fewer than 10 days, plus Rs. 50 for each additional day beyond 10. The **56 comparison schools** kept the flat Rs. 1,000 monthly pay
+:::
+
+## Why This Design Is Clever
+
+::: incremental
+-   The cameras solve the **monitoring problem**. Unannounced visits are expensive and infrequent. The camera gives daily, verifiable data on attendance at low cost
+
+-   The nonlinear pay structure is designed so that teachers who barely show up get a pay cut (Rs. 500 instead of Rs. 1,000), while teachers who attend regularly earn more than before (20 days at Rs. 50 each above 10 = Rs. 1,000 bonus on top of Rs. 500 = Rs. 1,500 total)
+
+-   The five-hour and eight-student rules prevent gaming. You cannot just show up, snap a photo, and leave
+
+-   Is this ethical? What are the considerations? Note that these are para-teachers on renewable contracts, not government employees with union protections
 :::
 
 ## Preview of Results
