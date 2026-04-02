@@ -421,19 +421,19 @@ The subscript $i$ on $\beta$ is the key change. Instead of one intercept $\beta_
 -   Once each city has its own baseline, the coefficient $\beta_1$ is estimated only from **within-city** variation: years when the *same city* had more or fewer police officers
 :::
 
-## Two Equivalent Ways to Think About FE
+## Two Equivalent Ways to Think About FE {.smaller}
 
 ::: incremental
 1.  **Add a dummy variable for every unit.** A control for "Atlanta" adjusts for everything about Atlanta. Fixed effects just add a dummy for *every* city at once.
 
 2.  **Subtract each unit's mean** (de-mean the data):
+:::
+
+. . .
 
 $$Y_{it} - \bar{Y}_{i} = \beta_{1}(X_{it} - \bar{X}_{i}) + \epsilon_{it}$$
 
 This is exactly what our visual walkthrough did: subtract each person's average exercise and average colds, then regress the deviations.
-:::
-
-. . .
 
 Both approaches produce the same $\beta_1$. The de-meaning version makes the "within" logic visible.
 
