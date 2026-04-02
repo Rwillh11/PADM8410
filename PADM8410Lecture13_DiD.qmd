@@ -8,67 +8,126 @@ execute:
   fig-align: center
 ---
 
-## The Setup
+## Where We Left Off {.smaller}
 
 ::: incremental
--   Often in policy, a treatment occurs at a specific point in time
+-   Last class, we learned **fixed effects**: control for the unit, use only within-unit variation over time
 
-    -   We observe the world before the treatment
+-   We also saw that **two-way fixed effects** (unit + time) has problems when treatment timing varies across units
 
-    -   And after the treatment
+-   Today we learn the method that builds directly on those ideas: **Difference-in-Differences (DiD)**
 
-    -   We want to know how much of the difference is **caused by the treatment**
-
--   One obvious backdoor path: **time trends**
-
-    -   Things change over time regardless of the policy — the economy grows, demographics shift, technology improves
+-   DiD is probably the **most commonly used** causal inference tool in applied policy research: minimum wage studies, Medicaid expansion, education reforms, environmental regulations
 :::
 
-## The Problem: Time as a Confounder
+## A Policy Question {.smaller}
+
+::: incremental
+-   A state legislator asks: **"Did our minimum wage increase cost us jobs?"**
+
+-   You have employment data from before and after the increase. Employment went up slightly. Case closed?
+
+-   Not so fast. Employment was rising *everywhere* during this period because of economic growth. Maybe it would have risen even more without the minimum wage increase.
+
+-   The problem: **time is a confounder**. Things change over time regardless of the policy, and we can't just compare before vs. after.
+:::
+
+## Why Before-and-After Isn't Enough {.smaller}
+
+::: incremental
+-   If we only look at one state, we can't tell how much of the change is due to the policy and how much is due to the economy, demographics, or other trends
+
+-   We need a **comparison group**: a similar state that *didn't* change its minimum wage
+
+-   If both states were on the same trajectory before the policy, then any *divergence* after the policy is plausibly caused by the treatment
+
+-   That's the core logic of Difference-in-Differences: compare the **change** in the treated group to the **change** in a control group
+:::
+
+## Why Should MPAs Care?
+
+::: incremental
+-   If you read policy evaluations, you *will* encounter DiD
+
+-   If you do evaluation work yourself, you will likely use it
+
+-   Understanding DiD also means understanding its limits, which will make you a better consumer of policy research
+:::
+
+## Today's Roadmap
+
+::: incremental
+1.  **The classic 2×2 DiD**: Card & Krueger's minimum wage study
+2.  **The parallel trends assumption**: the key to credibility
+3.  **DiD in R**: a full worked example
+4.  **Event studies**: visualizing effects over time
+5.  **Staggered adoption**: when different units get treated at different times
+6.  **Modern solutions**: new methods that fix problems with classic TWFE
+7.  **Practical advice**: a checklist for credible DiD designs
+:::
+
+# Part 1: The Classic 2×2 DiD
+
+## Card & Krueger (1994): Minimum Wage and Employment {.smaller}
+
+::: incremental
+-   This is exactly the question our legislator was asking, and it's one of the most famous studies in economics
+
+-   In April 1992, **New Jersey** raised its minimum wage from \$4.25 to \$5.05
+
+-   Neighboring **Pennsylvania** did not change its minimum wage
+
+-   Conventional economic theory predicted that a higher minimum wage would reduce employment
+
+-   Card & Krueger surveyed fast-food restaurants in both states, before and after the increase
+
+-   **The question:** Did NJ's minimum wage increase reduce fast-food employment?
+:::
+
+## The 2×2 Table
+
+| | Before (Feb 1992) | After (Nov 1992) | Change |
+|---|---|---|---|
+| **New Jersey** (treated) | 20.44 FTE | 21.03 FTE | +0.59 |
+| **Pennsylvania** (control) | 23.33 FTE | 21.17 FTE | -2.16 |
+
+. . .
+
+**DiD Estimate:** (+0.59) − (−2.16) = **+2.76 FTE employees**
+
+. . .
+
+::: {.callout-important}
+The minimum wage increase was associated with an **increase** in employment, the opposite of the standard prediction. This is one of the most influential papers in labor economics.
+:::
+
+## What Did the DiD Estimate Actually Do? {.smaller}
+
+::: incremental
+-   NJ employment went up by 0.59 FTE. But that alone doesn't tell us much, because lots of things were happening at the same time.
+
+-   PA employment went *down* by 2.16 FTE over the same period. PA serves as our benchmark for what would have happened to NJ without the policy.
+
+-   The difference between these two changes (0.59 minus -2.16 = 2.76) removes the common time trend and isolates the effect of the minimum wage increase.
+
+-   We're not comparing NJ to PA in *levels* (PA had more employees). We're comparing how much each state *changed*.
+:::
+
+## The DiD Formula
+
+$$\widehat{\delta}_{DiD} = (\bar{Y}_{treat}^{post} - \bar{Y}_{treat}^{pre}) - (\bar{Y}_{control}^{post} - \bar{Y}_{control}^{pre})$$
+
+::: {.callout-note}
+## In English
+Take the **change** in the treated group. Subtract the **change** in the control group. What's left is the treatment effect: the part of the change that can't be explained by common time trends.
+:::
+
+## The DiD Logic in DAG Terms {.smaller}
 
 ```{r}
 #| echo: false
 
 library(tidyverse)
-library(dagitty)
-library(ggdag)
-
-dag <- dagitty("
-dag {
-  Outcome      [pos=\"2,0\"]
-  Time         [pos=\"1,-1\"]
-  Treatment    [pos=\"0,0\"]
-
-  Time -> Treatment
-  Time -> Outcome
-  Treatment -> Outcome
-}
-")
-ggdag(dag, text = FALSE, use_labels = "name") +
-  coord_cartesian(clip = "off") +
-  theme_dag() +
-  theme(plot.margin = margin(t = 20, r = 10, b = 10, l = 10), legend.position = "none")
-```
-
-If all groups are treated at the same time, we **cannot** separate the treatment effect from the time trend.
-
-## Why We Need a Control Group
-
-::: incremental
--   Without a control group, we could try event studies or interrupted time series
-
-    -   But these rely on assumptions about what the trend *would have been* — often not very plausible
-
--   If we have a group that is **not treated**, we can use them as a benchmark
-
-    -   The logic of a "natural experiment": comparing a treatment group to a control group over time
-:::
-
-## The DiD DAG
-
-```{r}
-#| echo: false
-
 library(dagitty)
 library(ggdag)
 
@@ -92,98 +151,44 @@ ggdag(dag, text = FALSE, use_labels = "name") +
   theme(plot.margin = margin(t = 20, r = 10, b = 10, l = 10), legend.position = "none")
 ```
 
-We need to close both backdoor paths — through Time *and* through Group.
-
-## The DiD Logic
-
 ::: incremental
--   **Close the Group backdoor:** Look at *within-group* changes over time (we know how to do this — fixed effects!)
-
--   **Close the Time backdoor:** Compare the within-group changes between the treated and control groups
-
--   We're asking: **How much more did the treated group change compared to the control group?**
-:::
-
-## Why Should MPAs Care?
-
-::: incremental
--   DiD is probably the **most commonly used** causal inference tool in applied policy research
-
--   Minimum wage studies, Medicaid expansion, education reforms, environmental regulations — all use DiD
-
--   If you read policy evaluations, you *will* encounter DiD. If you do evaluation work, you'll likely *use* it.
-:::
-
-## Today's Roadmap
-
-::: incremental
-1.  **The classic 2×2 DiD** — Card & Krueger's minimum wage study
-2.  **The parallel trends assumption** — the key to credibility
-3.  **DiD in R** — a full worked example
-4.  **Event studies** — visualizing effects over time
-5.  **Staggered adoption** — when different units get treated at different times
-6.  **Modern solutions** — new methods that fix problems with classic TWFE
-7.  **Practical advice** — a checklist for credible DiD designs
-:::
-
-# Part 1: The Classic 2×2 DiD
-
-## Card & Krueger (1994): Minimum Wage and Employment {.smaller}
-
-::: incremental
--   In April 1992, **New Jersey** raised its minimum wage from \$4.25 to \$5.05
-
--   Neighboring **Pennsylvania** did not change its minimum wage
-
--   Conventional economic theory predicted: higher minimum wage → fewer jobs
-
--   Card & Krueger surveyed fast-food restaurants in both states, before and after the increase
-
--   **The question:** Did NJ's minimum wage increase reduce fast-food employment?
-:::
-
-## The 2×2 Table
-
-| | Before (Feb 1992) | After (Nov 1992) | Change |
-|---|---|---|---|
-| **New Jersey** (treated) | 20.44 FTE | 21.03 FTE | +0.59 |
-| **Pennsylvania** (control) | 23.33 FTE | 21.17 FTE | -2.16 |
-
-. . .
-
-**DiD Estimate:** (+0.59) − (−2.16) = **+2.76 FTE employees**
-
-. . .
-
-::: {.callout-important}
-The minimum wage increase was associated with an **increase** in employment — the opposite of the standard prediction! This paper changed the entire minimum wage debate.
-:::
-
-## The DiD Formula
-
-$$\widehat{\delta}_{DiD} = (\bar{Y}_{treat}^{post} - \bar{Y}_{treat}^{pre}) - (\bar{Y}_{control}^{post} - \bar{Y}_{control}^{pre})$$
-
-::: {.callout-note}
-## In English
-Take the **change** in the treated group. Subtract the **change** in the control group. What's left is the treatment effect — the part of the change that can't be explained by common time trends.
+-   There are two backdoor paths: through **Time** and through **Group**
+-   Differencing over time within each group closes the Time path (this is the fixed effects idea from last class)
+-   Differencing *between* groups closes the Group path
+-   DiD closes both at once
 :::
 
 # Part 2: The 2×2 DiD Estimator
 
 ## DiD as a Regression {.smaller}
 
-We can recover the DiD estimate from a **two-way fixed effects** regression:
-
-$$Y_{it} = \alpha_{g} + \alpha_{t} + \beta \cdot \text{Treated}_{it} + \epsilon_{it}$$
-
-Or equivalently, using the interaction form:
+We can express the DiD calculation as a regression. This should look familiar from OLS:
 
 $$Y_{it} = \beta_{0} + \beta_{1}\text{Group}_{i} + \beta_{2}\text{Post}_{t} + \beta_{3}(\text{Group}_{i} \times \text{Post}_{t}) + \epsilon_{it}$$
 
-::: {.callout-note}
-## In English
-$\beta_3$ is the DiD estimate — it captures the **extra change** in the treated group beyond what the control group experienced. The group dummy absorbs level differences; the time dummy absorbs common trends.
+::: incremental
+-   $\beta_1$ captures the baseline difference between groups (NJ vs PA before the policy)
+-   $\beta_2$ captures the common time trend (what changed for everyone)
+-   $\beta_3$ is the **DiD estimate**: the extra change in the treated group beyond what the control group experienced
 :::
+
+## The Connection to Fixed Effects {.smaller}
+
+::: incremental
+-   That interaction regression is equivalent to a **two-way fixed effects** model:
+
+$$Y_{it} = \alpha_{g} + \alpha_{t} + \beta \cdot \text{Treated}_{it} + \epsilon_{it}$$
+
+-   $\alpha_g$ is a group fixed effect (absorbs level differences between NJ and PA)
+-   $\alpha_t$ is a time fixed effect (absorbs common trends)
+-   $\beta$ is the same DiD estimate as $\beta_3$ above
+
+-   In `fixest`, this is the same syntax you learned last class, with treatment as the key variable:
+:::
+
+```r
+feols(fte ~ treated:post | state + period, data = ck_data)
+```
 
 ## Simulating Card & Krueger in R {.smaller}
 
@@ -198,84 +203,81 @@ n_restaurants <- 400  # 200 per state
 
 ck_data <- tibble(
   restaurant = 1:n_restaurants,
-  state = rep(c("NJ", "PA"), each = n_restaurants/2),
-  # PA starts with slightly more employees
-  base_fte = ifelse(state == "PA", rnorm(n_restaurants/2, 23.3, 4),
-                                    rnorm(n_restaurants/2, 20.4, 4))
+  state = rep(c("NJ", "PA"), each = n_restaurants / 2),
+  # PA starts with slightly more employees on average
+  base_fte = ifelse(state == "PA",
+                    rnorm(n_restaurants / 2, 23.3, 4),
+                    rnorm(n_restaurants / 2, 20.4, 4))
 ) %>%
-  # Create before and after observations
+  # Each restaurant appears twice: before and after
   crossing(period = c("before", "after")) %>%
   mutate(
-    post = ifelse(period == "after", 1, 0),
+    post    = ifelse(period == "after", 1, 0),
     treated = ifelse(state == "NJ", 1, 0),
-    # PA declines slightly; NJ gets a positive treatment effect
+    # Build the outcome from components:
     fte = base_fte +
-      ifelse(post == 1, -2.2, 0) +                   # Common time trend (decline)
-      ifelse(post == 1 & treated == 1, 2.76, 0) +    # Treatment effect
-      rnorm(n(), 0, 3)                                # Noise
+      ifelse(post == 1, -2.2, 0) +                # Common time trend (decline)
+      ifelse(post == 1 & treated == 1, 2.76, 0) +  # True treatment effect
+      rnorm(n(), 0, 3)                              # Random noise
   )
 ```
+
+We built in a true treatment effect of **+2.76 FTE**. Can our regression recover it?
 
 ## Running the DiD Regression {.smaller}
 
 ```{r}
 #| echo: true
 
-# Method 1: Interaction form
-did_interaction <- lm(fte ~ treated * post, data = ck_data)
-summary(did_interaction)$coefficients
-```
-
-. . .
-
-```{r}
-#| echo: true
-
-# Method 2: TWFE with fixest
+# TWFE with fixest (same syntax as last class)
 did_twfe <- feols(fte ~ treated:post | state + period, data = ck_data)
 summary(did_twfe)
 ```
 
 . . .
 
-Both methods recover approximately the same DiD estimate — the treatment effect of NJ's minimum wage increase.
+The `treated:post` coefficient is close to 2.76, the value we built into the simulation. The state and period fixed effects are absorbed behind the scenes, just like the country fixed effects in the gapminder example.
 
-## Why DiD Recovers the ATT, Not the ATE {.smaller}
+## The Interaction Form Gives the Same Answer {.smaller}
 
-::: incremental
--   In a randomized experiment, treatment and control groups are balanced → we get the **ATE**
+```{r}
+#| echo: true
 
--   In DiD, groups aren't randomly assigned — NJ and PA differ in many ways
-
--   What DiD recovers is the **Average Treatment Effect on the Treated (ATT)**
-
-    -   "Among the units that *actually received* the treatment, what was the average effect?"
-
--   We can't say (without more assumptions) what would have happened if PA had also raised its minimum wage
-:::
+# Interaction form with lm() -- equivalent, but shows all coefficients
+did_interaction <- lm(fte ~ treated * post, data = ck_data)
+summary(did_interaction)$coefficients
+```
 
 ::: {.callout-note}
-## In English
-DiD tells you: "The minimum wage increase added about 2.76 FTE jobs per restaurant **in New Jersey**." It doesn't tell you what would happen in Pennsylvania — because PA might be different in ways that matter.
+The `treated:post` coefficient is the DiD estimate in both models. The interaction form also shows you $\beta_1$ (group difference) and $\beta_2$ (time trend), which `feols()` absorbs into the fixed effects. Both approaches give the same answer.
 :::
 
 # Part 3: The Parallel Trends Assumption
 
-## The Key Assumption
+## The Key Assumption {.smaller}
 
 ::: incremental
--   DiD requires that, **without the treatment**, the treated group would have followed the same trend as the control group
+-   DiD requires one critical assumption: **without the treatment**, the treated group would have followed the same trend as the control group
 
 -   This is called the **parallel trends assumption**
 
--   It does **not** require that the groups are at the same *level* — just that they would have *changed at the same rate*
+-   In Card & Krueger, it means: if NJ had *not* raised its minimum wage, NJ's fast-food employment would have changed at the same rate as PA's
+
+-   Notice this is an assumption about a **counterfactual** that we can never observe. We can check whether trends were parallel *before* the treatment, but the assumption is about what would have happened *after*.
 :::
 
-. . .
+## Levels vs. Trends {.smaller}
 
 ::: {.callout-important}
-## The Unverifiable Part
-We can check whether trends were parallel *before* the treatment. But the assumption is about what would have happened *after* treatment in the absence of treatment — which is a counterfactual we can never observe. Pre-trends are suggestive, not definitive.
+## A Common Confusion
+
+Parallel trends does **not** require that the groups are at the same level. PA had more FTE employees than NJ before the policy. That's fine. What matters is that PA and NJ were *changing at the same rate*. DiD compares changes, not levels. This is the same within-unit logic from our fixed effects lecture.
+:::
+
+::: incremental
+-   Two cities can have very different crime rates but still have parallel trends if crime is rising (or falling) at the same rate in both
+
+-   If they are changing at different rates before the policy, any post-treatment difference could just be a continuation of that pre-existing divergence
 :::
 
 ## Good vs. Bad Parallel Trends {.smaller}
@@ -302,15 +304,15 @@ df <- tibble(
 
 make_plot <- function(data, panel_title) {
   ggplot(data, aes(x = time, y = outcome, color = group)) +
-    geom_line(size = 1) +
+    geom_line(linewidth = 1) +
     geom_point(size = 2) +
     geom_vline(xintercept = 6, linetype = "dashed") +
     annotate("rect", xmin = 6, xmax = 10.5, ymin = -Inf, ymax = Inf, alpha = 0.1) +
     annotate("text", x = 6.3, y = max(data$outcome) * 0.2, label = "Treatment\nPeriod", hjust = 0) +
     scale_color_manual(values = c("Treatment" = "black", "Control" = "gray40")) +
-    labs(title = panel_title, x = "Time", y = "Outcome") +
+    labs(title = panel_title, x = "Time", y = "Outcome", color = "Group") +
     theme_minimal(base_size = 14) +
-    theme(legend.position = "none")
+    theme(legend.position = "bottom")
 }
 
 p1 <- make_plot(df %>% filter(panel == "Parallel Prior Trends"), "(a) Parallel Prior Trends")
@@ -319,37 +321,35 @@ p2 <- make_plot(df %>% filter(panel == "Converging Prior Trends"), "(b) Convergi
 p1 + p2
 ```
 
-Panel (a): Pre-trends are parallel → DiD is credible. Panel (b): The control group was already converging → the "treatment effect" may just be the continuation of a pre-existing trend.
+Panel (a): pre-trends are parallel, so the post-treatment gap is plausibly causal. Panel (b): the control group was already converging before treatment, so the "effect" may just be a continuation of that pre-existing trend.
 
-## When Is Parallel Trends Plausible?
+## When Is Parallel Trends Plausible? {.smaller}
 
 ::: incremental
 -   **More plausible:**
-    -   Two neighboring states with similar economic structures
-    -   Units that were selected for treatment based on a fixed characteristic (not a trend)
+    -   Two neighboring states with similar economic structures (this is why Card & Krueger chose NJ and PA, not NJ and Alaska)
+    -   Units selected for treatment based on a fixed characteristic, not a trend
     -   Short time horizons where trends are less likely to diverge
 
 -   **Less plausible:**
     -   Comparing a booming city to a declining one
-    -   Units that self-selected into treatment based on anticipated trends
+    -   Units that self-selected into treatment based on anticipated trends (e.g., states that expanded Medicaid because their health outcomes were already improving)
     -   Very long time horizons with structural changes
 :::
 
-## Placebo Tests
+## Testing Parallel Trends {.smaller}
 
 ::: incremental
--   Run DiD in **pre-treatment periods** to check for spurious effects
+-   We can't prove parallel trends holds, but we can look for evidence against it
 
--   If treatment happens in April 2025 with monthly data:
-    -   Run DiD comparing March to February, February to January, etc.
-    -   Treat the later month as the "treatment period"
+-   **Placebo tests in pre-treatment periods:** Run DiD as if treatment happened earlier. If you find "effects" before the real treatment, something is wrong.
 
--   Finding significant effects in pre-treatment periods is strong evidence that parallel trends is violated
+-   **Event study plots** (which we'll build later) are the standard way to do this. They show the treatment-control difference at each time period. Before treatment, those differences should hover around zero.
 
--   Finding null effects doesn't *prove* the assumption, but it's reassuring
+-   Finding null pre-treatment effects doesn't *prove* the assumption, but it's reassuring. Finding significant pre-treatment effects is a serious red flag.
 :::
 
-## Anticipation Effects
+## Anticipation Effects {.smaller}
 
 ::: incremental
 -   What if people change behavior **before** the policy takes effect?
@@ -358,14 +358,26 @@ Panel (a): Pre-trends are parallel → DiD is credible. Panel (b): The control g
 
     -   Firms might hire ahead of a regulation deadline
 
--   Anticipation violates the assumption that treatment "turns on" at a specific time
+-   Anticipation violates the assumption that treatment "turns on" at a specific time. It can also make pre-trends look non-parallel even if the design is otherwise sound.
 
 -   **Solution:** Backdate the treatment period or exclude the periods just before treatment
 :::
 
-# Part 4: DiD in R — A Full Worked Example
+# Part 4: DiD in R - A Worked Example
 
-## Simulating a State EITC Expansion {.smaller}
+## A New Policy Question {.smaller}
+
+::: incremental
+-   Suppose a state expands its **Earned Income Tax Credit (EITC)**, which gives tax refunds to low-income working families
+
+-   The goal is to encourage labor force participation. Did it work?
+
+-   We have data on 30 counties in the treatment state and 30 counties in a neighboring control state, observed over 12 years. The expansion happens in year 7.
+
+-   This is a larger dataset than Card & Krueger, which lets us see the pre-trends more clearly and will set us up for event studies in the next section.
+:::
+
+## Simulating the EITC Data {.smaller}
 
 ```{r}
 #| echo: true
@@ -374,23 +386,27 @@ library(tidyverse)
 library(fixest)
 set.seed(30317)
 
-n_states <- 2
-n_years <- 10
-treatment_year <- 6  # Treatment starts in year 6
+treatment_year <- 7
 
-eitc_data <- expand_grid(
-  state = c("Treatment_State", "Control_State"),
-  year = 1:n_years
-) %>%
+# 60 counties: 30 in treatment state, 30 in control state
+county_info <- tibble(
+  county = 1:60,
+  treated_state = rep(c(1, 0), each = 30),
+  state = ifelse(treated_state == 1, "Treatment", "Control"),
+  # Each county has its own baseline LFP
+  county_fe = rnorm(60, 0, 2)
+)
+
+eitc_data <- county_info %>%
+  crossing(year = 1:12) %>%
   mutate(
-    treated_state = ifelse(state == "Treatment_State", 1, 0),
     post = ifelse(year >= treatment_year, 1, 0),
-    # Treatment state starts lower, both trend upward
-    base = ifelse(treated_state == 1, 55, 60) + 0.8 * year,
-    # Treatment effect: 3 percentage points increase in LFP
-    treatment_effect = ifelse(treated_state == 1 & post == 1, 3, 0),
-    # Add some noise
-    lfp = base + treatment_effect + rnorm(n(), 0, 0.8)
+    # Both states trend upward; treatment state starts lower
+    base = ifelse(treated_state == 1, 55, 60) + county_fe + 0.8 * year,
+    # True treatment effect: +3 percentage points
+    lfp = base +
+      ifelse(treated_state == 1 & post == 1, 3, 0) +
+      rnorm(n(), 0, 1.5)
   )
 ```
 
@@ -399,27 +415,32 @@ eitc_data <- expand_grid(
 ```{r}
 #| echo: true
 
-ggplot(eitc_data, aes(x = year, y = lfp, color = state)) +
-  geom_line(size = 1) +
+# Average across counties for a clean plot
+eitc_means <- eitc_data %>%
+  group_by(state, year) %>%
+  summarise(avg_lfp = mean(lfp), .groups = "drop")
+
+ggplot(eitc_means, aes(x = year, y = avg_lfp, color = state)) +
+  geom_line(linewidth = 1) +
   geom_point(size = 2) +
   geom_vline(xintercept = treatment_year - 0.5, linetype = "dashed", color = "gray40") +
-  annotate("text", x = treatment_year + 0.2, y = min(eitc_data$lfp) + 1,
+  annotate("text", x = treatment_year + 0.2, y = min(eitc_means$avg_lfp) + 1,
            label = "EITC Expansion", hjust = 0, size = 4) +
-  labs(title = "Labor Force Participation Before and After EITC Expansion",
+  labs(title = "Average Labor Force Participation by State",
        x = "Year", y = "Labor Force Participation (%)",
        color = "State") +
   theme_minimal(base_size = 14)
 ```
 
-Pre-treatment trends look parallel — good sign for our DiD design!
+Pre-treatment trends look parallel, which is a good sign for our DiD design. The treatment state starts at a lower level, but remember: parallel trends is about *rates of change*, not levels.
 
 ## Running the DiD {.smaller}
 
 ```{r}
 #| echo: true
 
-# TWFE regression
-eitc_did <- feols(lfp ~ treated_state:post | state + year, data = eitc_data)
+# TWFE regression with county and year fixed effects
+eitc_did <- feols(lfp ~ treated_state:post | county + year, data = eitc_data)
 summary(eitc_did)
 ```
 
@@ -427,74 +448,65 @@ summary(eitc_did)
 
 ::: {.callout-note}
 ## Interpretation
-The EITC expansion is associated with approximately a 3 percentage-point increase in labor force participation in the treatment state, compared to what the control state experienced over the same period.
+The EITC expansion is associated with approximately a 3 percentage-point increase in labor force participation. The county fixed effects absorb all the stable differences between counties; the year fixed effects absorb the common upward trend. What's left is the treatment effect.
 :::
 
 # Part 5: Event Studies
 
-## What Is an Event Study?
+## What If the Effect Isn't Constant? {.smaller}
 
 ::: incremental
--   An event study plots the **DiD effect for each time period** relative to the treatment
+-   Our EITC simulation assumed the treatment effect was an immediate, constant +3 points. But that's often unrealistic.
 
--   X-axis: time periods before and after treatment (with the period just before treatment as the reference)
+-   A job training program might not show results for a year
 
--   Y-axis: estimated coefficient (the difference between treated and control, relative to the reference period)
+-   A tax credit might take time as people learn about it and adjust their behavior
 
--   **Pre-treatment coefficients** should be ≈ 0 if parallel trends holds
+-   An **event study** lets us estimate the DiD effect **separately for each time period**, so we can see how the effect evolves
 
--   **Post-treatment coefficients** show how the effect evolves over time
+-   It also gives us a built-in test of parallel trends: the pre-treatment effects should be close to zero
 :::
 
-## Why Event Studies Matter for Policy
+## How an Event Study Works {.smaller}
 
 ::: incremental
--   Effects may **take time to materialize** — a job training program might not show results for a year
+-   Instead of one "post" dummy, we create a dummy for each time period relative to treatment
 
--   Effects may **fade over time** — an initial boost might disappear
+-   The period just before treatment (event time = -1) is the **reference category**, so all effects are measured relative to that point
 
--   Pre-treatment coefficients serve as a **visual diagnostic** for parallel trends
+-   **Pre-treatment coefficients** should hover around zero if parallel trends holds. This is the placebo test we discussed earlier.
 
--   As Huntington-Klein puts it: the event study is the "visual test" of your research design
+-   **Post-treatment coefficients** show how the effect unfolds: does it appear immediately? Grow over time? Fade?
 :::
 
-## Building an Event Study With More Data {.smaller}
+## Building an Event Study {.smaller}
+
+We'll simulate a new dataset where the EITC effect **grows over time** as more people learn about and respond to the program.
 
 ```{r}
 #| echo: true
 
 set.seed(30317)
-n_units <- 30  # 15 treated, 15 control
-n_years <- 12
-treatment_year <- 7
 
-unit_fes <- tibble(unit = 1:n_units, unit_fe = rnorm(n_units, 0, 3))
+# 60 units (30 treated, 30 control), 12 years, treatment in year 7
+unit_fes <- tibble(unit = 1:60, unit_fe = rnorm(60, 0, 3))
 
-event_data <- expand_grid(
-  unit = 1:n_units,
-  year = 1:n_years
-) %>%
+event_data <- expand_grid(unit = 1:60, year = 1:12) %>%
   left_join(unit_fes, by = "unit") %>%
   mutate(
-    treated_unit = ifelse(unit <= 15, 1, 0),
-    state = ifelse(treated_unit == 1, "Treated", "Control"),
-    post = ifelse(year >= treatment_year, 1, 0),
-    # Event time: periods relative to treatment
-    event_time = year - treatment_year,
-    # Base outcome with unit FE + time trend
-    base = 50 + unit_fe + 0.5 * year,
+    treated_unit = ifelse(unit <= 30, 1, 0),
+    event_time = year - 7,
     # Dynamic treatment effect: grows over time after treatment
     te = case_when(
-      treated_unit == 0 ~ 0,
-      event_time < 0 ~ 0,
-      event_time == 0 ~ 1.5,
-      event_time == 1 ~ 2.5,
-      event_time == 2 ~ 3.2,
-      event_time == 3 ~ 3.5,
-      event_time == 4 ~ 3.8,
-      TRUE ~ 4.0
+      treated_unit == 0 ~ 0,  # Control units: no effect
+      event_time < 0    ~ 0,  # Before treatment: no effect
+      event_time == 0   ~ 1.5,
+      event_time == 1   ~ 2.5,
+      event_time == 2   ~ 3.2,
+      event_time == 3   ~ 3.5,
+      TRUE              ~ 4.0  # Levels off
     ),
-    outcome = base + te + rnorm(n(), 0, 2)
+    outcome = 50 + unit_fe + 0.5 * year + te + rnorm(n(), 0, 2)
   )
 ```
 
@@ -503,42 +515,46 @@ event_data <- expand_grid(
 ```{r}
 #| echo: true
 
-# Event study with fixest: i() creates dummies for each event_time
-# ref = -1 means the period just before treatment is the reference
-es_model <- feols(outcome ~ i(event_time, treated_unit, ref = -1) | unit + year,
-                  data = event_data)
+# i() creates a dummy for each event_time period
+# ref = -1 sets the period before treatment as the reference
+es_model <- feols(
+  outcome ~ i(event_time, treated_unit, ref = -1) | unit + year,
+  data = event_data
+)
 
-# The event study plot
+# fixest has a built-in event study plot
 iplot(es_model,
       xlab = "Periods Relative to Treatment",
       ylab = "Estimated Effect",
-      main = "Event Study: EITC Expansion Effect Over Time")
+      main = "Event Study: Effect of EITC Expansion Over Time")
 ```
 
-## Reading an Event Study Plot
+## Reading the Event Study Plot {.smaller}
 
 ::: incremental
--   **Pre-treatment coefficients** (left of 0): Should bounce around zero with confidence intervals crossing zero. If they don't, parallel trends is suspect.
+-   **Pre-treatment coefficients** (left of 0): they hover around zero with confidence intervals crossing zero. This supports parallel trends.
 
--   **The jump at time 0**: The immediate treatment effect
+-   **The jump at time 0**: the immediate treatment effect (about 1.5 points in our simulation)
 
--   **Post-treatment trajectory**: Does the effect grow? Stabilize? Fade?
+-   **Post-treatment growth**: the effect increases over time as more people respond to the program, then levels off around 4 points
 
--   **Confidence intervals**: Wider = less precise. If they include zero post-treatment, the effect isn't statistically significant.
+-   **Confidence intervals**: if they include zero after treatment, we can't rule out no effect. Here the post-treatment intervals are clearly above zero.
 :::
 
 . . .
 
 ::: {.callout-tip}
 ## For Your Reports
-Event study plots are becoming the **standard way** to present DiD results in policy research. If you ever do a DiD analysis, include one.
+Event study plots are the **standard way** to present DiD results in policy research. They show both the treatment effect and the parallel trends evidence in a single figure. If you do a DiD analysis, include one.
 :::
 
 # Part 6: The Staggered Adoption Problem
 
-## What If Treatment Happens at Different Times?
+## What If Treatment Happens at Different Times? {.smaller}
 
 ::: incremental
+-   So far, we've had a clean setup: one group treated, one group not, at a single point in time
+
 -   In practice, policies are often adopted **at different times** by different units
 
     -   States expanded Medicaid in 2014, 2015, 2016, or not at all
@@ -547,7 +563,7 @@ Event study plots are becoming the **standard way** to present DiD results in po
 
     -   Schools implemented new curricula on different schedules
 
--   This is called **staggered adoption** — and it creates serious problems for classic TWFE
+-   This is called **staggered adoption**, and it creates serious problems for classic TWFE
 :::
 
 ## Visualizing Staggered Treatment {.smaller}
@@ -572,7 +588,7 @@ stagger_viz <- tibble(
   )
 
 ggplot(stagger_viz, aes(x = Year, y = State, fill = status)) +
-  geom_tile(color = "white", size = 1) +
+  geom_tile(color = "white", linewidth = 1) +
   scale_fill_manual(values = c("Treated" = "#2C7BB6", "Not Yet Treated" = "#FFFFBF",
                                 "Never Treated" = "#D7191C")) +
   labs(title = "Staggered Treatment Adoption",
@@ -592,23 +608,26 @@ Different states get treated at different times. Who serves as the "control" for
 
     -   TWFE compares **newly-treated units** to **already-treated units**
 
-    -   An already-treated unit is being used as a "control" — but it's already affected by treatment!
+    -   An already-treated unit is being used as a "control," but it's already affected by treatment!
 
 -   If treatment effects **change over time** (grow, fade, or differ across groups), these forbidden comparisons contaminate the estimate
 
--   The weights can even be **negative** — meaning the estimate can show a negative effect when the true effect is positive for everyone
+-   The weights can even be **negative**, meaning the estimate can show a negative effect when the true effect is positive for everyone
 :::
 
 ## An Intuitive Example {.smaller}
 
 ::: {.callout-warning}
-## The Negative Weights Problem (Cunningham's Framing)
-Imagine a job training program that helps everyone — but the effect grows over time. Early adopters have large effects by now (they've had the program for years). Late adopters have small effects (just started).
+## The Negative Weights Problem
 
-TWFE compares late adopters (small positive effect) to early adopters (large positive effect). The "change" in the early-adopter "controls" is actually driven by their growing treatment effect — making it look like the new treatment *reduced* outcomes. The estimated effect can flip negative, even though **everyone benefited**.
+Imagine a job training program that helps everyone, but the effect grows over time. Early adopters have large effects by now (they've had the program for years). Late adopters have small effects (they just started).
+
+TWFE compares late adopters (small positive effect) to early adopters (large positive effect). The "change" in the early-adopter "controls" is actually driven by their growing treatment effect, making it look like the new treatment *reduced* outcomes. The estimated effect can flip negative, even though **everyone benefited**.
+
+This is exactly the kind of dynamic effect we saw in our event study. If we had staggered adoption in that setting, TWFE would give us the wrong answer.
 :::
 
-## When TWFE Is Fine vs. Not
+## When Is TWFE Fine? {.smaller}
 
 ::: incremental
 -   **TWFE is fine if:**
@@ -620,24 +639,22 @@ TWFE compares late adopters (small positive effect) to early adopters (large pos
     -   Treatment effects build up, fade, or vary across cohorts
     -   You have staggered adoption with no never-treated group
     -   You suspect dynamic or heterogeneous effects
+
+-   In practice, constant effects are a strong assumption. Most policies take time to work, which means effects change over time. When in doubt, use the newer methods we'll see next.
 :::
-
-. . .
-
-As Huntington-Klein puts it: "If you believe effects are constant, TWFE is fine. If you believe effects change over time or differ across groups — you need better tools."
 
 # Part 7: Modern Solutions
 
-## The Good News
+## The Good News {.smaller}
 
-Econometricians have developed several methods that fix the staggered DiD problem. The two most popular:
+Econometricians have developed several methods that fix the staggered DiD problem. The two most widely used:
 
 ::: incremental
 -   **Callaway and Sant'Anna (2021):** Estimate separate treatment effects for each treatment cohort at each time period, then aggregate. R package: `did`.
 
 -   **Sun and Abraham (2021):** An interaction-weighted event-study estimator that avoids the contamination. Available in `fixest` via `sunab()`.
 
--   Both approaches share a key idea: **only make "clean" comparisons** — treated vs. not-yet-treated or never-treated, never treated vs. already-treated.
+-   Both approaches share a key idea: **only make "clean" comparisons**. Treated units should only be compared to not-yet-treated or never-treated units, never to already-treated units.
 :::
 
 ## Simulating Staggered Adoption {.smaller}
@@ -647,42 +664,42 @@ Econometricians have developed several methods that fix the staggered DiD proble
 
 set.seed(30317)
 
-# 40 units: 10 treated in year 5, 10 in year 7, 10 in year 9, 10 never
+# 40 units in 4 groups:
+# 10 treated starting year 5, 10 in year 7, 10 in year 9, 10 never
 stag_unit_fes <- tibble(unit = 1:40, unit_fe = rnorm(40, 0, 2))
 
-stag_data <- expand_grid(
-  unit = 1:40,
-  year = 1:12
-) %>%
+stag_data <- expand_grid(unit = 1:40, year = 1:12) %>%
   left_join(stag_unit_fes, by = "unit") %>%
   mutate(
     cohort = case_when(
-      unit <= 10 ~ 5,
-      unit <= 20 ~ 7,
-      unit <= 30 ~ 9,
-      TRUE ~ Inf  # Never treated
+      unit <= 10 ~ 5,   # Early adopters
+      unit <= 20 ~ 7,   # Middle adopters
+      unit <= 30 ~ 9,   # Late adopters
+      TRUE ~ Inf         # Never treated
     ),
     treated = ifelse(year >= cohort, 1, 0),
-    # Dynamic treatment effect: grows with time since treatment
     years_treated = pmax(year - cohort, 0),
-    true_te = ifelse(is.finite(cohort) & treated == 1, 1 + 0.5 * years_treated, 0),
-    # Outcome
+    # Dynamic effect: grows with time since treatment (1 + 0.5 per year)
+    true_te = ifelse(is.finite(cohort) & treated == 1,
+                     1 + 0.5 * years_treated, 0),
     outcome = 50 + unit_fe + 0.3 * year + true_te + rnorm(n(), 0, 1.5)
   )
 ```
 
-## TWFE vs. Sun-Abraham {.smaller}
+The effect grows over time since treatment. This is exactly the scenario where TWFE breaks.
+
+## Running Both Models {.smaller}
 
 ```{r}
 #| echo: true
 
 library(fixest)
 
-# Classic TWFE — potentially misleading with staggered treatment
+# Classic TWFE: one coefficient for all treatment variation
 twfe_model <- feols(outcome ~ treated | unit + year, data = stag_data)
 
-# Sun & Abraham via fixest — only clean comparisons
-# Need to set cohort to 1000 (or large number) for never-treated
+# Sun & Abraham: only uses clean comparisons
+# sunab() needs a finite number for never-treated units
 stag_data_sa <- stag_data %>%
   mutate(cohort_sa = ifelse(is.infinite(cohort), 1000, cohort))
 
@@ -690,32 +707,36 @@ sa_model <- feols(outcome ~ sunab(cohort_sa, year) | unit + year,
                   data = stag_data_sa)
 ```
 
-## Comparing the Two Approaches {.smaller}
+`sunab()` does the heavy lifting: it figures out which comparisons are clean and estimates the effect for each time period relative to treatment, just like our event study earlier.
+
+## TWFE: A Single (Misleading) Coefficient {.smaller}
 
 ```{r}
 #| echo: true
 
-# TWFE: single coefficient
 summary(twfe_model)
 ```
 
-. . .
+TWFE gives us one number for the treatment effect. But we built in an effect that grows over time, so a single number can't capture the full picture. Worse, the forbidden comparisons may be pulling this estimate in the wrong direction.
+
+## Sun & Abraham: The Full Event Study {.smaller}
 
 ```{r}
 #| echo: true
 
-# Sun & Abraham: event study plot
 iplot(sa_model,
       xlab = "Periods Relative to Treatment",
       ylab = "Estimated Effect",
       main = "Sun & Abraham Event Study (Staggered DiD)")
 ```
 
-## The Key Takeaway for MPAs
+The Sun & Abraham estimator correctly shows pre-treatment coefficients near zero and a growing post-treatment effect. This is what the true data-generating process looks like.
+
+## The Key Takeaway {.smaller}
 
 ::: {.callout-important}
 ## Reading DiD Papers
-If you encounter a DiD paper with **staggered treatment** that was published before ~2020, the estimates might be unreliable — especially if treatment effects are likely to grow or change over time. Papers using modern methods (Callaway & Sant'Anna, Sun & Abraham, or similar) have addressed this problem. When evaluating research, ask: "Is treatment staggered? If so, did they use a modern estimator?"
+If you encounter a DiD paper with **staggered treatment** that was published before roughly 2020, the estimates might be unreliable, especially if treatment effects are likely to grow or change over time. Papers using modern methods (Callaway & Sant'Anna, Sun & Abraham, or similar) have addressed this problem. When evaluating research, ask: "Is treatment staggered? If so, did they use a modern estimator?"
 :::
 
 # Part 8: Practical Advice
@@ -724,17 +745,29 @@ If you encounter a DiD paper with **staggered treatment** that was published bef
 
 ::: incremental
 1.  Is there a **clear treatment** and a **clear control group**?
-2.  Is the **treatment timing plausibly exogenous** — not driven by anticipated outcomes?
+2.  Is the **treatment timing plausibly exogenous**, not driven by anticipated outcomes?
 3.  Do **pre-treatment trends look parallel**? (Plot them!)
 4.  Are there **anticipation effects** that could blur the treatment timing?
 5.  Is treatment **staggered**? If so, use modern methods.
 6.  How **sensitive** are results to the choice of control group?
 :::
 
+## What DiD Estimates: The ATT {.smaller}
+
+::: incremental
+-   One important detail: DiD does not estimate the average treatment effect for everyone (the ATE). It estimates the **Average Treatment Effect on the Treated (ATT)**.
+
+-   In Card & Krueger, the estimate tells us what the minimum wage increase did **in New Jersey**. It does not tell us what would happen if Pennsylvania also raised its wage, because PA might be different in ways that matter.
+
+-   In a randomized experiment, treatment and control groups are balanced, so the ATE and ATT are the same. In DiD, groups are not randomly assigned, so we can only speak to the effect on the units that were actually treated.
+
+-   This is usually fine for policy evaluation. Legislators want to know: "Did *our* policy work?" That's an ATT question.
+:::
+
 ## Common Pitfalls
 
 ::: incremental
--   **Confusing levels with trends:** Groups can be at very different levels — what matters is that they *change at the same rate* pre-treatment
+-   **Confusing levels with trends:** Groups can be at very different levels; what matters is that they *change at the same rate* pre-treatment
 
 -   **Cherry-picking the control group** to manufacture parallel trends
 
@@ -742,46 +775,46 @@ If you encounter a DiD paper with **staggered treatment** that was published bef
 
 -   **Using classic TWFE with staggered adoption** when effects are dynamic
 
--   **Ignoring anticipation effects** that shift behavior before the treatment "officially" begins
+-   **Ignoring anticipation effects** that shift behavior before the treatment takes effect
 :::
 
-## Readings
+## Readings {.smaller}
 
 ::: incremental
--   **Cunningham, *Causal Inference: The Mixtape*** — Excellent chapter on DiD with real-world examples and R code. Freely available online.
+-   **Cunningham, *Causal Inference: The Mixtape***: Excellent chapter on DiD with real-world examples and R code. Freely available online.
 
--   **Huntington-Klein, *The Effect*** — Very intuitive treatment of DiD and event studies. Also freely available.
+-   **Huntington-Klein, *The Effect***: Very intuitive treatment of DiD and event studies. Also freely available.
 
--   **Callaway & Sant'Anna (2021)** — The key paper on staggered DiD. Technical but the introduction is accessible.
+-   **Callaway & Sant'Anna (2021)**: The key paper on staggered DiD. Technical, but the introduction is accessible.
 
--   **Goodman-Bacon (2021)** — "Difference-in-Differences with Variation in Treatment Timing." The paper that showed *why* TWFE breaks.
+-   **Goodman-Bacon (2021)**: "Difference-in-Differences with Variation in Treatment Timing." The paper that showed why TWFE breaks with staggered adoption.
 :::
 
 # Wrapping Up
 
-## What We Covered Today
+## What We Covered Today {.smaller}
 
 ::: incremental
-1.  **The DiD idea** — use a control group to remove common time trends
-2.  **Card & Krueger** — the classic 2×2 example that reshaped the minimum wage debate
-3.  **The parallel trends assumption** — the core of DiD credibility
-4.  **Event studies** — the standard way to present DiD results and test assumptions
-5.  **Staggered adoption** — why classic TWFE breaks and how to spot the problem
-6.  **Modern solutions** — Sun & Abraham and Callaway-Sant'Anna fix the staggered problem
-7.  **Practical advice** — a checklist for credible designs
+1.  **The DiD idea**: use a control group to remove common time trends
+2.  **Card & Krueger**: the classic 2×2 minimum wage study
+3.  **The parallel trends assumption**: the foundation of DiD credibility
+4.  **Event studies**: the standard way to present DiD results and test assumptions
+5.  **Staggered adoption**: why classic TWFE breaks and how to spot the problem
+6.  **Modern solutions**: Sun & Abraham and Callaway-Sant'Anna fix the staggered problem
+7.  **Practical advice**: a checklist for credible designs
 :::
 
 ## What's Next
 
 ::: incremental
--   **Regression Discontinuity Designs** — exploiting arbitrary cutoffs for causal inference
+-   **Regression Discontinuity Designs**: exploiting arbitrary cutoffs for causal inference
 
--   **Instrumental Variables** — finding exogenous sources of variation
+-   **Instrumental Variables**: finding exogenous sources of variation
 :::
 
 ## For Your Capstone
 
 ::: {.callout-tip}
 ## Think About This Now
-Is there a **policy change** in your area of interest with a natural control group? A state that changed a law while a neighbor didn't? A program that was rolled out in some districts before others? If so, DiD might be the right tool — and now you know the modern best practices for using it.
+Is there a **policy change** in your area of interest with a natural control group? A state that changed a law while a neighbor didn't? A program that was rolled out in some districts before others? If so, DiD might be the right tool, and now you know the modern best practices for using it.
 :::
