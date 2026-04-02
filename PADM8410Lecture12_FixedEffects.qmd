@@ -8,7 +8,7 @@ execute:
   fig-align: center
 ---
 
-## Panel Data
+## Panel Data {.smaller}
 
 ::: incremental
 -   You download education data from the state. You notice the same schools appear year after year. You have **panel data**.
@@ -37,7 +37,7 @@ execute:
 
     -   Schools are nested in districts
 
--   If we don't account for this structure, our standard errors will be wrong and our estimates may be biased
+-   If we don't account for this structure, our estimates may be biased
 :::
 
 ## Why Should MPAs Care?
@@ -53,82 +53,56 @@ execute:
 
 -   If you ignore this structure, you will get wrong answers, sometimes dramatically wrong
 
--   Today we learn the workhorse tool for dealing with this: **fixed effects**
+-   Today we learn the most common tool for dealing with this: **fixed effects**
 :::
 
 ## Today's Roadmap
 
 ::: incremental
-1.  **The fixed effects idea** -- controlling for the unit
-2.  **Visual walkthrough** -- seeing FE in action
-3.  **The mechanics** -- equations, `fixest` in R, gapminder
-4.  **Policy example** -- housing prices across cities
-5.  **Assumptions and caveats** -- what FE can't do
-6.  **Two-way fixed effects** -- and why it's tricky
+1.  **The fixed effects idea** - controlling for the unit
+2.  **Visual walkthrough** - seeing FE in action
+3.  **The mechanics** - equations, `fixest` in R, gapminder
+4.  **Policy example** - housing prices across cities
+5.  **Assumptions and caveats** - what FE can't do
+6.  **Two-way fixed effects** - and why it's tricky
 :::
 
-# Part 1: The Fixed Effects Idea
+# Part 1: What are Fixed Effects?
 
-## Example: International Trade Policy {.smaller}
+## A Policy Question {.smaller}
 
 ::: incremental
--   Imagine we want to know whether a visit from Germany's chancellor increases trade with Germany the following year
+-   A state legislator asks you: **"Does hiring more police officers reduce crime?"**
 
--   Global trade data is "stacked": each row is a country-year, with each country entering the data many times
+-   You pull data on 50 cities over 20 years. Each row is a city-year. You run a regression of crime rates on police staffing.
 
--   Trade with Germany depends on culture, history, geography, resource endowments, and more
-
-    -   This would make a very messy DAG. How can we deal with all these confounders?
+-   The regression says more police is associated with **more** crime. Should you tell the legislator that police cause crime?
 :::
 
-## The Messy DAG
+. . .
 
-```{r}
-#| echo: false
+::: callout-important
+## The Problem
 
-library(dagitty)
+Cities with high crime **hire more police in response**. A naive regression picks up that relationship instead of the causal effect of policing. We're comparing high-crime cities to low-crime cities, not asking what happens when the *same city* changes its staffing.
+:::
 
-g <- dagitty("
-dag {
-  bb=\"0,0,5,4\"
-
-  CultureOfPopulation   [pos=\"2,0\"]
-  CurrentPolitics       [pos=\"0,2\"]
-  Geography            [pos=\"2,2\"]
-  ChancellorVisit      [pos=\"0,3\"]
-  HistoryWithGermany   [pos=\"4,2\"]
-  TradeWithGermany     [pos=\"4,3\"]
-
-  CultureOfPopulation -> ChancellorVisit
-  CultureOfPopulation -> TradeWithGermany
-
-  Geography -> ChancellorVisit
-  Geography -> TradeWithGermany
-
-  CurrentPolitics -> ChancellorVisit
-  CurrentPolitics -> TradeWithGermany
-
-  HistoryWithGermany -> TradeWithGermany
-  HistoryWithGermany -> ChancellorVisit
-
-  ChancellorVisit -> TradeWithGermany
-}
-")
-
-plot(g, text = FALSE, use_labels = "name")
-```
-
-## Adding a Fixed Effect
+## Why Simple Controls Won't Save You {.smaller}
 
 ::: incremental
--   If we add a **fixed effect for country**, we control for everything about that country that doesn't change (or changes very slowly) over time
+-   You might think: "I'll just control for poverty, unemployment, population density..."
 
--   Controlling for "France" implicitly controls for France's proximity to Germany, its resource endowments, its political culture, and its history with Germany
+-   But crime rates also depend on things that are hard to measure or impossible to observe:
 
-    -   All of those confounders, handled with a single control
+    -   Local policing culture and community trust
+    -   Historical patterns of neighborhood segregation
+    -   How the city's court system handles cases
+    -   Informal social networks and institutions
+
+-   You could never list all of these, let alone measure them. Your DAG would be enormous.
 :::
 
-## The Clean DAG
+## The Confounding Problem
 
 ```{r}
 #| echo: false
@@ -137,41 +111,104 @@ library(dagitty)
 
 g <- dagitty('
 dag {
-  CurrentPolitics      [pos="0,1"]
-  ChancellorVisit      [pos="0,3"]
-  TradeWithGermany     [pos="4,3"]
-  Country              [pos="4,1"]
+  Poverty              [pos="0,0"]
+  LocalCulture         [pos="2,0"]
+  HistoricalFactors    [pos="4,0"]
+  PoliceStaffing       [pos="0,2"]
+  CrimeRate            [pos="4,2"]
 
-  CurrentPolitics -> ChancellorVisit
-  CurrentPolitics -> TradeWithGermany
+  Poverty -> PoliceStaffing
+  Poverty -> CrimeRate
 
-  Country         -> ChancellorVisit
-  Country         -> TradeWithGermany
+  LocalCulture -> PoliceStaffing
+  LocalCulture -> CrimeRate
 
-  ChancellorVisit -> TradeWithGermany
+  HistoricalFactors -> PoliceStaffing
+  HistoricalFactors -> CrimeRate
+
+  PoliceStaffing -> CrimeRate
 }
 ')
+
 plot(g, text = FALSE, use_labels = "name")
 ```
 
-## What Do Fixed Effects Actually Do?
+All of these confounders are **specific to the city** and mostly **stable over time**.
+
+## The Key Insight {.smaller}
 
 ::: incremental
--   Fixed effects **control for the unit** — country, individual, state, school, etc.
+-   Most of what makes cities different from each other — their history, culture, geography, institutions — doesn't change much from year to year
+
+-   What if we could **hold the city constant** and only look at what happens when the *same city* changes its police staffing over time?
+
+-   That's exactly what a **fixed effect** does: it controls for everything about a unit (city, state, school, person) that stays the same across time periods
+
+-   Instead of comparing Atlanta to Seattle, we compare **Atlanta to itself** in years with more vs. fewer officers
+:::
+
+## How Fixed Effects Simplify the DAG
+
+```{r}
+#| echo: false
+
+library(dagitty)
+
+g <- dagitty('
+dag {
+  City                 [pos="2,0"]
+  YearlyShocks         [pos="0,0"]
+  PoliceStaffing       [pos="0,2"]
+  CrimeRate            [pos="4,2"]
+
+  City -> PoliceStaffing
+  City -> CrimeRate
+
+  YearlyShocks -> PoliceStaffing
+  YearlyShocks -> CrimeRate
+
+  PoliceStaffing -> CrimeRate
+}
+')
+
+plot(g, text = FALSE, use_labels = "name")
+```
+
+By controlling for "City," we absorb poverty, local culture, historical factors, and every other time-invariant confounder in a single variable. What remains are **yearly changes** within each city.
+
+## What Do Fixed Effects Actually Do? {.smaller}
+
+::: incremental
+-   Fixed effects **control for the unit** — city, state, school, person, etc.
 
 -   As with any control, this means we hold the unit constant and look only at variation **within** the unit
 
 -   **Key point:** We throw away all "between-unit" variation. We only use changes *within* each unit over time.
+
+-   The confounders don't disappear — they get absorbed into the unit's fixed effect, so they can't bias our estimate of the treatment variable
 :::
 
 . . .
 
-::: {.callout-note}
+::: callout-note
 ## In English
-Fixed effects let you ask: "For the **same country**, in years when the chancellor visited, did trade go up compared to years when they didn't visit?" You're never comparing France to Finland — only France to itself.
+
+Fixed effects let you ask: "For the **same city**, in years when it had more police officers than usual, did crime go down compared to years when it had fewer?" You're never comparing Atlanta to Seattle — only Atlanta to itself.
 :::
 
 # Part 2: Visual Walkthrough
+
+## Let's See This in Action
+
+::: incremental
+-   The police example is complex. Let's build the intuition with something smaller.
+
+-   We track **two people** — Esnaina and Mariam — over five years each
+
+-   We record how much they exercise and how many colds they get
+
+-   **Question:** Does exercising more cause you to get fewer colds?
+:::
 
 ## Pooled Data {.smaller}
 
@@ -196,7 +233,7 @@ ggplot(df, aes(x = Exercise, y = Colds, color = Individual, shape = Individual))
   theme_minimal(base_size = 14)
 ```
 
-At first glance, the relationship looks positive.
+At first glance, the relationship looks positive. More exercise, more colds?
 
 ## Pooled Regression
 
@@ -215,6 +252,18 @@ ggplot(df, aes(x = Exercise, y = Colds, color = Individual, shape = Individual))
 ```
 
 The pooled regression says more exercise → more colds. That can't be right!
+
+## Why Is the Pooled Regression Wrong? {.smaller}
+
+::: incremental
+-   Mariam is a daycare teacher — she exercises a lot, but she's also constantly exposed to sick children. She gets many colds regardless of how much she exercises.
+
+-   Esnaina works from home — less exposure to illness, fewer colds overall, and also happens to exercise less.
+
+-   The pooled regression is **comparing Mariam to Esnaina**, not comparing each person to themselves. It picks up the between-person difference (Mariam exercises more *and* gets more colds) and confuses it for a causal effect.
+
+-   This is the same problem as the police example: comparing high-crime cities to low-crime cities instead of comparing the same city over time.
+:::
 
 ## Adding Individual Means
 
@@ -248,7 +297,7 @@ ggplot(df, aes(x = Exercise, y = Colds, color = Individual, shape = Individual))
   theme_minimal(base_size = 14)
 ```
 
-Think of each person's mean as their personal origin (0,0).
+The dashed lines mark each person's average exercise and average colds. We're about to subtract these averages — removing everything that makes Esnaina and Mariam *different people* and keeping only how each one *varies from year to year*.
 
 ## Just the Between Variation
 
@@ -265,7 +314,7 @@ ggplot(df_means, aes(x = mean_exercise, y = mean_colds, color = Individual, shap
   theme_minimal(base_size = 14)
 ```
 
-These are the person-specific factors we're going to control away. Mariam exercises more *and* gets more colds — but that's a between-person difference, not a causal effect.
+This is what's confusing the pooled regression. Mariam exercises more *and* gets more colds — but that's because of who she is (a daycare teacher), not because exercise causes colds. Fixed effects throw this between-person variation away.
 
 ## Within-Person Variation
 
@@ -312,53 +361,81 @@ ggplot(df_centered, aes(x = Exercise_centered, y = Colds_centered)) +
   theme_minimal(base_size = 14)
 ```
 
-Now the relationship is **negative** — in years when a person exercises more than their own average, they get fewer colds. The pooled regression had it backwards!
+Now the relationship is **negative** - in years when a person exercises more than their own average, they get fewer colds. The pooled regression had it backwards!
 
-## The Intuition
-
-::: {.callout-important}
-## The tradeoff
-By using fixed effects, we lose the ability to use between-group variation. If you are interested in between-group comparisons, you cannot use FE.
-:::
+## What Just Happened? {.smaller}
 
 ::: incremental
 -   We removed all between-person variation by subtracting each person's mean
 
--   By controlling for an individual, we also control for all **time-invariant** features of that person
+-   This is exactly what a fixed effect does: it gives each person their own intercept, so we only use **within-person** variation
 
--   We still need to control for things that **vary within the individual over time**
+-   By controlling for the individual, we also control for all **time-invariant** features of that person — their job, their genetics, their neighborhood, everything that doesn't change year to year
+
+-   We still need to control for things that **vary within the individual over time** (e.g., Mariam's daycare had a flu outbreak one year)
+:::
+
+. . .
+
+::: callout-important
+## The Tradeoff
+
+By using fixed effects, we **lose the ability to use between-group variation**. If your research question is about why some cities have more crime than others (a between-city question), fixed effects cannot help you. FE only answers within-unit questions.
 :::
 
 # Part 3: The FE Equation and fixest
 
-## The Fixed Effects Equation
+## From Intuition to Equation {.smaller}
+
+In our visual walkthrough, we subtracted each person's mean from their data. That's one way to think about what fixed effects do. The other way: give each unit its own intercept.
+
+. . .
+
+**Standard regression** (one intercept for everyone):
+
+$$Y_{it} = \beta_{0} + \beta_{1}X_{it} + \epsilon_{it}$$
+
+. . .
+
+**Fixed effects regression** (each unit gets its own intercept):
 
 $$Y_{it} = \beta_{i} + \beta_{1}X_{it} + \epsilon_{it}$$
 
-::: {.callout-note}
-## In English
-$Y_{it}$ is the outcome for unit $i$ at time $t$. The key difference from standard OLS: we now have **unit-specific intercepts** $\beta_i$ — each country (or person, school, etc.) gets its own baseline level. We only estimate the effect of $X$ from variation *within* each unit.
-:::
-
-## Varying Intercepts = Dummy Variables
-
-::: {.callout-tip}
-It may not be immediately obvious, but letting the intercept vary by individual is exactly the same as adding a dummy (binary) variable for each individual!
-:::
-
 . . .
 
-A control for "India" tells us the change we'd expect in Y given that we're in India rather than the reference category. Fixed effects just add a dummy for *every* unit.
+The subscript $i$ on $\beta$ is the key change. Instead of one intercept $\beta_0$ for all units, each city (or person, school, state) gets its own baseline $\beta_i$.
 
-. . .
+## What Does $\beta_i$ Absorb? {.smaller}
 
-Equivalently, we can "de-mean" the data:
+::: incremental
+-   In the police example, $\beta_i$ is a separate intercept for each city
+
+-   Atlanta's intercept captures everything about Atlanta that doesn't change over time — its history, culture, geography, institutions
+
+-   Seattle's intercept captures everything about Seattle
+
+-   Once each city has its own baseline, the coefficient $\beta_1$ is estimated only from **within-city** variation: years when the *same city* had more or fewer police officers
+:::
+
+## Two Equivalent Ways to Think About FE
+
+::: incremental
+1.  **Add a dummy variable for every unit.** A control for "Atlanta" adjusts for everything about Atlanta. Fixed effects just add a dummy for *every* city at once.
+
+2.  **Subtract each unit's mean** (de-mean the data):
 
 $$Y_{it} - \bar{Y}_{i} = \beta_{1}(X_{it} - \bar{X}_{i}) + \epsilon_{it}$$
 
-This is exactly what our visual walkthrough did — subtract each person's mean.
+This is exactly what our visual walkthrough did — subtract each person's average exercise and average colds, then regress the deviations.
+:::
 
-## Gapminder: Pooled Regression {.smaller}
+. . .
+
+Both approaches produce the same $\beta_1$. The de-meaning version makes the "within" logic visible.
+
+## Seeing FE Visually: Gapminder {.smaller}
+
+Let's see how this looks with real data. The `gapminder` dataset tracks countries over time — perfect for fixed effects.
 
 ```{r}
 #| echo: true
@@ -367,6 +444,7 @@ library(tidyverse)
 library(gapminder)
 library(ggrepel)
 
+# Filter to just two countries so we can see what's happening
 df_gap <- gapminder %>%
   filter(country %in% c("Brazil", "India"))
 
@@ -377,8 +455,8 @@ ggplot(df_gap, aes(x = gdpPercap, y = lifeExp, color = country)) +
               linetype = "dashed", color = "black") +
   scale_x_log10(labels = scales::dollar_format(prefix = "$")) +
   labs(
-    title = "Life Expectancy vs. GDP per Capita (Pooled Regression)",
-    subtitle = "India and Brazil, 1952–2007 (Gapminder)",
+    title = "Pooled Regression: One Line for Both Countries",
+    subtitle = "India and Brazil, 1952–2007",
     x = "GDP per Capita (log scale)",
     y = "Life Expectancy (years)",
     color = "Country"
@@ -386,11 +464,16 @@ ggplot(df_gap, aes(x = gdpPercap, y = lifeExp, color = country)) +
   theme_minimal(base_size = 14)
 ```
 
+The single regression line tries to fit both countries at once — mixing between-country and within-country variation.
+
 ## Gapminder: Country-Specific Intercepts {.smaller}
+
+Now give each country its own intercept — this is a fixed effect.
 
 ```{r}
 #| echo: true
 
+# lm() with country as a control = country fixed effect
 model_fe <- lm(lifeExp ~ log(gdpPercap) + country, data = df_gap)
 
 predict_df <- expand.grid(
@@ -404,11 +487,11 @@ ggplot(df_gap, aes(x = gdpPercap, y = lifeExp, color = country)) +
   geom_text_repel(aes(label = year), size = 3, min.segment.length = 0) +
   geom_line(data = predict_df,
             aes(x = gdpPercap, y = lifeExp_pred, color = country),
-            linetype = "dashed", size = 1) +
+            linetype = "dashed", linewidth = 1) +
   scale_x_log10(labels = scales::dollar_format(prefix = "$")) +
   labs(
-    title = "Life Expectancy vs. GDP per Capita (Fixed Effects)",
-    subtitle = "Same slope, different intercepts: Brazil has higher life expectancy at any GDP level",
+    title = "Fixed Effects: Each Country Gets Its Own Intercept",
+    subtitle = "Same slope, but Brazil's baseline life expectancy is higher than India's",
     x = "GDP per Capita (log scale)",
     y = "Life Expectancy (years)",
     color = "Country"
@@ -416,42 +499,52 @@ ggplot(df_gap, aes(x = gdpPercap, y = lifeExp, color = country)) +
   theme_minimal(base_size = 14)
 ```
 
+The slope is the same — that's the within-country effect of GDP growth. The intercepts differ — that's what the fixed effect absorbs.
+
 ## The fixest Package {.smaller}
+
+With two countries, `lm()` works fine. But real panel data has hundreds of units. The `fixest` package is designed for this.
 
 ```{r}
 #| echo: true
 
 library(fixest)
 
-# Notation: y ~ x | fixed_effect(s)
+# fixest notation: y ~ x | fixed_effect
+# The pipe (|) separates the model from the fixed effects
 m_fe <- feols(lifeExp ~ log(gdpPercap) | country, data = gapminder)
 summary(m_fe)
 ```
 
-. . .
-
-::: {.callout-note}
-## How to Interpret This
-"When a country's GDP per capita roughly doubles compared to its own average, we expect life expectancy to be about **9.8 years higher than it typically is for that country**." Everything is relative to the unit's own average. That is the fixed effect at work.
-:::
-
-# Part 4: Policy Example -- Housing Prices
-
-## The Question
+## Interpreting the Output {.smaller}
 
 ::: incremental
--   Does **building more houses** lead to increases or decreases in home prices?
+-   The coefficient on `log(gdpPercap)` is about **9.8**
 
--   We'd want to control for crime, school quality, amenities...
+-   Because GDP is logged, this means: when a country's GDP per capita doubles relative to its own history, life expectancy increases by about $9.8 \times \log(2) \approx$ **6.8 years**
 
--   But housing prices and new construction are both driven by unobservable, city-specific factors: desirability, zoning culture, land availability
+-   Notice what's *not* in the output: there are no coefficients for each country. `fixest` absorbs them behind the scenes. You only see the coefficient you care about.
 
--   We can control away those city-specific factors with fixed effects (as long as they don't vary over time)
+-   **Key interpretation:** This is a **within-country** estimate. It says nothing about why Brazil has higher life expectancy than India. It only tells us what happens when a country gets richer *compared to itself*.
 :::
 
-## Simulated Data {.smaller}
+# Part 4: Policy Example — Housing Prices
 
-We simulated data for 13 US cities where popular cities both build more housing and have higher prices. The true causal effect of new construction on prices is **negative** (-$450 per new house built).
+## The Question {.smaller}
+
+::: incremental
+-   A city council member asks: **"Does building more houses make housing more or less affordable?"**
+
+-   You'd want to control for crime, school quality, amenities...
+
+-   But housing prices and new construction are both driven by hard-to-observe, city-specific factors: desirability, zoning culture, land availability
+
+-   This is the same problem as before — we have confounders baked into the identity of each city
+
+-   Let's use simulated data so we can check whether our model gets the right answer
+:::
+
+## Setting Up the Simulation {.smaller}
 
 ```{r}
 #| echo: false
@@ -459,37 +552,33 @@ We simulated data for 13 US cities where popular cities both build more housing 
 library(tidyverse)
 set.seed(30317)
 
-cities <- c("Atlanta", "Chicago", "Houston", "Boston", "New York",
-            "Cleveland", "Los Angeles", "San Francisco", "Sacramento",
-            "Seattle", "Philadelphia", "Washington DC", "Dallas")
+# Create city-level characteristics
+city_info <- tibble(
+  city = c("Atlanta", "Chicago", "Houston", "Boston", "New York",
+           "Cleveland", "Los Angeles", "San Francisco", "Sacramento",
+           "Seattle", "Philadelphia", "Washington DC", "Dallas"),
+  # More popular cities have higher baseline prices AND more construction
+  popularity     = runif(13, min = -1, max = 1),
+  base_price     = 850000 + 650000 * popularity,
+  avg_new_houses = 50 + 20 * popularity
+)
 
-n_obs_per_city <- 100
-
-city_popularity <- runif(length(cities), min = -1, max = 1)
-city_intercepts <- 850000 + 650000 * city_popularity
-mean_new_houses <- 50 + 20 * city_popularity
-
-beta_crime      <- -300
-beta_edu        <-  1500
-beta_new_houses <- -450
-
-sim_data <- data.frame()
-for (i in seq_along(cities)) {
-  crime_vals      <- rnorm(n_obs_per_city, mean = 50, sd = 10)
-  edu_vals        <- rnorm(n_obs_per_city, mean = 5, sd = 1)
-  new_houses_vals <- rpois(n_obs_per_city, lambda = pmax(mean_new_houses[i], 1))
-
-  price_vals <- city_intercepts[i] +
-    beta_crime * crime_vals + beta_edu * edu_vals +
-    beta_new_houses * new_houses_vals +
-    rnorm(n_obs_per_city, mean = 0, sd = 30000)
-
-  sim_data <- rbind(sim_data, data.frame(
-    city = cities[i], crime = crime_vals, edu_quality = edu_vals,
-    new_houses = new_houses_vals, price = price_vals
-  ))
-}
+# Generate 100 observations per city
+sim_data <- city_info %>%
+  slice(rep(1:n(), each = 100)) %>%
+  mutate(
+    crime       = rnorm(n(), mean = 50, sd = 10),
+    edu_quality = rnorm(n(), mean = 5, sd = 1),
+    new_houses  = rpois(n(), lambda = pmax(avg_new_houses, 1)),
+    # True effect of new_houses is NEGATIVE: -$450 per house
+    price = base_price +
+      -300 * crime + 1500 * edu_quality +
+      -450 * new_houses +
+      rnorm(n(), mean = 0, sd = 30000)
+  )
 ```
+
+We simulated data for 13 US cities. Popular cities have higher baseline prices *and* more construction — the confounder is baked in. We know the true causal effect, so we can check whether our model recovers it.
 
 ## Pooled Data: The Wrong Answer
 
@@ -497,14 +586,15 @@ for (i in seq_along(cities)) {
 #| echo: false
 
 ggplot(sim_data, aes(x = new_houses, y = price, color = city)) +
-  geom_point(size = 2) +
-  geom_smooth(aes(group = 1), method = "lm", se = FALSE) +
-  theme_minimal() +
+  geom_point(size = 2, alpha = 0.5) +
+  geom_smooth(aes(group = 1), method = "lm", se = FALSE, color = "black",
+              linewidth = 1.2) +
+  theme_minimal(base_size = 14) +
   labs(title = "Pooled: New Houses vs. Housing Price",
        x = "New Houses Built", y = "Average Housing Price")
 ```
 
-The pooled regression says more houses → higher prices. But this is confounded by city popularity!
+The pooled regression says more houses → higher prices. Should we tell the council member to stop building?
 
 ## City-Level Averages: The Between Story
 
@@ -515,14 +605,17 @@ city_means <- sim_data %>%
   group_by(city) %>%
   summarise(avg_price = mean(price), avg_new_houses = mean(new_houses))
 
-ggplot(city_means, aes(x = avg_new_houses, y = avg_price)) +
-  geom_point(size = 2) +
-  geom_smooth(method = "lm", se = FALSE) +
-  theme_minimal() +
+ggplot(city_means, aes(x = avg_new_houses, y = avg_price, label = city)) +
+  geom_point(size = 3) +
+  geom_text_repel(size = 3.5, min.segment.length = 0) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed") +
+  theme_minimal(base_size = 14) +
   labs(title = "Between Cities: More Building = Higher Prices?",
        subtitle = "Each point = one city's average. Popular cities build more AND have higher prices.",
        x = "Avg New Houses", y = "Avg Housing Price")
 ```
+
+This is the between-city variation. It's driven by popularity — San Francisco is expensive *and* builds a lot, Cleveland is cheap *and* builds less.
 
 ## Within-City: The True Story
 
@@ -530,85 +623,183 @@ ggplot(city_means, aes(x = avg_new_houses, y = avg_price)) +
 #| echo: false
 
 ggplot(sim_data, aes(x = new_houses, y = price)) +
-  geom_point(alpha = 0.4) +
-  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  geom_point(alpha = 0.3, size = 1) +
+  geom_smooth(method = "lm", se = FALSE, color = "black", linewidth = 0.8) +
   facet_wrap(~ city, scales = "free") +
-  theme_minimal() +
+  theme_minimal(base_size = 12) +
+  theme(strip.text = element_text(size = 10, face = "bold")) +
   labs(title = "Within Each City: More Supply → Lower Prices",
        subtitle = "Fixed effects isolate this within-city variation.",
        x = "New Houses Built", y = "Housing Price")
 ```
+
+Within every city, the relationship is negative. More construction → lower prices. The pooled regression had it completely backwards.
 
 ## Naive vs. Fixed Effects Model {.smaller}
 
 ```{r}
 #| echo: true
 
-library(fixest)
-
-# Pooled (naive) model
+# Pooled (naive) model — no fixed effects
 naive_model <- feols(price ~ new_houses + crime + edu_quality, data = sim_data)
 
-# Fixed effects model
+# Fixed effects model — absorb city-level confounders
 fe_model <- feols(price ~ new_houses + crime + edu_quality | city, data = sim_data)
 
 # Compare side by side
 etable(naive_model, fe_model, headers = c("Pooled", "City FE"))
 ```
 
-## Why the Naive Model Gets It Wrong
+## Reading the Table {.smaller}
 
-::: {.callout-important}
+::: incremental
+-   **Look at `new_houses` first.** In the pooled model, the coefficient is positive — more houses, higher prices. In the FE model, it flips to about **-450** — more houses, lower prices.
+
+-   The true effect we built into the simulation was **-\$450 per new house**. The FE model recovers it; the pooled model gets the sign wrong.
+
+-   The coefficients on `crime` and `edu_quality` are similar in both models. Why? Because those variables vary *within* each city and aren't confounded by city popularity.
+
+-   This is the same pattern as the police example: the naive model confuses "which cities have more X" with "what happens when a city gets more X."
+:::
+
+## The Lesson
+
+::: callout-important
 ## The Simpson's Paradox of Policy Analysis
-**Popular cities** have higher housing prices *and* more new homes. When you pool all cities together, you capture that positive *between-city* correlation. Fixed effects remove it, revealing the **negative within-city** effect: more supply → lower prices. This is exactly the kind of mistake that leads to bad policy recommendations.
+
+**Popular cities** have higher housing prices *and* more new homes. Pool all cities together and you see a positive correlation. Fixed effects remove that between-city confounding, revealing the **negative within-city** effect: more supply → lower prices.
+
+If you gave the city council the pooled estimate, you'd recommend *less* construction to bring prices down — exactly the wrong policy.
 :::
 
-# Part 5: Assumptions and Caveats
+# Part 5: Assumptions and Limitations
 
-## What Fixed Effects Require
+## What FE *Can* Do {.smaller}
 
 ::: incremental
--   Each regressor must **vary over time** for at least some units, and cannot be perfectly collinear with the fixed effects
+-   Control for **all time-invariant confounders** at once — observed and unobserved
 
--   Fixed effects **cannot solve reverse causality**
+-   This is powerful. You don't need to name or measure every confounder. If it's stable over time, the fixed effect absorbs it.
 
-    -   A model of police spending will predict that more police *causes* more crime. Why? Because cities hire more police *in response to* crime.
-
--   Cannot handle time-varying unobserved confounders
-
--   Time-invariant variables must have **time-invariant effects**. For example, if you use state fixed effects but the effect of education spending on test scores has been growing over time, the fixed effect will not capture that change. See Ren (2025) in the optional readings for more on this.
+-   In the housing example, we never measured "city desirability" directly, but the city fixed effect absorbed it anyway.
 :::
 
-## A Note on Clustering Standard Errors
+. . .
+
+::: callout-tip
+## The Rule of Thumb
+
+If the thing you're worried about is a *permanent feature* of the unit — geography, institutional culture, historical legacies — fixed effects handle it. If it *changes over time within the unit*, you still need to control for it explicitly.
+:::
+
+## Limitation 1: Your X Must Vary Over Time {.smaller}
 
 ::: incremental
--   With panel data, observations within the same unit are not independent. Standard errors need to account for this.
+-   Fixed effects absorb everything that doesn't change within a unit. That includes your variable of interest if it doesn't change either.
 
--   The good news: `fixest` clusters standard errors at the fixed effect level by default, so you do not need to do anything extra.
+-   **Example:** You want to know whether being a Southern state affects policy outcomes. But "Southern" never changes — Alabama is always Southern. A state fixed effect absorbs that completely, and you can't estimate its effect.
+
+-   **The rule:** If your key independent variable doesn't vary over time within units, fixed effects will eliminate it along with the confounders.
+:::
+
+## Limitation 2: FE Cannot Fix Reverse Causality {.smaller}
+
+::: incremental
+-   Remember the police example from the beginning of class? Cities with more crime hire more police.
+
+-   Fixed effects help with the *between-city* confounding (Atlanta is different from Seattle). But they do **not** help with the fact that *within* Atlanta, a spike in crime this year causes more hiring next year.
+
+-   Even with city fixed effects, a regression of crime on police staffing will likely show more police → more crime, because the **within-city** variation is still driven by reverse causality.
+
+-   For this, you need a different strategy (instruments, natural experiments, or diff-in-diff — topics for later in the course).
+:::
+
+## Limitation 3: Time-Varying Confounders {.smaller}
+
+::: incremental
+-   Fixed effects remove confounders that are *stable features* of the unit. But some confounders change over time.
+
+-   **Example:** You use city FE to estimate the effect of new housing construction on prices. But a tech boom hits Seattle in the 2010s, increasing both construction *and* prices. That boom is a time-varying confounder within Seattle — the city fixed effect won't absorb it.
+
+-   **The solution:** You still need to control for time-varying confounders the old-fashioned way — by including them in your model.
+:::
+
+## Limitation 4: Effects Must Be Constant Over Time
+
+::: incremental
+-   Fixed effects assume that the effect of your X on Y is the **same** across all time periods
+
+-   **Example:** If the effect of education spending on test scores has been growing over time (perhaps because of new teaching methods), a simple FE model won't capture that change
+
+-   See Ren (2025) in the optional readings for more on this assumption
+:::
+
+## A Note on Standard Errors {.smaller}
+
+::: incremental
+-   One more technical detail: with panel data, observations within the same unit are **not independent**. Atlanta's crime rate in 2019 is correlated with its crime rate in 2020.
+
+-   This means standard errors from regular OLS will be **too small**, making you overconfident in your results.
+
+-   The fix is to **cluster** standard errors at the unit level. This adjusts for the within-unit correlation.
+
+-   The good news: `fixest` clusters standard errors at the fixed effect level by default, so you don't need to do anything extra.
 :::
 
 # Part 6: Two-Way Fixed Effects
 
-## Can We Control for Multiple Dimensions? {.smaller}
+## Controlling for Two Dimensions at Once {.smaller}
 
 ::: incremental
--   Can we control for both the unit *and* the time period?
+-   So far, we've used fixed effects for one dimension — the **unit** (city, person, country)
 
--   For example, **state fixed effects** to absorb everything about South Carolina that does not change, plus **year fixed effects** to absorb anything that affected all states in a given year, like a recession
+-   But what about things that affect *all* units in a given time period? A recession hits every state in 2008. A federal policy change affects every city in 2015.
 
--   This is called **two-way fixed effects** (TWFE), and it was extremely popular in applied research
+-   **Two-way fixed effects** (TWFE) adds a second set of fixed effects — one for each **time period** — on top of the unit fixed effects
 :::
 
-## The Problem with Two-Way FE
+. . .
+
+In `fixest`, the syntax just adds another variable after the `|`:
+
+```r
+# Unit FE only
+feols(y ~ x | city, data = df)
+
+# Two-way FE: unit + year
+feols(y ~ x | city + year, data = df)
+```
+
+## What Does Each Dimension Absorb? {.smaller}
 
 ::: incremental
--   It would be very nice to adjust for both unit-specific and time-specific unobserved confounders at once
+-   **City fixed effects** absorb everything about a city that doesn't change over time — its history, geography, institutions
 
--   But Imai and Kim (2021) show that you cannot simultaneously and non-parametrically adjust for both unit-specific and time-specific unobserved confounders under this framework
+-   **Year fixed effects** absorb everything about a year that hits all cities equally — recessions, federal policy changes, national trends
 
--   See [Kubinec's overview of TWFE issues](https://www.robertkubinec.com/post/fixed_effects/) for a clear walkthrough of why this matters
+-   Together, they leave only variation that is specific to a *particular city in a particular year*
 
--   We will return to these points when we cover **Diff-in-Diff**
+-   **Example:** With city + year FE, your estimate of police staffing on crime uses only the variation in staffing that can't be explained by "Atlanta is always like this" or "2008 was bad for everyone"
+:::
+
+## The Limits of TWFE {.smaller}
+
+::: incremental
+-   This sounds like it handles everything — but it comes with hidden assumptions
+
+-   TWFE assumes that after removing unit and time effects, the **remaining variation is as good as random**. That's a strong claim.
+
+-   Recent research has uncovered serious problems when units adopt a policy at **different times** (staggered adoption). Goodman-Bacon (2021) showed that TWFE can quietly use already-treated units as "controls" for newly-treated units — producing estimates that can even have the **wrong sign**.
+
+-   This sent shockwaves through applied research. Many published TWFE results are now being revisited with newer methods.
+
+-   We will dig into these problems — and the solutions — when we cover **Difference-in-Differences** next.
+:::
+
+. . .
+
+::: callout-note
+For an accessible overview, see [Kubinec's walkthrough of TWFE issues](https://www.robertkubinec.com/post/fixed_effects/).
 :::
 
 # A Brief Note on Multilevel Models
@@ -618,7 +809,7 @@ etable(naive_model, fe_model, headers = c("Pooled", "City FE"))
 ::: incremental
 -   Fixed effects give each group its own intercept. But what if some groups are very small?
 
--   Imagine you are rating schools by test scores. A school with 500 students and a 95% pass rate: you trust that number. But a school with 8 students and a 100% pass rate? That is probably just luck.
+-   Imagine you are rating schools by test scores. A school with 500 students and a 95% pass rate — you trust that number. A school with 8 students and a 100% pass rate? That is probably just luck.
 
 -   **Multilevel models** (also called hierarchical or random effects models) pull small groups' estimates back toward the overall average. The less data a group has, the more it gets "shrunk" toward the grand mean.
 
@@ -634,7 +825,7 @@ etable(naive_model, fe_model, headers = c("Pooled", "City FE"))
 
 -   **Small-area poverty estimation:** The Census Bureau uses multilevel models to estimate poverty rates for small geographic areas where sample sizes are tiny.
 
--   You do not need to learn to run these models in this class, but knowing they exist makes you a better consumer of evidence when you encounter rankings and ratings in policy reports.
+-   You don't need to learn to run these models in this class, but knowing they exist makes you a better consumer of evidence when you encounter rankings and ratings in policy reports.
 :::
 
 # Wrapping Up
@@ -642,26 +833,27 @@ etable(naive_model, fe_model, headers = c("Pooled", "City FE"))
 ## What We Covered Today {.smaller}
 
 ::: incremental
-1.  **Panel and hierarchical data** -- most policy data has this structure
-2.  **Fixed effects** -- control for the unit, use only within-unit variation
-3.  **The visual intuition** -- pooled regression can get the sign wrong; FE fixes it
-4.  **fixest in R** -- the practical tool for FE regression
-5.  **Housing prices** -- a full policy simulation showing why pooled estimates mislead
-6.  **Assumptions** -- FE cannot fix reverse causality or time-varying confounders
-7.  **Two-way FE** -- powerful but with important limitations
+1.  **The problem** — comparing different units (cities, people) confuses "who they are" with "what happened to them"
+2.  **Fixed effects** — control for the unit, use only within-unit variation
+3.  **The visual intuition** — pooled regression can get the sign wrong; de-meaning the data fixes it
+4.  **The equation and `fixest`** — $\beta_i$ gives each unit its own intercept; `feols()` makes it easy
+5.  **Housing prices** — a simulation showing the pooled model recommends the wrong policy
+6.  **Limitations** — FE can't fix reverse causality, time-varying confounders, or variables that don't change
+7.  **Two-way FE** — controls for unit *and* time, but comes with strong assumptions
 :::
 
 ## What's Next
 
 ::: incremental
--   **Difference-in-Differences** -- comparing changes over time between treated and untreated groups
+-   **Difference-in-Differences** — comparing changes over time between treated and untreated groups
 
--   **Regression Discontinuity** -- exploiting arbitrary cutoffs for causal inference
+-   **Regression Discontinuity** — exploiting arbitrary cutoffs for causal inference
 :::
 
 ## For Your Final Project
 
-::: {.callout-tip}
+::: callout-tip
 ## Think About This Now
-Does your data have a panel or hierarchical structure? If you are looking at schools, hospitals, states, or any repeated observations, you almost certainly need fixed effects.
+
+Does your data have a panel or hierarchical structure? If you are looking at schools, hospitals, states, or any repeated observations, you should consider whether fixed effects are appropriate. Ask yourself: what confounders are baked into the identity of each unit, and do they change over time?
 :::
