@@ -756,7 +756,7 @@ Without stratification, you might end up with 40 free-lunch students in treatmen
 ::: incremental
 -   The treatment vs. control comparison tells us "did the program work?" But the authors wanted to answer a harder question: **how much of the effect is from monitoring, and how much is from the financial incentive?**
 
--   The key insight is that the nonlinear pay structure creates variation in incentives *within* the treatment group. A teacher who has worked 9 days with 2 days left faces a huge incentive to show up one more day (crossing the 10-day threshold means Rs. 500 more). A teacher who has already worked 15 days faces a smaller marginal incentive (just Rs. 50)
+-   The key insight is that the nonlinear pay structure creates variation in incentives *within* the treatment group. A teacher who has taught 9 days with several days left has a strong reason to show up: one more day crosses the 10-day threshold and unlocks the Rs. 50/day bonus for every day from 10 onward. But a teacher who has only taught 7 days with 2 days left *cannot* reach the threshold, so there is no marginal incentive to attend. Above 10 days, the incentive is a flat Rs. 50 per day.
 
 -   By tracking daily attendance decisions and matching them to where each teacher stood relative to the threshold on each day, the authors can estimate how responsive teachers are to money vs. simply being watched
 
