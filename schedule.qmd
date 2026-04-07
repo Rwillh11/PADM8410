@@ -120,6 +120,7 @@ toc-depth: 2
 **Materials:**
 
 - [Slides](PADM8410Lecture11_Experiments.qmd)
+- [Example Pre-Analysis Plan: Oregon Health Insurance Experiment (PDF)](https://www.nber.org/sites/default/files/2020-02/analysis-plan-voting-2015-09-23.pdf)
 
 ## Week 12: Panel Data & Fixed Effects
 

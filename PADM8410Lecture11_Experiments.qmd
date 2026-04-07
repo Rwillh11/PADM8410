@@ -686,7 +686,7 @@ Small samples create two underappreciated problems beyond low power:
 
 -   For our tutoring study, the plan would specify that we are comparing end-of-year math scores by assignment using a t-test, and that we will also look at attendance and grades as secondary outcomes.
 
--   Example of a real pre-analysis plan: [Oregon Health Insurance Experiment PAP](https://www.nber.org/programs-projects/projects-and-centers/oregon-health-insurance-experiment/oregon-health-insurance-experiment-pre-analysis-plans). Oregon randomly assigned Medicaid enrollment to low-income adults, then pre-registered the outcomes they would measure (ER use, health, finances).
+-   Example of a real pre-analysis plan: [Oregon Health Insurance Experiment PAP](https://www.nber.org/sites/default/files/2020-02/analysis-plan-voting-2015-09-23.pdf). Oregon randomly assigned Medicaid enrollment to low-income adults, then pre-registered the outcomes they would measure (ER use, health, finances).
 :::
 
 ## Assignment Strategies {.smaller}
