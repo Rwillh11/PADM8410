@@ -785,16 +785,6 @@ Without stratification, you might end up with 40 free-lunch students in treatmen
 -   After 2.5 years, children in the program were **62% more likely** to transfer to formal primary schools
 :::
 
-## Design Details
-
-::: incremental
--   Duflo and co-authors partnered with Seva Mandir — a very common approach for field experiments
-
-    -   Sometimes a way to find funding: provide free analysis for an NGO
-
--   120 total schools, randomized. Some **attrition**: 3 treatment schools and 4 control schools closed during the study.
-:::
-
 ## Treatment Details
 
 ::: incremental
