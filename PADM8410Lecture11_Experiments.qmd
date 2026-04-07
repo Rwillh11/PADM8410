@@ -686,7 +686,7 @@ Small samples create two underappreciated problems beyond low power:
 
 -   For our tutoring study, the plan would specify that we are comparing end-of-year math scores by assignment using a t-test, and that we will also look at attendance and grades as secondary outcomes.
 
--   Example of a real pre-analysis plan: <https://osf.io/prk2t/?view_only=bf72ec263e764bab82a3c9817f96f84d>
+-   Example of a real pre-analysis plan: [Oregon Health Insurance Experiment PAP](https://www.nber.org/programs-projects/projects-and-centers/oregon-health-insurance-experiment/oregon-health-insurance-experiment-pre-analysis-plans). Oregon randomly assigned Medicaid enrollment to low-income adults, then pre-registered the outcomes they would measure (ER use, health, finances).
 :::
 
 ## Assignment Strategies {.smaller}
@@ -719,7 +719,8 @@ data.frame(
 
 . . .
 
-Without stratification, you might end up with 40 free-lunch students in treatment and only 20 in control. Most important if you care about the effects on some small subgroup
+Without stratification, you might end up with 40 free-lunch students in treatment and only 20 in control. Most important if you care about the effects on some small subgroup.
+
 # Part 5: Case Study: Incentives Work (Duflo, Hanna, and Ryan 2012)
 
 ## Incentives Work: Getting Teachers to Come to School {.smaller}

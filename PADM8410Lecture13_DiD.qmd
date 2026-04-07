@@ -20,28 +20,46 @@ execute:
 -   DiD is probably the **most commonly used** causal inference tool in applied policy research: minimum wage studies, Medicaid expansion, education reforms, environmental regulations
 :::
 
-## A Policy Question {.smaller}
+## A Story About Cholera {.smaller}
 
 ::: incremental
--   A state legislator asks: **"Did our minimum wage increase cost us jobs?"**
+-   In the 1850s, cholera was killing thousands of people in London. Nobody knew what caused it.
 
--   You have employment data from before and after the increase. Employment went up slightly. Case closed?
+-   The physician John Snow had a theory: cholera spread through contaminated water, not through the air (the prevailing view at the time)
 
--   Not so fast. Employment was rising *everywhere* during this period because of economic growth. Maybe it would have risen even more without the minimum wage increase.
+-   Two water companies served overlapping parts of London. In 1852, one of them, the **Lambeth Company**, moved its water intake pipe upstream, away from the sewage. The other, **Southwark & Vauxhall**, kept its pipe in the contaminated water.
 
--   The problem: **time is a confounder**. Things change over time regardless of the policy, and we can't just compare before vs. after.
+-   Households served by the two companies lived in the same neighborhoods, on the same streets. The only difference was where their water came from.
 :::
 
-## Why Before-and-After Isn't Enough {.smaller}
+## Snow's Natural Experiment {.smaller}
 
 ::: incremental
--   If we only look at one state, we can't tell how much of the change is due to the policy and how much is due to the economy, demographics, or other trends
+-   Snow compared cholera death rates in households served by each company, before and after the Lambeth Company moved its pipe
 
--   We need a **comparison group**: a similar state that *didn't* change its minimum wage
+-   Before the move, both groups had similarly high cholera rates
 
--   If both states were on the same trajectory before the policy, then any *divergence* after the policy is plausibly caused by the treatment
+-   After the move, deaths plummeted in Lambeth households but stayed high in Southwark & Vauxhall households
 
--   That's the core logic of Difference-in-Differences: compare the **change** in the treated group to the **change** in a control group
+-   The **difference in the changes** between the two groups was the evidence that contaminated water caused cholera
+:::
+
+. . .
+
+::: {.callout-note}
+This is Difference-in-Differences. Snow didn't compare Lambeth to Southwark & Vauxhall at one point in time (they differed in many ways). He compared how much each group *changed* after the pipe was moved. The part of the change that the control group didn't experience is plausibly caused by the treatment.
+:::
+
+## The General Logic {.smaller}
+
+::: incremental
+-   The problem with simple before-and-after comparisons is that **time is a confounder**. Things change over time regardless of any policy: the economy grows, demographics shift, diseases wax and wane.
+
+-   If we only look at one group, we can't tell how much of the change is due to the treatment and how much would have happened anyway.
+
+-   The solution: find a **comparison group** that was on a similar trajectory. If the treated group diverges from the control group *after* treatment, that divergence is plausibly caused by the treatment.
+
+-   That's the core logic of DiD: compare the **change** in the treated group to the **change** in a control group.
 :::
 
 ## Why Should MPAs Care?
@@ -71,7 +89,7 @@ execute:
 ## Card & Krueger (1994): Minimum Wage and Employment {.smaller}
 
 ::: incremental
--   This is exactly the question our legislator was asking, and it's one of the most famous studies in economics
+-   Snow's cholera study is the foundational example of this kind of reasoning. The most famous modern application is Card & Krueger (1994).
 
 -   In April 1992, **New Jersey** raised its minimum wage from \$4.25 to \$5.05
 
@@ -110,7 +128,7 @@ The minimum wage increase was associated with an **increase** in employment, the
 
 -   The difference between these two changes (0.59 minus -2.16 = 2.76) removes the common time trend and isolates the effect of the minimum wage increase.
 
--   We're not comparing NJ to PA in *levels* (PA had more employees). We're comparing how much each state *changed*.
+-   This is the same logic as Snow's cholera study: we're not comparing NJ to PA in *levels* (PA had more employees). We're comparing how much each state *changed*.
 :::
 
 ## The DiD Formula
