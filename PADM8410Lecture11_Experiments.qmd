@@ -785,20 +785,6 @@ Without stratification, you might end up with 40 free-lunch students in treatmen
 -   After 2.5 years, children in the program were **62% more likely** to transfer to formal primary schools
 :::
 
-## Treatment Details
-
-::: incremental
--   Initial teacher wage: Rs. 1,000 (\~\$160 PPP) for a minimum of 20 days of work
-
-    -   Treatment: Rs. 50 bonus (\~\$8 PPP) for each day over 20; Rs. 50 fine for each day under 20, fines capped at Rs. 500
-
--   Control group receives the initial wage with no incentive structure
-
--   Teachers reminded they could be dismissed for poor attendance
-
-    -   But no teacher was actually fired during the evaluation. Why not?
-:::
-
 ## Data Collection {.smaller}
 
 ::: incremental
