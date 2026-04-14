@@ -189,7 +189,7 @@ ggplot(od_means, aes(x = Quarter, y = avg_rate, color = group, group = group)) +
   theme_minimal(base_size = 14)
 ```
 
-Before the policy, both groups trend similarly. After Q3 2011, they diverge. That's the DiD at work.
+Look at what happens after the dashed line. Do the trends diverge? Not really. That's already a hint about what the regression will find. But let's work through the numbers to be sure.
 
 ## Step 2: Create the Treatment Variable {.smaller}
 
@@ -255,7 +255,7 @@ summary(did_model)
 
 ::: {.callout-note}
 ## Interpretation
-The coefficient on `Treated` is the DiD estimate, the same number we computed by hand. State fixed effects absorb permanent differences between states. Quarter fixed effects absorb common time trends. What's left is the effect of California's policy change.
+The coefficient on `Treated` is the DiD estimate, the same number we computed by hand. It's small and not statistically significant. The active-choice policy **did not meaningfully increase** organ donation rates in California relative to the other states. Not every policy works, and DiD is just as useful for showing null effects as positive ones.
 :::
 
 ## The Connection to Fixed Effects {.smaller}
