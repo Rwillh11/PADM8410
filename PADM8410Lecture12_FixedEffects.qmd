@@ -551,7 +551,7 @@ summary(m_fe)
 ## Setting Up the Simulation {.smaller}
 
 ```{r}
-#| echo: false
+#| echo: true
 
 library(tidyverse)
 set.seed(30317)
