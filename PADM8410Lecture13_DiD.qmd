@@ -294,13 +294,13 @@ The minimum wage increase was associated with an *increase* in employment, the o
 ## The Key Assumption {.smaller}
 
 ::: incremental
--   DiD requires one critical assumption: **without the treatment**, the treated group would have followed the same trend as the control group
+-   We introduced this briefly with Snow's data. Now let's dig into it.
 
--   This is called the **parallel trends assumption**
+-   DiD requires one critical assumption: **without the treatment**, the treated group would have followed the same trend as the control group. This is called the **parallel trends assumption**.
 
--   In Card & Krueger, it means: if NJ had *not* raised its minimum wage, NJ's fast-food employment would have changed at the same rate as PA's
+-   In the organ donation example, it means: if California had *not* changed its DMV question, California's donation rate would have changed at the same rate as the other states.
 
--   Notice this is an assumption about a **counterfactual** that we can never observe. We can check whether trends were parallel *before* the treatment, but the assumption is about what would have happened *after*.
+-   This is an assumption about a **counterfactual** that we can never observe. We can check whether trends were parallel *before* the treatment, but the assumption is about what would have happened *after*.
 :::
 
 ## Levels vs. Trends {.smaller}
@@ -308,7 +308,7 @@ The minimum wage increase was associated with an *increase* in employment, the o
 ::: {.callout-important}
 ## A Common Confusion
 
-Parallel trends does **not** require that the groups are at the same level. PA had more FTE employees than NJ before the policy. That's fine. What matters is that PA and NJ were *changing at the same rate*. DiD compares changes, not levels. This is the same within-unit logic from our fixed effects lecture.
+Parallel trends does **not** require that the groups are at the same level. In the organ donation plot, California's rate was at a different level than the other states. That's fine. What matters is that they were *changing at the same rate*. Similarly, in Snow's data, the Lambeth and non-Lambeth areas had slightly different death rates in 1849, but DiD still works because we're comparing changes, not levels.
 :::
 
 ::: incremental
@@ -364,7 +364,7 @@ Panel (a): pre-trends are parallel, so the post-treatment gap is plausibly causa
 
 ::: incremental
 -   **More plausible:**
-    -   Two neighboring states with similar economic structures (this is why Card & Krueger chose NJ and PA, not NJ and Alaska)
+    -   Units in similar environments (Snow's households were on the same streets; Card & Krueger chose neighboring NJ and PA, not NJ and Alaska)
     -   Units selected for treatment based on a fixed characteristic, not a trend
     -   Short time horizons where trends are less likely to diverge
 
