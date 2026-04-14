@@ -529,7 +529,7 @@ Event study plots are the **standard way** to present DiD results in policy rese
 ## What If Treatment Happens at Different Times? {.smaller}
 
 ::: incremental
--   So far, we've had a clean setup: one group treated, one group not, at a single point in time
+-   So far, we've had a clean setup: California changed its policy, the other states didn't, and it all happened at one point in time
 
 -   In practice, policies are often adopted **at different times** by different units
 
