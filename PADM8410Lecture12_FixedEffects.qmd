@@ -251,7 +251,7 @@ ggplot(df, aes(x = Exercise, y = Colds, color = Individual, shape = Individual))
   theme_minimal(base_size = 14)
 ```
 
-The pooled regression says more exercise → more colds. That can't be right!
+The pooled regression says more exercise, more colds. That can't be right!
 
 ## Why Is the Pooled Regression Wrong? {.smaller}
 
@@ -598,7 +598,7 @@ ggplot(sim_data, aes(x = new_houses, y = price, color = city)) +
        x = "New Houses Built", y = "Average Housing Price")
 ```
 
-The pooled regression says more houses → higher prices. Should we tell the council member to stop building?
+The pooled regression says more houses, higher prices. Should we tell the council member to stop building?
 
 ## City-Level Averages: The Between Story
 
@@ -632,12 +632,12 @@ ggplot(sim_data, aes(x = new_houses, y = price)) +
   facet_wrap(~ city, scales = "free") +
   theme_minimal(base_size = 12) +
   theme(strip.text = element_text(size = 10, face = "bold")) +
-  labs(title = "Within Each City: More Supply → Lower Prices",
+  labs(title = "Within Each City: More Supply, Lower Prices",
        subtitle = "Fixed effects isolate this within-city variation.",
        x = "New Houses Built", y = "Housing Price")
 ```
 
-Within every city, the relationship is negative. More construction → lower prices. The pooled regression had it completely backwards.
+Within every city, the relationship is negative. More construction, lower prices. The pooled regression had it completely backwards.
 
 ## Naive vs. Fixed Effects Model {.smaller}
 
@@ -671,7 +671,7 @@ etable(naive_model, fe_model, headers = c("Pooled", "City FE"))
 ::: callout-important
 ## The Simpson's Paradox of Policy Analysis
 
-**Popular cities** have higher housing prices *and* more new homes. Pool all cities together and you see a positive correlation. Fixed effects remove that between-city confounding, revealing the **negative within-city** effect: more supply → lower prices.
+**Popular cities** have higher housing prices *and* more new homes. Pool all cities together and you see a positive correlation. Fixed effects remove that between-city confounding, revealing the **negative within-city** effect: more supply, lower prices.
 
 If you gave the city council the pooled estimate, you'd recommend *less* construction to bring prices down. That's exactly the wrong policy.
 :::
@@ -713,7 +713,7 @@ If the thing you're worried about is a *permanent feature* of the unit (geograph
 
 -   Fixed effects help with the *between-city* confounding (Atlanta is different from Seattle). But they do **not** help with the fact that *within* Atlanta, a spike in crime this year causes more hiring next year.
 
--   Even with city fixed effects, a regression of crime on police staffing will likely show more police → more crime, because the **within-city** variation is still driven by reverse causality.
+-   Even with city fixed effects, a regression of crime on police staffing will likely show more police, more crime, because the **within-city** variation is still driven by reverse causality.
 
 -   For this, you need a different strategy (instruments, natural experiments, or diff-in-diff, which we'll cover later in the course).
 :::
