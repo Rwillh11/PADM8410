@@ -17,8 +17,10 @@ execute:
 
 -   Today we learn the method that builds directly on those ideas: **Difference-in-Differences (DiD)**
 
--   DiD is probably the **most commonly used** causal inference tool in applied policy research: minimum wage studies, Medicaid expansion, education reforms, environmental regulations
+-   DiD is probably the **most commonly used** causal inference tool in applied policy research
 :::
+
+# Part 1: The DiD Idea
 
 ## A Story About Cholera {.smaller}
 
@@ -27,108 +29,64 @@ execute:
 
 -   The physician John Snow had a theory: cholera spread through contaminated water, not through the air (the prevailing view at the time)
 
--   Two water companies served overlapping parts of London. In 1852, one of them, the **Lambeth Company**, moved its water intake pipe upstream, away from the sewage. The other, **Southwark & Vauxhall**, kept its pipe in the contaminated water.
+-   Two water companies served overlapping parts of London. In 1852, the **Lambeth Company** moved its water intake upstream, away from the sewage. The other, **Southwark & Vauxhall**, did not.
 
--   Households served by the two companies lived in the same neighborhoods, on the same streets. The only difference was where their water came from.
+-   Households served by the two companies lived in the same neighborhoods. The only difference was where their water came from.
 :::
 
-## Snow's Natural Experiment {.smaller}
+## The Problem: Before-and-After Isn't Enough {.smaller}
 
 ::: incremental
--   Snow compared cholera death rates in households served by each company, before and after the Lambeth Company moved its pipe
+-   After the Lambeth Company moved its pipe, cholera deaths in Lambeth-served households dropped from 130.1 to 84.9 per 10,000 people. That's a decline of 45.2 deaths.
 
--   Before the move, both groups had similarly high cholera rates
+-   Can we conclude that clean water saved 45 lives per 10,000? Not yet.
 
--   After the move, deaths plummeted in Lambeth households but stayed high in Southwark & Vauxhall households
+-   Cholera outbreaks vary from year to year for all sorts of reasons: weather, population density, sanitation practices. Maybe 1854 was just a less severe year overall.
 
--   The **difference in the changes** between the two groups was the evidence that contaminated water caused cholera
+-   **Time is a confounder.** If we only look at one group, we can't separate the effect of the treatment from things that were changing anyway.
 :::
 
-. . .
-
-::: {.callout-note}
-This is Difference-in-Differences. Snow didn't compare Lambeth to Southwark & Vauxhall at one point in time (they differed in many ways). He compared how much each group *changed* after the pipe was moved. The part of the change that the control group didn't experience is plausibly caused by the treatment.
-:::
-
-## The General Logic {.smaller}
+## The Solution: A Comparison Group {.smaller}
 
 ::: incremental
--   The problem with simple before-and-after comparisons is that **time is a confounder**. Things change over time regardless of any policy: the economy grows, demographics shift, diseases wax and wane.
+-   Snow had something better than a simple before-and-after comparison. He also had data on households served by **Southwark & Vauxhall**, whose water was still contaminated.
 
--   If we only look at one group, we can't tell how much of the change is due to the treatment and how much would have happened anyway.
+-   If 1854 was simply a better year for cholera, we'd expect deaths to drop in *both* groups.
 
--   The solution: find a **comparison group** that was on a similar trajectory. If the treated group diverges from the control group *after* treatment, that divergence is plausibly caused by the treatment.
+-   In fact, deaths in the Southwark & Vauxhall areas *rose* from 134.9 to 146.6 per 10,000, an increase of 11.7.
 
--   That's the core logic of DiD: compare the **change** in the treated group to the **change** in a control group.
+-   So the overall environment was getting *worse* for cholera in 1854, not better. The decline in Lambeth households happened *despite* that trend.
 :::
 
-## Why Should MPAs Care?
+## Snow's 2×2 Table {.smaller}
 
-::: incremental
--   If you read policy evaluations, you *will* encounter DiD
-
--   If you do evaluation work yourself, you will likely use it
-
--   Understanding DiD also means understanding its limits, which will make you a better consumer of policy research
-:::
-
-## Today's Roadmap
-
-::: incremental
-1.  **The classic 2×2 DiD**: Card & Krueger's minimum wage study
-2.  **The parallel trends assumption**: the key to credibility
-3.  **DiD in R**: a full worked example
-4.  **Event studies**: visualizing effects over time
-5.  **Staggered adoption**: when different units get treated at different times
-6.  **Modern solutions**: new methods that fix problems with classic TWFE
-7.  **Practical advice**: a checklist for credible DiD designs
-:::
-
-# Part 1: The Classic 2×2 DiD
-
-## Card & Krueger (1994): Minimum Wage and Employment {.smaller}
-
-::: incremental
--   Snow's cholera study is the foundational example of this kind of reasoning. The most famous modern application is Card & Krueger (1994).
-
--   In April 1992, **New Jersey** raised its minimum wage from \$4.25 to \$5.05
-
--   Neighboring **Pennsylvania** did not change its minimum wage
-
--   Conventional economic theory predicted that a higher minimum wage would reduce employment
-
--   Card & Krueger surveyed fast-food restaurants in both states, before and after the increase
-
--   **The question:** Did NJ's minimum wage increase reduce fast-food employment?
-:::
-
-## The 2×2 Table
-
-| | Before (Feb 1992) | After (Nov 1992) | Change |
+| | 1849 (Before) | 1854 (After) | Change |
 |---|---|---|---|
-| **New Jersey** (treated) | 20.44 FTE | 21.03 FTE | +0.59 |
-| **Pennsylvania** (control) | 23.33 FTE | 21.17 FTE | -2.16 |
+| **Lambeth** (clean water) | 130.1 deaths per 10,000 | 84.9 | -45.2 |
+| **Southwark & Vauxhall** (contaminated) | 134.9 | 146.6 | +11.7 |
 
 . . .
 
-**DiD Estimate:** (+0.59) − (−2.16) = **+2.76 FTE employees**
+**Step 1:** The change in the treated group (Lambeth): 84.9 - 130.1 = **-45.2**
 
 . . .
 
-::: {.callout-important}
-The minimum wage increase was associated with an **increase** in employment, the opposite of the standard prediction. This is one of the most influential papers in labor economics.
-:::
+**Step 2:** The change in the control group (Southwark & Vauxhall): 146.6 - 134.9 = **+11.7**
 
-## What Did the DiD Estimate Actually Do? {.smaller}
+. . .
+
+**Step 3:** The DiD estimate: (-45.2) - (+11.7) = **-56.9 deaths per 10,000**
+
+## What Did We Just Do? {.smaller}
 
 ::: incremental
--   NJ employment went up by 0.59 FTE. But that alone doesn't tell us much, because lots of things were happening at the same time.
+-   The Lambeth deaths fell by 45.2. But we can't credit all of that to clean water, because other things were changing too.
 
--   PA employment went *down* by 2.16 FTE over the same period. PA serves as our benchmark for what would have happened to NJ without the policy.
+-   The Southwark & Vauxhall deaths *rose* by 11.7 over the same period. They serve as our benchmark for what would have happened to Lambeth without the clean water.
 
--   The difference between these two changes (0.59 minus -2.16 = 2.76) removes the common time trend and isolates the effect of the minimum wage increase.
+-   So the true effect of clean water is the Lambeth change *minus* the Southwark & Vauxhall change: -45.2 - 11.7 = -56.9
 
--   This is the same logic as Snow's cholera study: we're not comparing NJ to PA in *levels* (PA had more employees). We're comparing how much each state *changed*.
+-   We're not comparing the two groups at one point in time (their levels were similar but not identical). We're comparing how much each group *changed*. That's the "difference in differences."
 :::
 
 ## The DiD Formula
@@ -140,135 +98,196 @@ $$\widehat{\delta}_{DiD} = (\bar{Y}_{treat}^{post} - \bar{Y}_{treat}^{pre}) - (\
 Take the **change** in the treated group. Subtract the **change** in the control group. What's left is the treatment effect: the part of the change that can't be explained by common time trends.
 :::
 
-## The DiD Logic in DAG Terms {.smaller}
-
-```{r}
-#| echo: false
-
-library(tidyverse)
-library(dagitty)
-library(ggdag)
-
-dag <- dagitty("
-dag {
-  Outcome      [pos=\"2,0\"]
-  Time         [pos=\"1,-1\"]
-  Treatment    [pos=\"0,0\"]
-  Group        [pos=\"1,1\"]
-
-  Time -> Treatment
-  Time -> Outcome
-  Treatment -> Outcome
-  Group -> Treatment
-  Group -> Outcome
-}
-")
-ggdag(dag, text = FALSE, use_labels = "name") +
-  coord_cartesian(clip = "off") +
-  theme_dag() +
-  theme(plot.margin = margin(t = 20, r = 10, b = 10, l = 10), legend.position = "none")
-```
+## The Key Assumption {.smaller}
 
 ::: incremental
--   There are two backdoor paths: through **Time** and through **Group**
--   Differencing over time within each group closes the Time path (this is the fixed effects idea from last class)
--   Differencing *between* groups closes the Group path
--   DiD closes both at once
+-   This only works if we believe that, **without the treatment**, Lambeth households would have experienced the same trend as Southwark & Vauxhall households
+
+-   This is called the **parallel trends assumption**, and it is the foundation of every DiD design
+
+-   In Snow's case, it's plausible: the households were in the same neighborhoods, exposed to the same weather and sanitation conditions. The only difference was the water source.
+
+-   We'll spend more time on this assumption later. For now, the point is that DiD requires a credible argument that the two groups were on the same trajectory before treatment.
 :::
 
-# Part 2: The 2×2 DiD Estimator
-
-## DiD as a Regression {.smaller}
-
-We can express the DiD calculation as a regression. This should look familiar from OLS:
-
-$$Y_{it} = \beta_{0} + \beta_{1}\text{Group}_{i} + \beta_{2}\text{Post}_{t} + \beta_{3}(\text{Group}_{i} \times \text{Post}_{t}) + \epsilon_{it}$$
+## Why Should MPAs Care?
 
 ::: incremental
--   $\beta_1$ captures the baseline difference between groups (NJ vs PA before the policy)
--   $\beta_2$ captures the common time trend (what changed for everyone)
--   $\beta_3$ is the **DiD estimate**: the extra change in the treated group beyond what the control group experienced
+-   DiD is everywhere in policy evaluation: minimum wage studies, Medicaid expansion, education reforms, environmental regulations
+
+-   If you read policy evaluations, you *will* encounter DiD. If you do evaluation work, you will likely use it.
+
+-   Real applications get more complex than Snow's 2×2 table (multiple time periods, many units, staggered policy adoption), and we'll work through those complications today
 :::
 
-## The Connection to Fixed Effects {.smaller}
+## Today's Roadmap
 
 ::: incremental
--   That interaction regression is equivalent to a **two-way fixed effects** model:
-
-$$Y_{it} = \alpha_{g} + \alpha_{t} + \beta \cdot \text{Treated}_{it} + \epsilon_{it}$$
-
--   $\alpha_g$ is a group fixed effect (absorbs level differences between NJ and PA)
--   $\alpha_t$ is a time fixed effect (absorbs common trends)
--   $\beta$ is the same DiD estimate as $\beta_3$ above
-
--   In `fixest`, this is the same syntax you learned last class, with treatment as the key variable:
+1.  **DiD with real data in R**: California's organ donation policy
+2.  **The parallel trends assumption**: when is DiD credible?
+3.  **Event studies**: visualizing effects over time
+4.  **Staggered adoption**: when different units get treated at different times
+5.  **Modern solutions**: new methods that fix problems with classic TWFE
+6.  **Practical advice**: a checklist for credible DiD designs
 :::
 
-```r
-feols(fte ~ treated:post | state + period, data = ck_data)
-```
+# Part 2: DiD With Real Data
 
-## Simulating Card & Krueger in R {.smaller}
+## California's Organ Donation Policy {.smaller}
+
+::: incremental
+-   In July 2011, **California** changed how it asked people about organ donation at the DMV
+
+-   Previously, the question was opt-in: "Would you like to be an organ donor?" (most people skipped it)
+
+-   California switched to **active choice**: "Do you wish to register as an organ donor?" with a required yes or no answer
+
+-   **The question:** Did this change increase organ donation registration rates?
+
+-   We have quarterly data on 27 states from Q4 2010 through Q1 2012. Only California changed its policy.
+:::
+
+## Loading the Data {.smaller}
+
+This example comes from Kessler and Roth (2014) and is used in Huntington-Klein's *The Effect*.
 
 ```{r}
 #| echo: true
 
 library(tidyverse)
 library(fixest)
-set.seed(30317)
+library(causaldata)
 
-n_restaurants <- 400  # 200 per state
+# Load the data
+od <- organ_donations
 
-ck_data <- tibble(
-  restaurant = 1:n_restaurants,
-  state = rep(c("NJ", "PA"), each = n_restaurants / 2),
-  # PA starts with slightly more employees on average
-  base_fte = ifelse(state == "PA",
-                    rnorm(n_restaurants / 2, 23.3, 4),
-                    rnorm(n_restaurants / 2, 20.4, 4))
-) %>%
-  # Each restaurant appears twice: before and after
-  crossing(period = c("before", "after")) %>%
-  mutate(
-    post    = ifelse(period == "after", 1, 0),
-    treated = ifelse(state == "NJ", 1, 0),
-    # Build the outcome from components:
-    fte = base_fte +
-      ifelse(post == 1, -2.2, 0) +                # Common time trend (decline)
-      ifelse(post == 1 & treated == 1, 2.76, 0) +  # True treatment effect
-      rnorm(n(), 0, 3)                              # Random noise
-  )
+# What does it look like?
+head(od, 12)
 ```
 
-We built in a true treatment effect of **+2.76 FTE**. Can our regression recover it?
+Each row is a state-quarter. `Rate` is the organ donation registration rate. California's policy changes in Q3 2011.
 
-## Running the DiD Regression {.smaller}
+## Step 1: Look at the Raw Trends {.smaller}
+
+Before running any model, plot the data.
 
 ```{r}
 #| echo: true
 
-# TWFE with fixest (same syntax as last class)
-did_twfe <- feols(fte ~ treated:post | state + period, data = ck_data)
-summary(did_twfe)
+# Average donation rate: California vs. everyone else
+od_means <- od %>%
+  mutate(group = ifelse(State == "California", "California", "Other States")) %>%
+  group_by(group, Quarter) %>%
+  summarise(avg_rate = mean(Rate), .groups = "drop")
+
+ggplot(od_means, aes(x = Quarter, y = avg_rate, color = group, group = group)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  geom_vline(xintercept = "Q32011", linetype = "dashed", color = "gray40") +
+  labs(title = "Organ Donation Rates: California vs. Other States",
+       x = "Quarter", y = "Donation Rate", color = "") +
+  theme_minimal(base_size = 14)
+```
+
+Before the policy, both groups trend similarly. After Q3 2011, they diverge. That's the DiD at work.
+
+## Step 2: Create the Treatment Variable {.smaller}
+
+```{r}
+#| echo: true
+
+# A unit is "treated" if it is California AND in the post-treatment period
+od <- od %>%
+  mutate(
+    California = ifelse(State == "California", 1, 0),
+    Post = ifelse(Quarter %in% c("Q32011", "Q42011", "Q12012"), 1, 0),
+    Treated = California * Post
+  )
+
+# Check: how many treated observations?
+od %>% count(California, Post, Treated)
+```
+
+`Treated = 1` only for California in Q3 2011 and after. Everything else is a control observation.
+
+## Step 3: The DiD by Hand {.smaller}
+
+Just like we did with Snow's cholera data, let's compute the DiD estimate manually before running a regression.
+
+```{r}
+#| echo: true
+
+# Average donation rates by group and period
+did_table <- od %>%
+  mutate(group = ifelse(California == 1, "California", "Other States"),
+         period = ifelse(Post == 1, "After", "Before")) %>%
+  group_by(group, period) %>%
+  summarise(avg_rate = mean(Rate), .groups = "drop") %>%
+  pivot_wider(names_from = period, values_from = avg_rate) %>%
+  mutate(Change = After - Before)
+
+did_table
 ```
 
 . . .
 
-The `treated:post` coefficient is close to 2.76, the value we built into the simulation. The state and period fixed effects are absorbed behind the scenes, just like the country fixed effects in the gapminder example.
+```{r}
+#| echo: true
 
-## The Interaction Form Gives the Same Answer {.smaller}
+# The DiD estimate: difference in the changes
+did_table$Change[did_table$group == "California"] -
+  did_table$Change[did_table$group == "Other States"]
+```
+
+## Step 4: The DiD Regression {.smaller}
+
+Now let's get the same answer from a regression with proper standard errors. This is the same `feols()` syntax from last class.
 
 ```{r}
 #| echo: true
 
-# Interaction form with lm() -- equivalent, but shows all coefficients
-did_interaction <- lm(fte ~ treated * post, data = ck_data)
-summary(did_interaction)$coefficients
+# TWFE regression: state fixed effects + quarter fixed effects
+did_model <- feols(Rate ~ Treated | State + Quarter, data = od)
+summary(did_model)
 ```
 
+. . .
+
 ::: {.callout-note}
-The `treated:post` coefficient is the DiD estimate in both models. The interaction form also shows you $\beta_1$ (group difference) and $\beta_2$ (time trend), which `feols()` absorbs into the fixed effects. Both approaches give the same answer.
+## Interpretation
+The coefficient on `Treated` is the DiD estimate, the same number we computed by hand. State fixed effects absorb permanent differences between states. Quarter fixed effects absorb common time trends. What's left is the effect of California's policy change.
 :::
+
+## The Connection to Fixed Effects {.smaller}
+
+::: incremental
+-   The DiD regression is a **two-way fixed effects** model, which you learned last class:
+
+$$Y_{it} = \alpha_{i} + \alpha_{t} + \beta \cdot \text{Treated}_{it} + \epsilon_{it}$$
+
+-   $\alpha_i$ is a state fixed effect (absorbs level differences between California and other states)
+-   $\alpha_t$ is a quarter fixed effect (absorbs trends common to all states)
+-   $\beta$ is the DiD estimate
+
+-   DiD builds directly on fixed effects. The new ingredient is the treatment variable that "turns on" for specific units at a specific time.
+:::
+
+## A Famous Example: Card & Krueger (1994) {.smaller}
+
+The most famous DiD study in economics uses this same logic. In April 1992, **New Jersey** raised its minimum wage. Neighboring **Pennsylvania** did not.
+
+| | Before (Feb 1992) | After (Nov 1992) | Change |
+|---|---|---|---|
+| **New Jersey** (treated) | 20.44 FTE | 21.03 FTE | +0.59 |
+| **Pennsylvania** (control) | 23.33 FTE | 21.17 FTE | -2.16 |
+
+. . .
+
+**DiD Estimate:** (+0.59) - (-2.16) = **+2.76 FTE employees**
+
+. . .
+
+The minimum wage increase was associated with an *increase* in employment, the opposite of the standard prediction. This is one of the most influential papers in labor economics.
 
 # Part 3: The Parallel Trends Assumption
 
@@ -381,95 +400,8 @@ Panel (a): pre-trends are parallel, so the post-treatment gap is plausibly causa
 -   **Solution:** Backdate the treatment period or exclude the periods just before treatment
 :::
 
-# Part 4: DiD in R - A Worked Example
 
-## A New Policy Question {.smaller}
-
-::: incremental
--   Suppose a state expands its **Earned Income Tax Credit (EITC)**, which gives tax refunds to low-income working families
-
--   The goal is to encourage labor force participation. Did it work?
-
--   We have data on 30 counties in the treatment state and 30 counties in a neighboring control state, observed over 12 years. The expansion happens in year 7.
-
--   This is a larger dataset than Card & Krueger, which lets us see the pre-trends more clearly and will set us up for event studies in the next section.
-:::
-
-## Simulating the EITC Data {.smaller}
-
-```{r}
-#| echo: true
-
-library(tidyverse)
-library(fixest)
-set.seed(30317)
-
-treatment_year <- 7
-
-# 60 counties: 30 in treatment state, 30 in control state
-county_info <- tibble(
-  county = 1:60,
-  treated_state = rep(c(1, 0), each = 30),
-  state = ifelse(treated_state == 1, "Treatment", "Control"),
-  # Each county has its own baseline LFP
-  county_fe = rnorm(60, 0, 2)
-)
-
-eitc_data <- county_info %>%
-  crossing(year = 1:12) %>%
-  mutate(
-    post = ifelse(year >= treatment_year, 1, 0),
-    # Both states trend upward; treatment state starts lower
-    base = ifelse(treated_state == 1, 55, 60) + county_fe + 0.8 * year,
-    # True treatment effect: +3 percentage points
-    lfp = base +
-      ifelse(treated_state == 1 & post == 1, 3, 0) +
-      rnorm(n(), 0, 1.5)
-  )
-```
-
-## Visualizing the Data {.smaller}
-
-```{r}
-#| echo: true
-
-# Average across counties for a clean plot
-eitc_means <- eitc_data %>%
-  group_by(state, year) %>%
-  summarise(avg_lfp = mean(lfp), .groups = "drop")
-
-ggplot(eitc_means, aes(x = year, y = avg_lfp, color = state)) +
-  geom_line(linewidth = 1) +
-  geom_point(size = 2) +
-  geom_vline(xintercept = treatment_year - 0.5, linetype = "dashed", color = "gray40") +
-  annotate("text", x = treatment_year + 0.2, y = min(eitc_means$avg_lfp) + 1,
-           label = "EITC Expansion", hjust = 0, size = 4) +
-  labs(title = "Average Labor Force Participation by State",
-       x = "Year", y = "Labor Force Participation (%)",
-       color = "State") +
-  theme_minimal(base_size = 14)
-```
-
-Pre-treatment trends look parallel, which is a good sign for our DiD design. The treatment state starts at a lower level, but remember: parallel trends is about *rates of change*, not levels.
-
-## Running the DiD {.smaller}
-
-```{r}
-#| echo: true
-
-# TWFE regression with county and year fixed effects
-eitc_did <- feols(lfp ~ treated_state:post | county + year, data = eitc_data)
-summary(eitc_did)
-```
-
-. . .
-
-::: {.callout-note}
-## Interpretation
-The EITC expansion is associated with approximately a 3 percentage-point increase in labor force participation. The county fixed effects absorb all the stable differences between counties; the year fixed effects absorb the common upward trend. What's left is the treatment effect.
-:::
-
-# Part 5: Event Studies
+# Part 4: Event Studies
 
 ## What If the Effect Isn't Constant? {.smaller}
 
@@ -566,7 +498,7 @@ iplot(es_model,
 Event study plots are the **standard way** to present DiD results in policy research. They show both the treatment effect and the parallel trends evidence in a single figure. If you do a DiD analysis, include one.
 :::
 
-# Part 6: The Staggered Adoption Problem
+# Part 5: The Staggered Adoption Problem
 
 ## What If Treatment Happens at Different Times? {.smaller}
 
@@ -661,7 +593,7 @@ This is exactly the kind of dynamic effect we saw in our event study. If we had 
 -   In practice, constant effects are a strong assumption. Most policies take time to work, which means effects change over time. When in doubt, use the newer methods we'll see next.
 :::
 
-# Part 7: Modern Solutions
+# Part 6: Modern Solutions
 
 ## The Good News {.smaller}
 
@@ -757,7 +689,7 @@ The Sun & Abraham estimator correctly shows pre-treatment coefficients near zero
 If you encounter a DiD paper with **staggered treatment** that was published before roughly 2020, the estimates might be unreliable, especially if treatment effects are likely to grow or change over time. Papers using modern methods (Callaway & Sant'Anna, Sun & Abraham, or similar) have addressed this problem. When evaluating research, ask: "Is treatment staggered? If so, did they use a modern estimator?"
 :::
 
-# Part 8: Practical Advice
+# Part 7: Practical Advice
 
 ## A Checklist for Credible DiD Designs
 
@@ -813,8 +745,8 @@ If you encounter a DiD paper with **staggered treatment** that was published bef
 ## What We Covered Today {.smaller}
 
 ::: incremental
-1.  **The DiD idea**: use a control group to remove common time trends
-2.  **Card & Krueger**: the classic 2×2 minimum wage study
+1.  **The DiD idea**: Snow's cholera data showed us how to use a comparison group to remove common time trends
+2.  **DiD with real data**: walked through California's organ donation policy step by step in R
 3.  **The parallel trends assumption**: the foundation of DiD credibility
 4.  **Event studies**: the standard way to present DiD results and test assumptions
 5.  **Staggered adoption**: why classic TWFE breaks and how to spot the problem
