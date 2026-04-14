@@ -575,32 +575,57 @@ ggplot(stagger_viz, aes(x = Year, y = State, fill = status)) +
 
 Different states get treated at different times. Who serves as the "control" for whom?
 
-## Why Classic TWFE Breaks {.smaller}
+## What Comparisons Does TWFE Make? {.smaller}
 
 ::: incremental
--   Classic TWFE estimates a **single treatment coefficient** from a weighted average of *all possible 2×2 comparisons*
+-   With staggered adoption, TWFE estimates a single treatment coefficient from a weighted average of **all possible 2×2 comparisons** in the data
 
--   The problem: some of those comparisons are **"forbidden"**
+-   Some of those comparisons are fine: treated vs. never-treated, or treated vs. not-yet-treated
 
-    -   TWFE compares **newly-treated units** to **already-treated units**
+-   But TWFE also makes **"forbidden" comparisons**: it compares **newly-treated units** to **already-treated units**
 
-    -   An already-treated unit is being used as a "control," but it's already affected by treatment!
-
--   If treatment effects **change over time** (grow, fade, or differ across groups), these forbidden comparisons contaminate the estimate
-
--   The weights can even be **negative**, meaning the estimate can show a negative effect when the true effect is positive for everyone
+-   An already-treated unit is being used as a "control," but it's already affected by treatment. If its treatment effect is changing over time, this comparison is contaminated.
 :::
 
-## An Intuitive Example {.smaller}
+## A Numerical Example {.smaller}
 
-::: {.callout-warning}
-## The Negative Weights Problem
+Suppose a job training program is adopted by two states at different times. The true effect is **+2 in year 1** and **+5 by year 2** (it grows as workers gain skills).
 
-Imagine a job training program that helps everyone, but the effect grows over time. Early adopters have large effects by now (they've had the program for years). Late adopters have small effects (they just started).
+| | Year 1 | Year 2 | Year 3 |
+|---|---|---|---|
+| **State A** (treated Year 1) | 50 + **2** = 52 | 50 + **5** = 55 | 50 + **5** = 55 |
+| **State B** (treated Year 2) | 40 | 40 + **2** = 42 | 40 + **5** = 45 |
 
-TWFE compares late adopters (small positive effect) to early adopters (large positive effect). The "change" in the early-adopter "controls" is actually driven by their growing treatment effect, making it look like the new treatment *reduced* outcomes. The estimated effect can flip negative, even though **everyone benefited**.
+. . .
 
-This is exactly the kind of dynamic effect we saw in our event study. If we had staggered adoption in that setting, TWFE would give us the wrong answer.
+The true effect is positive for everyone. Now let's see what TWFE does when it uses State A as a "control" for State B in Year 2.
+
+## The Forbidden Comparison {.smaller}
+
+::: incremental
+-   TWFE asks: when State B gets treated in Year 2, how does it change relative to State A?
+
+-   **State B** goes from 40 to 42: a change of **+2** (the true Year 1 effect)
+
+-   **State A** goes from 52 to 55: a change of **+3** (but this is State A's treatment effect *growing*, not a time trend!)
+
+-   The DiD from this comparison: (+2) - (+3) = **-1**
+
+-   TWFE interprets this as a *negative* treatment effect. But the true effect on State B is +2. The problem is that State A's "change" is driven by its own growing treatment effect, not by a common trend.
+:::
+
+## How This Contaminates the Estimate {.smaller}
+
+::: incremental
+-   TWFE averages across all these 2×2 comparisons, including the forbidden ones
+
+-   The clean comparisons (treated vs. never-treated) pull toward the correct answer
+
+-   The forbidden comparisons (newly-treated vs. already-treated) pull in the wrong direction
+
+-   If the forbidden comparisons get enough weight, the overall TWFE estimate can be **too small, zero, or even negative**, even when the true effect is positive for everyone
+
+-   This is the negative weights problem identified by Goodman-Bacon (2021)
 :::
 
 ## When Is TWFE Fine? {.smaller}
