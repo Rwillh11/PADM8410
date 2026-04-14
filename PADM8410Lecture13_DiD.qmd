@@ -403,18 +403,18 @@ Panel (a): pre-trends are parallel, so the post-treatment gap is plausibly causa
 
 # Part 4: Event Studies
 
-## What If the Effect Isn't Constant? {.smaller}
+## Beyond a Single Number {.smaller}
 
 ::: incremental
--   Our EITC simulation assumed the treatment effect was an immediate, constant +3 points. But that's often unrealistic.
+-   Our organ donation DiD gave us one coefficient: the average treatment effect across all post-treatment quarters. But that single number hides a lot.
 
--   A job training program might not show results for a year
+-   Did the effect appear immediately, or did it take time to materialize?
 
--   A tax credit might take time as people learn about it and adjust their behavior
+-   Did it grow, stabilize, or fade over time?
 
--   An **event study** lets us estimate the DiD effect **separately for each time period**, so we can see how the effect evolves
+-   And were pre-treatment trends really parallel, or is our design on shaky ground?
 
--   It also gives us a built-in test of parallel trends: the pre-treatment effects should be close to zero
+-   An **event study** answers all of these by estimating the DiD effect **separately for each time period**
 :::
 
 ## How an Event Study Works {.smaller}
@@ -424,14 +424,38 @@ Panel (a): pre-trends are parallel, so the post-treatment gap is plausibly causa
 
 -   The period just before treatment (event time = -1) is the **reference category**, so all effects are measured relative to that point
 
--   **Pre-treatment coefficients** should hover around zero if parallel trends holds. This is the placebo test we discussed earlier.
+-   **Pre-treatment coefficients** should hover around zero if parallel trends holds. This is the placebo test we discussed in Part 3.
 
 -   **Post-treatment coefficients** show how the effect unfolds: does it appear immediately? Grow over time? Fade?
 :::
 
-## Building an Event Study {.smaller}
+## Event Study: Organ Donation Data {.smaller}
 
-We'll simulate a new dataset where the EITC effect **grows over time** as more people learn about and respond to the program.
+We can run an event study on the organ donation data we already have.
+
+```{r}
+#| echo: true
+
+# Create a California indicator and use Quarter_Num for event time
+od <- od %>%
+  mutate(California = ifelse(State == "California", 1, 0))
+
+# Event study: separate coefficient for each quarter × California
+# ref = 3 means Q2 2011 (the quarter before treatment) is the reference
+es_od <- feols(Rate ~ i(Quarter_Num, California, ref = 3) | State + Quarter_Num,
+               data = od)
+
+iplot(es_od,
+      xlab = "Quarter (1 = Q4 2010, 4 = Q3 2011)",
+      ylab = "Estimated Effect",
+      main = "Event Study: California Organ Donation Policy")
+```
+
+All coefficients hover near zero, both before *and* after the policy. This confirms what we saw earlier: the active-choice policy had no detectable effect.
+
+## What a Positive Effect Looks Like {.smaller}
+
+To see how an event study looks when a policy *does* work, we'll simulate data where the treatment effect **grows over time**.
 
 ```{r}
 #| echo: true
@@ -476,19 +500,21 @@ es_model <- feols(
 iplot(es_model,
       xlab = "Periods Relative to Treatment",
       ylab = "Estimated Effect",
-      main = "Event Study: Effect of EITC Expansion Over Time")
+      main = "Event Study: Simulated Policy With Growing Effect")
 ```
 
-## Reading the Event Study Plot {.smaller}
+## Reading an Event Study Plot {.smaller}
 
 ::: incremental
 -   **Pre-treatment coefficients** (left of 0): they hover around zero with confidence intervals crossing zero. This supports parallel trends.
 
 -   **The jump at time 0**: the immediate treatment effect (about 1.5 points in our simulation)
 
--   **Post-treatment growth**: the effect increases over time as more people respond to the program, then levels off around 4 points
+-   **Post-treatment growth**: the effect increases over time, then levels off around 4 points
 
 -   **Confidence intervals**: if they include zero after treatment, we can't rule out no effect. Here the post-treatment intervals are clearly above zero.
+
+-   Compare this to the organ donation event study: there, the post-treatment coefficients *also* hovered near zero, confirming the null result.
 :::
 
 . . .
