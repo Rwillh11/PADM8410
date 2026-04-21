@@ -930,6 +930,28 @@ When the rule *shifts* treatment probability but doesn't perfectly determine it,
 
 $$\hat{\tau}_{fuzzy} = \frac{\text{jump in outcome at cutoff}}{\text{jump in treatment probability at cutoff}}$$
 
+## What We Just Did: Instrumental Variables {.smaller}
+
+This is **instrumental variables (IV)** in action — a causal-inference technique for when treatment isn't randomly assigned. The "instrument" here is the cutoff itself: it shifts treatment but, we hope, doesn't otherwise affect the outcome.
+
+**IV in general needs three things:**
+
+::: incremental
+1.  The instrument actually **changes treatment** — we showed this with the jump in class size
+2.  The instrument is **as good as random** with respect to the outcome — true at the cutoff, where a 4-week age or 1-student enrollment difference can't plausibly sort people on unobservables
+3.  The instrument affects the outcome **only through treatment** — the strong assumption we unpack next
+:::
+
+**Why fuzzy RDD is a relatively well-behaved form of IV:**
+
+::: incremental
+-   The first stage is **visible in a plot** — you can literally see whether the cutoff moves treatment
+-   Assignment at the cutoff is nearly random *by construction*
+-   "Only through" is easier to argue about a narrow threshold than for an instrument coming from somewhere else in the world
+:::
+
+*We won't cover standalone IV in this course — it's a whole separate methodology, and usually more controversial than its fuzzy-RDD cousin.*
+
 ## The Catch: Why Fuzzy Estimates Deserve Scrutiny {.smaller}
 
 Fuzzy RDD requires a strong assumption — and it mechanically amplifies what it reports.
