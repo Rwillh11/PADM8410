@@ -233,13 +233,13 @@ The **jump** at the cutoff is the treatment effect. Everything else is smooth.
 
     -   If students knew the scholarship cutoff was 80, could they artificially score just above it?
 
-    -   Age-based cutoffs (like Medicare at 65) are harder to manipulate — you can't fake your birthday
+    -   Age-based cutoffs (like Medicare at 65) are harder to manipulate.
 
 -   **Continuity:** Everything *other* than treatment changes smoothly through the cutoff
 
     -   No other policies kick in at the same threshold
 
-    -   *Violation example:* Studying Medicaid's effect at 138% FPL gets complicated because SNAP, CHIP, and housing assistance can change eligibility around the same income range.
+    -   *Violation example:* Studying Medicaid's effect at 138% FPL gets complicated because SNAP, CHIP, and housing assistance all have similar thresholds.
 
 -   **No anticipation:** People don't change behavior in advance of crossing the cutoff
 :::
@@ -697,7 +697,20 @@ plot_panel(panel_a, "a", "Coef. 47.2\n95% CI = 46.1 to 48.7")
 
 **The jump at week 0 is \~47 percentage points** — from about 30% to about 77%. A 4-week age difference at the cutoff produced an enormous difference in treatment. This is a very strong first stage.
 
-## Placebo Checks: Did Anything Else Change? {.smaller}
+## Placebo Checks: The Logic {.smaller}
+
+**The worry:** what if people born just before vs. just after the cutoff differ in some *other* way — not just eligibility? Then we'd confound the vaccine effect with something else.
+
+**The check:** look for jumps in *pre-treatment* outcomes — things measured BEFORE the 2013 policy started. If the groups were comparable, pre-treatment outcomes should trend smoothly through the cutoff with no discontinuity.
+
+::: callout-note
+## Two Natural Placebos for This Study
+
+-   **Prior shingles diagnoses.** If the groups were comparable, shingles rates measured *before* the 2013 program should be similar on either side of the cutoff
+-   **Prior dementia diagnoses.** Dementia tends to rise with age, but the rate measured *before* the program should vary *smoothly* across birth week — no sudden jump at Sept 2, 1933
+:::
+
+## Placebo Checks: Prior Shingles and Prior Dementia {.smaller}
 
 ```{r}
 #| echo: false
@@ -720,18 +733,11 @@ plot_panel(panel_b, "b", "Coef. 0.1\n95% CI = -0.5 to 0.6") +
 plot_panel(panel_c, "c", "Coef. -0.2\n95% CI = -0.8 to 0.4")
 ```
 
-**The worry:** what if people born just before vs. just after the cutoff differ in some *other* way — not just eligibility? Then we'd confound the vaccine effect with something else.
-
-**The check:** look for jumps in *pre-treatment* outcomes — things measured BEFORE the 2013 policy started.
-
 ::: incremental
--   **Panel (b):** Prior shingles diagnoses. Flat across the cutoff (coef ≈ 0.1). Groups had similar shingles histories.
--   **Panel (c):** Prior dementia diagnoses. Smooth downward trend (older people → more dementia), but **no jump** at the cutoff. Groups were comparable.
+-   **Panel (b):** Prior shingles diagnoses are flat across the cutoff (coef ≈ 0.1). Groups had similar shingles histories
+-   **Panel (c):** Prior dementia shows a smooth downward trend (older people → more dementia), but **no jump** at the cutoff. Groups were comparable
+-   **The takeaway:** the cutoff changed vaccination rates (panel a) and *nothing else* (panels b, c). Identification comes from the policy, not from underlying differences
 :::
-
-. . .
-
-**The takeaway:** the cutoff changed vaccination rates (panel a) and *nothing else* (panels b, c). Identification comes from the policy, not from underlying differences.
 
 ## The Punchline: Vaccines Reduce Dementia {.smaller}
 
