@@ -120,7 +120,7 @@ DiD works when you can find **two groups** — one treated, one not — and argu
 -   If being just above or just below the cutoff is **as good as random**, we can estimate the treatment effect by comparing the two sides
 :::
 
-## Why Should MPAs Care?
+## Why Should MPAs Care? {.smaller}
 
 ::: incremental
 -   Government programs are **full of arbitrary cutoffs**: income thresholds, age limits, test score requirements, geographic boundaries
@@ -132,7 +132,7 @@ DiD works when you can find **two groups** — one treated, one not — and argu
 -   RDD is widely considered one of the **most credible** quasi-experimental designs when applicable
 :::
 
-## The Core Intuition
+## The Core Intuition {.smaller}
 
 ::: incremental
 -   Imagine a scholarship for students scoring above 80 on an exam
@@ -152,16 +152,16 @@ DiD works when you can find **two groups** — one treated, one not — and argu
 RDD exploits the fact that people right at the cutoff are essentially identical — the only thing that differs is whether they got the treatment. That's almost as good as random assignment.
 :::
 
-## Today's Roadmap
+## Today's Roadmap {.smaller}
 
 ::: incremental
 1.  **Terminology & assumptions** — running variables, cutoffs, and what can go wrong
 2.  **The graphical recipe** — seeing the discontinuity step by step
 3.  **Bandwidth & estimation** — how to estimate the jump and choose a window
-4.  **Policy examples** — shingles vaccines, Medicare, and Maimonides' Rule
-5.  **Sharp vs. fuzzy RDD** — what if the cutoff isn't perfectly enforced?
-6.  **Validity checks** — manipulation tests, placebo tests, and diagnostics
-7.  **Practical advice** — a checklist for credible RDD designs
+4.  **Policy examples** — shingles vaccines and Medicare at 65
+5.  **Sharp vs. fuzzy RDD** — what if the cutoff isn't perfectly enforced? (Maimonides' Rule)
+6.  **Validity checks** — manipulation tests, placebo cutoffs, donut hole tests
+7.  **Practical advice** — and broader lessons about quant work as an MPA
 :::
 
 # Part 1: Terminology & Assumptions
@@ -599,7 +599,29 @@ Observations closer to the cutoff get **more weight**. This is what `rdrobust` d
 
 # Part 4: Policy Examples
 
-## Example 1: Shingles Vaccines and Dementia {.smaller}
+## Example 1: The Welsh Shingles Policy {.smaller}
+
+**The policy.** In September 2013, the Welsh NHS introduced a shingles vaccination program for older adults. The eligibility rule was a **sharp birth-date cutoff**: adults born on or after **September 2, 1933** were eligible; adults born before that date were deemed too old per the guidance.
+
+**Why this matters for dementia research:**
+
+::: incremental
+-   Shingles is caused by reactivation of the varicella-zoster virus — the same virus that causes chickenpox in childhood
+-   Emerging hypothesis: chronic viral infections may contribute to dementia risk
+-   Hard to test causally — people who get vaccinated differ from those who don't (wealthier, more health-conscious, better access to care)
+-   The Welsh birth-date cutoff removes that confounding entirely. **You cannot manipulate your birth date.**
+:::
+
+**The RDD setup:**
+
+-   **Running variable:** Week of birth relative to Sept 2, 1933
+-   **Cutoff:** Week 0 (Sept 2, 1933)
+-   **Treatment:** Eligibility for the shingles vaccine
+-   **Main outcome:** New dementia diagnosis within 7 years
+
+*Source: Eyting et al. (2025), Nature*
+
+## First Stage: Did the Cutoff Change Vaccination? {.smaller}
 
 ```{r}
 #| echo: false
@@ -608,7 +630,7 @@ library(ggplot2)
 library(dplyr)
 library(patchwork)
 
-## Simulated data inspired by Eyting et al. 2025 Nature study for pedagogical purposes
+## Simulated data inspired by Eyting et al. 2025 for pedagogical purposes
 set.seed(30317)
 
 weeks <- seq(-156, 156, by = 4)
@@ -616,20 +638,8 @@ weeks <- seq(-156, 156, by = 4)
 panel_a <- tibble(
   week = weeks,
   y = ifelse(week < 0, 30 + rnorm(length(week), 0, 2),
-             77 + rnorm(length(week), 0, 2)),
+                        77 + rnorm(length(week), 0, 2)),
   outcome = "Ever had shingles vaccine (%)"
-)
-
-panel_b <- tibble(
-  week = weeks,
-  y = 10 + rnorm(length(week), 0, 1.5),
-  outcome = "Had shingles before program start (%)"
-)
-
-panel_c <- tibble(
-  week = weeks,
-  y = 15 - 0.005 * weeks + rnorm(length(week), 0, 0.1),
-  outcome = "Had dementia within 7 years before start (%)"
 )
 
 plot_panel <- function(data, panel_label, coef_text) {
@@ -639,7 +649,7 @@ plot_panel <- function(data, panel_label, coef_text) {
                                levels = c("Born before cutoff",
                                           "Born after cutoff")))
   ggplot(data, aes(x = week, y = y)) +
-    geom_point(aes(color = side), alpha = 0.85) +
+    geom_point(aes(color = side), alpha = 0.85, size = 1.5) +
     geom_smooth(data = filter(data, week <  0), method = "lm",
                 se = FALSE, color = "black") +
     geom_smooth(data = filter(data, week >= 0), method = "lm",
@@ -652,30 +662,50 @@ plot_panel <- function(data, panel_label, coef_text) {
          y = unique(data$outcome)) +
     annotate("text", x = -120, y = max(data$y) - 2,
              label = coef_text, hjust = 0, size = 3.2) +
-    theme_minimal(base_size = 11) +
+    theme_minimal(base_size = 12) +
     theme(legend.position = "none")
 }
 
-p_a <- plot_panel(panel_a, "a", "Coef. 47.2\n95% CI = 46.1 to 48.7")
-p_b <- plot_panel(panel_b, "b", "Coef. 0.1\n95% CI = -0.5 to 0.6")
-p_c <- plot_panel(panel_c, "c", "Coef. -0.2\n95% CI = -0.8 to 0.4")
-
-p_a + p_b + p_c + plot_layout(nrow = 1)
+plot_panel(panel_a, "a", "Coef. 47.2\n95% CI = 46.1 to 48.7")
 ```
 
-## Reading the Shingles/Dementia Panels
+**What you're seeing:** each dot is a birth-week cohort. X-axis is week of birth relative to the Sept 2, 1933 cutoff. Y-axis is the percent who eventually received the shingles vaccine.
+
+**The jump at week 0 is ~47 percentage points** — from about 30% to about 77%. A 4-week age difference at the cutoff produced an enormous difference in treatment. This is a very strong first stage.
+
+## Placebo Checks: Did Anything Else Change? {.smaller}
+
+```{r}
+#| echo: false
+
+set.seed(30317)
+
+panel_b <- tibble(
+  week = weeks,
+  y = 10 + rnorm(length(weeks), 0, 1.5),
+  outcome = "Had shingles BEFORE program start (%)"
+)
+
+panel_c <- tibble(
+  week = weeks,
+  y = 15 - 0.005 * weeks + rnorm(length(weeks), 0, 0.1),
+  outcome = "Had dementia within 7 yrs BEFORE program (%)"
+)
+
+plot_panel(panel_b, "b", "Coef. 0.1\n95% CI = -0.5 to 0.6") +
+plot_panel(panel_c, "c", "Coef. -0.2\n95% CI = -0.8 to 0.4")
+```
+
+**The worry:** what if people born just before vs. just after the cutoff differ in some *other* way — not just eligibility? Then we'd confound the vaccine effect with something else.
+
+**The check:** look for jumps in *pre-treatment* outcomes — things measured BEFORE the 2013 policy started.
 
 ::: incremental
--   **Panel (a):** The "first stage" — people born just before the cutoff were \~47 percentage points more likely to get vaccinated. This is the discontinuity in treatment.
-
--   **Panel (b):** A placebo check — no discontinuity in *prior* shingles diagnosis. Good: people on either side of the cutoff had similar health histories.
-
--   **Panel (c):** Another placebo — no discontinuity in *prior* dementia. The groups were comparable before the program.
+-   **Panel (b):** Prior shingles diagnoses. Flat across the cutoff (coef ≈ 0.1). Groups had similar shingles histories.
+-   **Panel (c):** Prior dementia diagnoses. Smooth downward trend (older people → more dementia), but **no jump** at the cutoff. Groups were comparable.
 :::
 
-. . .
-
-These three panels together tell you: the cutoff changed vaccination rates (panel a) but nothing else changed at the cutoff (panels b, c). That's the RDD ideal.
+**The takeaway:** the cutoff changed vaccination rates (panel a) and *nothing else* (panels b, c). That's the RDD ideal — identification comes from the policy, not from underlying differences.
 
 ## The Punchline: Vaccines Reduce Dementia {.smaller}
 
@@ -1173,7 +1203,7 @@ If the estimate is **stable** across bandwidths, that's reassuring. Wild swings 
 4.  **Be honest about the limits.** Every estimate has assumptions. Every result applies to a specific group. Saying "we can't tell from this data" is often more useful — and more credible — than overselling a small effect
 :::
 
-## What This Course Was Really About
+## What This Course Was Really About {.smaller}
 
 ::: callout-tip
 ## The Real Lesson
@@ -1183,7 +1213,7 @@ We spent the semester on methods — OLS, fixed effects, DiD, RDD, experiments. 
 You don't need to be the person who runs every analysis. You do need to be the person who knows **what to ask, what to trust, and what to reject**. That's how quantitative work actually shapes policy — and it's what makes you valuable.
 :::
 
-## For Your Capstone
+## For Your Capstone {.smaller}
 
 ::: callout-tip
 ## Think About This Now
