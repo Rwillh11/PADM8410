@@ -149,6 +149,7 @@ toc-depth: 2
 **Optional readings:**
 
 - [Card and Krueger (1994), "Minimum Wages and Employment"](https://doi.org/10.1257/aer.90.5.1397)
+- [Miller, Johnson, and Wherry (2021), "Medicaid and Mortality: New Evidence from Linked Survey and Administrative Data"](https://doi.org/10.1093/qje/qjab004)
 - [Goodman-Bacon (2021), "Difference-in-Differences with Variation in Treatment Timing"](https://doi.org/10.1016/j.jeconom.2021.03.014)
 - [Callaway and Sant'Anna (2021), "Difference-in-Differences with Multiple Time Periods"](https://doi.org/10.1016/j.jeconom.2020.12.001)
 
