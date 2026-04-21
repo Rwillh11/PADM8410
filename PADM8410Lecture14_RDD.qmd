@@ -439,14 +439,25 @@ Smaller bandwidth → more credible, less power. `rdrobust` can choose the optim
 
 ## The Simplest RDD Regression {.smaller}
 
-We can estimate the jump with OLS:
+We can estimate the jump with OLS. Let's walk through each piece:
 
 $$Y = \beta_{0} + \beta_{1}(\text{Running} - c) + \beta_{2}\text{Treated} + \beta_{3}(\text{Running} - c) \times \text{Treated} + \epsilon$$
+
+::: incremental
+-   **$\text{Running} - c$** is the running variable, **centered at the cutoff**. So 0 = "right at the cutoff," negative = below, positive = above. Centering makes the intercept interpretable as "outcome at the cutoff" instead of "outcome at zero score"
+-   **$\text{Treated}$** is a 0/1 indicator: 1 if above the cutoff, 0 if below
+-   **$\beta_0$** = outcome *at the cutoff* on the just-below side
+-   **$\beta_1$** = slope on the left side (how outcome rises or falls with the running variable)
+-   **$\beta_2$** = **the jump at the cutoff → this is the treatment effect**
+-   **$\beta_3$** × (Running − c) × Treated lets the two sides have **different slopes**. Without it, we'd force the left and right lines to tilt in exactly the same way, which is often too restrictive
+:::
+
+. . .
 
 ::: callout-note
 ## In English
 
-This gives us **two separate lines** — one on each side of the cutoff. $\beta_2$ is the **jump** at the cutoff: the estimated treatment effect. We center the running variable at the cutoff so the intercept difference has a clean interpretation.
+This one regression fits **two lines**, one on each side of the cutoff, in a single model. $\beta_2$ reads off the vertical gap between those lines *right at the cutoff*. That gap is the treatment effect.
 :::
 
 ## Seeing the Two Lines {.smaller}
