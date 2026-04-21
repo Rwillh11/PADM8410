@@ -968,23 +968,19 @@ When the rule *shifts* treatment probability but doesn't perfectly determine it,
 
 $$\hat{\tau}_{fuzzy} = \frac{\text{jump in outcome}}{\text{jump in treatment}}$$
 
-**Why "treatment" and not "treatment probability"?** When treatment is **binary** (e.g., "did they enroll in the program?"), the denominator is a probability between 0 and 1 — and you'll often see the formula written that way. When treatment is **continuous** (here: class size), the denominator is the jump in the treatment variable itself, in its own units. For Maimonides: $\frac{0.2 \text{ SD}}{8 \text{ students}} = 0.025$ SD per student.
+## Fuzzy RD \~ Instrumental Variables {.smaller}
 
-## What We Just Did: Instrumental Variables {.smaller}
-
-This is **instrumental variables (IV)** in action — a causal-inference technique for when treatment isn't randomly assigned. The "instrument" here is the cutoff itself: it shifts treatment but, we hope, doesn't otherwise affect the outcome.
+This is **instrumental variables (IV)**: a causal-inference technique for when treatment isn't randomly assigned. The "instrument" here is the cutoff itself: it shifts treatment but, we hope, doesn't otherwise affect the outcome.
 
 **IV in general needs three things:**
 
 ::: incremental
-1.  The instrument actually **changes treatment** — we showed this with the jump in class size
-2.  The instrument is **as good as random** with respect to the outcome — true at the cutoff, where a 4-week age or 1-student enrollment difference can't plausibly sort people on unobservables
-3.  The instrument affects the outcome **only through treatment** — the strong assumption we unpack next
+1.  The instrument actually **changes treatment**: we showed this with the jump in class size
+2.  The instrument is **as good as random** with respect to the outcome: true at the cutoff, where a 4-week age or 1-student enrollment difference can't plausibly sort people on unobservables
+3.  The instrument affects the outcome **only through treatment**; this needs careful consideration!
 :::
 
-. . .
-
-**Why fuzzy RDD is a relatively well-behaved form of IV:**
+## **Fuzzy RDD is a well-behaved form of IV:**
 
 ::: incremental
 -   The first stage is **visible in a plot** — you can literally see whether the cutoff moves treatment
@@ -1001,7 +997,7 @@ This is **instrumental variables (IV)** in action — a causal-inference techniq
 Fuzzy RDD requires a strong assumption — and it can mechanically amplify what it reports.
 
 ::: incremental
--   **The "only through" part is a strong assumption.** For Maimonides, is class size really the *only* thing that changes at enrollment = 41? What about teacher assignments, classroom resources, peer composition, or parents sorting across schools? If any of these also moves the outcome, we could be over-estimating the effect.
+-   **The "only through" part is a strong assumption.** For Maimonides, is class size really the *only* thing that changes at enrollment = 41? What about parents sorting across schools? Maybe some parents find out that class sizes are larger, and pull their kids out? If this also moves the outcome, we could be over-estimating the effect.
 
 -   **Scaling amplifies noise.** Dividing a small, imprecise outcome jump by a small, imprecise treatment jump produces a bigger estimate *and* a wider confidence interval. A modest reduced-form result can become a dramatic-sounding fuzzy estimate
 :::
@@ -1011,7 +1007,7 @@ Fuzzy RDD requires a strong assumption — and it can mechanically amplify what 
 ::: callout-important
 ## Bottom Line
 
-A sharp RDD result is easier to defend than a fuzzy one. When you encounter a fuzzy RDD in a paper or report, ask: *what else might be changing at that cutoff?* and *how strong is the first stage?* Be more skeptical than you would be with a sharp design.
+A sharp RDD result is cleaner than a fuzzy one. When you encounter a fuzzy RDD in a paper or report, ask: *what else might be changing at that cutoff?* and *how strong is the effect on treatment \[first stage\]?*
 :::
 
 ## Fuzzy RDD in `rdrobust` {.smaller}
@@ -1136,34 +1132,6 @@ ggplot(placebo_results, aes(x = cutoff, y = estimate, color = is_real)) +
 
 Only the cutoff at 80 should show a real effect. Placebo cutoffs should be indistinguishable from zero — that's what we see.
 
-## The Donut Hole Test {.smaller}
-
-```{r}
-#| echo: true
-
-donut_values <- c(0, 0.5, 1, 2)   # donut radius in test-score points
-
-donut_results <- map_dfr(donut_values, function(d) {
-  keep <- abs(df$score - cutoff) >= d
-  rd <- rdrobust(y = df$completion[keep], x = df$score[keep], c = cutoff)
-  tibble(donut    = d,
-         estimate = rd$coef[1],
-         ci_lower = rd$ci[1, 1],
-         ci_upper = rd$ci[1, 2])
-})
-
-ggplot(donut_results, aes(x = donut, y = estimate)) +
-  geom_point(size = 3) +
-  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.08) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
-  labs(title = "Donut Hole Test: Stability When Near-Cutoff Points Are Excluded",
-       x = "Donut Radius (test-score points excluded on each side)",
-       y = "RDD Estimate (completion rate)") +
-  theme_minimal(base_size = 13)
-```
-
-If the estimate is **stable** as we exclude observations closer to the cutoff, that's reassuring. Wild swings would suggest those boundary observations are driving — or contaminating — the result.
-
 ## Covariate Balance Check {.smaller}
 
 ```{r}
@@ -1222,7 +1190,7 @@ If the estimate is **stable** across bandwidths, that's reassuring. Wild swings 
 
 ## Checklist + Common Pitfalls {.smaller}
 
-**Before you trust an RDD — yours or someone else's:**
+**Before you trust an RDD:**
 
 ::: incremental
 1.  Running variable is **precisely measured** and hard to manipulate
@@ -1238,11 +1206,10 @@ If the estimate is **stable** across bandwidths, that's reassuring. Wild swings 
 **Pitfalls to avoid:**
 
 ::: incremental
--   Too-wide bandwidth — people far from the cutoff aren't comparable
--   High-order polynomials — can manufacture fake jumps (Gelman & Imbens 2019)
--   Forgetting **LATE** — your estimate applies at the cutoff, not everywhere
--   Not showing the plot — RDD is visual; the picture *is* the evidence
--   Assuming sharp when it's fuzzy — biases the estimate toward zero
+-   Too-wide bandwidth: people far from the cutoff aren't comparable
+-   Forgetting **LATE**: your estimate applies at the cutoff, not everywhere
+-   Not showing the plot: RDD is visual; the picture *is* the evidence
+-   Assuming sharp when it's fuzzy: biases the estimate toward zero
 :::
 
 ## Readings {.smaller}
@@ -1268,16 +1235,16 @@ If the estimate is **stable** across bandwidths, that's reassuring. Wild swings 
 
 # Doing Quant Work as an MPA
 
-## Four Habits That Separate Good Analysis from Statistical Theater {.smaller}
+## Good Habits that make great analysts {.smaller}
 
 ::: incremental
-1.  **Start with the question, not the method.** A simple t-test on the right comparison beats a fancy model on the wrong one. Design follows the question — not the other way around
+1.  **Start with the question, not the method.** A simple t-test on the right comparison beats a fancy model on the wrong one. Design follows the question, not the other way around
 
-2.  **You'll mostly be a consumer, not a producer.** Most of your career you'll read, commission, and push back on analyses. Learn to ask: *"What's the comparison? How do you know they're comparable? Who does this estimate apply to?"*
+2.  **You'll mostly be a consumer, not a producer.** Most of your career you'll read, commission, and push back on analyses. Ask: *"What's the comparison? What is the precise quantity we estiamte? Who does this estimate apply to?"*
 
-3.  **Show the picture.** Every method we covered has a visual signature — parallel pre-trends for DiD, a jump at the cutoff for RDD, balanced baselines for experiments. If the plot doesn't tell the story, be suspicious of the coefficient that does
+3.  **Show the picture.** Parallel pre-trends for DiD, a jump at the cutoff for RDD, balanced baselines for experiments. If the plot doesn't tell the story, be suspicious.
 
-4.  **Be honest about the limits.** Every estimate has assumptions. Every result applies to a specific group. Saying "we can't tell from this data" is often more useful — and more credible — than overselling a small effect
+4.  **Be honest about the limits.** Every estimate has assumptions. Every result applies to a specific group. Saying "we can't tell from this data" is often more useful, and more credible, than overselling a small effect
 :::
 
 ## What This Course Was Really About {.smaller}
@@ -1285,12 +1252,12 @@ If the estimate is **stable** across bandwidths, that's reassuring. Wild swings 
 ::: callout-tip
 ## The Real Lesson
 
-We spent the semester on methods — OLS, fixed effects, DiD, RDD, experiments. The real lesson is **mental discipline**: being precise about *what question you're answering*, *what assumptions you're making*, and *what your result does and doesn't mean*.
+We spent the semester on methods: OLS, MLE, fixed effects, DiD, RDD, experiments. What I want you to takeaway is the importance of being precise about *what question you're answering*, *what assumptions you're making*, and *what your result does and doesn't mean*.
 
-You don't need to be the person who runs every analysis. You do need to be the person who knows **what to ask, what to trust, and what to reject**. That's how quantitative work actually shapes policy — and it's what makes you valuable.
+You don't need to be the person who runs every analysis. But, you should want to be the person who knows **what to ask, what to trust, and what to reject**.
 :::
 
-## For Your Capstone {.smaller}
+## For Your Project (and future work) {.smaller}
 
 ::: callout-tip
 ## Think About This Now
