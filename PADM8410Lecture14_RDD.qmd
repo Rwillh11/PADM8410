@@ -505,6 +505,25 @@ summary(rd_result)
 Instead of manually choosing bandwidths and functional forms, `rdrobust` uses data-driven methods (Calonico, Cattaneo, and Titiunik, 2014) to select the optimal bandwidth and provide robust inference. This is now the **standard tool** for applied RDD work.
 :::
 
+## How `rdrobust` Chooses the Bandwidth {.smaller}
+
+The tool picks a bandwidth by balancing **two concerns that pull in opposite directions**:
+
+::: incremental
+-   **Too wide a window** → you include observations far from the cutoff, which may not be comparable. Your estimate gets *biased*
+-   **Too narrow a window** → you don't have enough observations. Your estimate gets *noisy*
+:::
+
+The "best" bandwidth minimizes a single quantity called **mean squared error (MSE)** — which combines bias and noise into one number. Think of it as finding the right **zoom level**: close enough to the cutoff that comparisons are credible, far enough out that you have enough data to see the jump.
+
+. . .
+
+::: callout-tip
+## You're Not Locked In
+
+The default bandwidth is a sensible *starting point*, not a final answer. Always run the **sensitivity check** (Part 6) — if the estimate is stable across a range of bandwidths, the result is robust. If it swings wildly, the data is telling you something.
+:::
+
 ## `rdrobust` in Action {.smaller}
 
 ```{r}
