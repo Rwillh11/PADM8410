@@ -914,30 +914,38 @@ ggplot() +
   theme_minimal(base_size = 12)
 ```
 
-**Schools don't perfectly comply.** Angrist and Lavy use the **predicted** class size (from the rule) as an **instrument** for the **actual** class size. Their key finding: smaller classes improve test scores, especially for disadvantaged students.
+**Schools don't perfectly comply.** Angrist and Lavy use *only the variation in class size that the rule predicts* — setting aside school-level choices — to isolate a causal effect. Their key finding: smaller classes improve test scores, especially for disadvantaged students. We'll walk through how this actually works in a moment.
 
-## Understanding Fuzzy RDD {.smaller}
+## How Fuzzy RDD Actually Works {.smaller}
+
+When the rule *shifts* treatment probability but doesn't perfectly determine it, fuzzy RDD combines **two jumps** at the cutoff into one effect estimate.
 
 ::: incremental
--   Many real-world policies have **imperfect compliance**
+1.  **Measure the jump in treatment at the cutoff.** For Maimonides: at enrollment = 41, actual class size drops by about 8 students on average — *not* the full 20 the rule predicts, because compliance is imperfect
 
-    -   Not everyone eligible for a program actually enrolls
+2.  **Measure the jump in the outcome at the cutoff.** Say test scores rise by 0.2 standard deviations across the same threshold
 
-    -   Some people below the cutoff find ways to get treated anyway
-
--   In a fuzzy design, we use the cutoff as an **instrument** (just like instrumental variables!)
-
-    -   **First stage:** Show that the cutoff causes a jump in the probability of treatment
-
-    -   **Second stage:** Use that jump to estimate the treatment effect
-
--   The estimate is the jump in the outcome divided by the jump in treatment probability: $\hat{\tau}_{fuzzy} = \frac{\text{Jump in } Y}{\text{Jump in Treatment Probability}}$
+3.  **Scale.** *If* we believe the cutoff affects outcomes **only through** class size, each 1-student change in class size explains 0.2 / 8 ≈ **0.025 SD** of test-score improvement
 :::
 
-::: callout-note
-## In English
+$$\hat{\tau}_{fuzzy} = \frac{\text{jump in outcome at cutoff}}{\text{jump in treatment probability at cutoff}}$$
 
-If the cutoff increases treatment rates by 40 percentage points, and the outcome jumps by 2 points at the cutoff, then the estimated treatment effect is $2 / 0.4 = 5$ points. We're "scaling up" the reduced-form effect by how much the cutoff actually changed treatment.
+## The Catch: Why Fuzzy Estimates Deserve Scrutiny {.smaller}
+
+Fuzzy RDD requires a strong assumption — and it mechanically amplifies what it reports.
+
+::: incremental
+-   **The "only through" part is heavy.** For Maimonides, is class size really the *only* thing that changes at enrollment = 41? What about teacher assignments, classroom resources, peer composition, or parents sorting across schools? If any of these also moves the outcome, the scaling gives you the wrong answer — and the assumption is rarely directly testable
+
+-   **Scaling amplifies noise.** Dividing a small, imprecise outcome jump by a small, imprecise treatment jump produces a bigger estimate *and* a wider confidence interval. A modest reduced-form result can become a dramatic-sounding fuzzy estimate
+:::
+
+. . .
+
+::: callout-important
+## Bottom Line
+
+A sharp RDD result is usually easier to defend than a fuzzy one. When you encounter a fuzzy RDD in a paper or report, ask: *what else might be changing at that cutoff?* and *how strong is the first stage?* Be more skeptical than you would be with a sharp design.
 :::
 
 ## Fuzzy RDD in `rdrobust` {.smaller}
@@ -946,8 +954,9 @@ If the cutoff increases treatment rates by 40 percentage points, and the outcome
 #| echo: true
 #| eval: false
 
-# Fuzzy RDD: just add the treatment variable
-# The 'fuzzy' argument tells rdrobust to do the IV-style estimation
+# Fuzzy RDD: pass the actual treatment indicator to `fuzzy`.
+# rdrobust handles the two-jump scaling for you — but the scaling
+# is only as honest as the "only through" assumption on the prior slide.
 rd_fuzzy <- rdrobust(y = outcome, x = running_var, c = cutoff,
                      fuzzy = treatment_indicator)
 summary(rd_fuzzy)
