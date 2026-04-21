@@ -8,15 +8,15 @@ execute:
   fig-align: center
 ---
 
-# One Final DiD Walkthrough
+# First: One Final DiD Walkthrough
 
 ## Did Medicaid Expansion Save Lives? {.smaller}
 
 ::: incremental
--   Before we pivot to RDD, one last DiD walkthrough — this time on a live policy question
+-   Before we pivot to RDD, one last DiD walkthrough: this time on a live policy question
 -   **The paper:** Miller, Johnson, and Wherry (2021), "Medicaid and Mortality: New Evidence from Linked Survey and Administrative Data," *Quarterly Journal of Economics*
--   **The question:** Did the ACA's Medicaid expansion reduce mortality among near-Medicare-eligible adults?
--   **Why it matters:** One of the most consequential policy changes in decades — and a case where credible DiD evidence has shaped the policy debate
+-   **The question:** Did the ACA's Medicaid expansion reduce mortality among near Medicare-eligible adults?
+-   **Why it matters:** One of the most consequential policy changes in decades + a case where credible DiD evidence has shaped the policy debate
 :::
 
 ## The DiD Setup {.smaller}
@@ -26,11 +26,11 @@ execute:
     -   About 24 states expanded in 2014
     -   Some expanded later (Louisiana 2016, Virginia 2019)
     -   A dozen still have never expanded
--   **Treatment group:** Near-Medicare-eligible adults (ages 55-64) in expansion states
--   **Control group:** Near-Medicare-eligible adults in non-expansion states
+-   **Treatment group:** Near Medicare-eligible adults (ages 55-64) in expansion states
+-   **Control group:** Near Medicare-eligible adults in non-expansion states
 -   **Before:** 2010-2013 (pre-expansion)
 -   **After:** 2014 onward
--   Same 2×2 structure as the California organ donation example — just with states and years instead of hospitals and quarters
+-   Same 2×2 structure as the California organ donation example, just with states and years instead of hospitals and quarters
 :::
 
 ## What the Data Look Like {.smaller}
@@ -91,10 +91,10 @@ Parallel before 2014, divergence after — the visual signature of a credible Di
 ## What Makes This Credible? {.smaller}
 
 ::: incremental
--   **Parallel pre-trends:** The two groups track each other closely before 2014 — necessary (but not sufficient) evidence the comparison is valid
--   **No anticipation:** The 2012 Supreme Court ruling made expansion an unexpected state-by-state choice — hard to plan around in advance
+-   **Parallel pre-trends:** The two groups track each other closely before 2014, necessary (but not sufficient) evidence the comparison is valid
+-   **No anticipation:** The 2012 Supreme Court ruling made expansion an unexpected state-by-state choice. Hard to plan around in advance
 -   **Staggered adoption:** Later expanders (Louisiana 2016, Virginia 2019) complicate TWFE. The paper uses modern estimators (Callaway-Sant'Anna) to avoid the forbidden comparisons we discussed
--   **LATE interpretation:** The estimate applies to Medicaid-eligible near-Medicare-eligible adults in expansion states — not the whole population
+-   **LATE interpretation:** The estimate applies to Medicaid-eligible near-Medicare-eligible adults in expansion states: not the whole population
 -   **Bottom line:** The paper estimates Medicaid expansion reduced annual mortality by \~9% in this group
 :::
 
@@ -113,9 +113,9 @@ DiD works when you can find **two groups** — one treated, one not — and argu
 ::: incremental
 -   Sometimes, the way a policy is implemented creates a **sharp cutoff** between who gets treated and who doesn't
 
-    -   You qualify for Medicaid if your income is below 138% of the poverty line — but not at 139%
+    -   You qualify for Medicaid if your income is below 138% of the poverty line, but not at 139%
 
-    -   You get Title I school funding if your poverty rate is above a threshold — but not one percentage point below
+    -   You get Title I school funding if your poverty rate is above a threshold, but not one percentage point below
 
 -   If being just above or just below the cutoff is **as good as random**, we can estimate the treatment effect by comparing the two sides
 :::
@@ -127,7 +127,7 @@ DiD works when you can find **two groups** — one treated, one not — and argu
 
 -   RDD lets you turn these administrative rules into **natural experiments**
 
--   As a policy analyst, recognizing these cutoffs is a superpower — they're hiding in eligibility rules everywhere
+-   As a policy analyst, recognizing these cutoffs, hiding in eligibility rules everywhere, unlocks powerful research designs
 
 -   RDD is widely considered one of the **most credible** quasi-experimental designs when applicable
 :::
@@ -139,7 +139,7 @@ DiD works when you can find **two groups** — one treated, one not — and argu
 
 -   A student who scored 81 got the scholarship. A student who scored 79 didn't.
 
--   Are these two students fundamentally different? Probably not — the difference is essentially **luck**
+-   Are these two students fundamentally different? Probably not - the difference is essentially **luck**
 
 -   By comparing outcomes for students *just above* and *just below* 80, we approximate a **local randomized experiment**
 :::
@@ -149,36 +149,34 @@ DiD works when you can find **two groups** — one treated, one not — and argu
 ::: callout-note
 ## In English
 
-RDD exploits the fact that people right at the cutoff are essentially identical — the only thing that differs is whether they got the treatment. That's almost as good as random assignment.
+RDD exploits the fact that people right at the cutoff are essentially identical - the only thing that differs is whether they got the treatment. That's almost as good as random assignment.
 :::
 
 ## Today's Roadmap {.smaller}
 
 ::: incremental
-1.  **Terminology & assumptions** — running variables, cutoffs, and what can go wrong
-2.  **The graphical recipe** — seeing the discontinuity step by step
-3.  **Bandwidth & estimation** — how to estimate the jump and choose a window
-4.  **Policy examples** — shingles vaccines and Medicare at 65
-5.  **Sharp vs. fuzzy RDD** — what if the cutoff isn't perfectly enforced? (Maimonides' Rule)
-6.  **Validity checks** — manipulation tests, placebo cutoffs, donut hole tests
-7.  **Practical advice** — and broader lessons about quant work as an MPA
+1.  **Terminology & assumptions**: running variables, cutoffs, and what can go wrong
+2.  **The graphical recipe**: seeing the discontinuity step by step
+3.  **Bandwidth & estimation**: how to estimate the jump and choose a window
+4.  **Policy examples**: shingles vaccines and Medicare at 65
+5.  **Sharp vs. fuzzy RDD**: what if the cutoff isn't perfectly enforced? (Maimonides' Rule)
+6.  **Validity checks**: manipulation tests, placebo cutoffs, donut hole tests
+7.  **Practical advice** + broader lessons about quant work as an MPA
 :::
 
 # Part 1: Terminology & Assumptions
 
 ## Key Terminology {.smaller}
 
-Let's ground the core terms in one real policy: **Pell Grants** — federal need-based aid for college students. Eligibility depends on **Expected Family Contribution (EFC)**. If your EFC is below a threshold, you qualify.
+Let's ground the core terms in one real policy: **Pell Grants** - federal need-based aid for college students. Eligibility depends on **Expected Family Contribution (EFC)**. If your EFC is below a threshold, you qualify.
 
 ::: incremental
 -   **Running Variable (aka forcing variable):** The variable that determines treatment
     -   *Pell example:* Expected Family Contribution (EFC)
     -   *In general:* test scores, income, age, birth date, distance from a border
-
 -   **Cutoff (aka threshold):** The value where treatment "turns on"
     -   *Pell example:* the max EFC for eligibility (historically around \$5,800)
     -   *In general:* any administrative line — 138% FPL, score of 80, age 65
-
 -   **Bandwidth:** How close to the cutoff do we look?
     -   *Pell example:* students within \$500 of the cutoff? \$1,000? \$2,000?
     -   Narrower = more credible (more similar students), less precise (fewer observations)
@@ -241,9 +239,7 @@ The **jump** at the cutoff is the treatment effect. Everything else is smooth.
 
     -   No other policies kick in at the same threshold
 
-    -   *Violation example:* Studying Medicaid's effect at 138% FPL gets complicated because SNAP, CHIP, and housing assistance can change eligibility around the same income range — multiple policies shift at once, so you can't isolate Medicaid alone
-
-    -   The cutoff wasn't chosen *because* of a particular person or group
+    -   *Violation example:* Studying Medicaid's effect at 138% FPL gets complicated because SNAP, CHIP, and housing assistance can change eligibility around the same income range.
 
 -   **No anticipation:** People don't change behavior in advance of crossing the cutoff
 :::
@@ -261,7 +257,7 @@ Ask yourself: "Is there any reason someone *just below* the cutoff would be syst
 ::: incremental
 -   RDD gives us a **Local Average Treatment Effect (LATE)**
 
--   It tells us the effect of treatment **for people right at the cutoff** — not for everyone
+-   It tells us the effect of treatment **for people right at the cutoff**, not for everyone
 
     -   The effect of Medicare for 65-year-olds, not 40-year-olds
 
@@ -269,6 +265,8 @@ Ask yourself: "Is there any reason someone *just below* the cutoff would be syst
 
 -   This is both a **strength** (very credible for that group) and a **limitation** (may not generalize)
 :::
+
+. . .
 
 ::: callout-note
 ## In English
@@ -531,8 +529,11 @@ Focus on these five numbers from the summary above:
 -   **P\>\|z\|:** The p-value — is the jump statistically distinguishable from zero?
 :::
 
+. . .
+
 ::: callout-tip
 ## Report Both Intervals
+
 Show both the **Conventional** and **Robust** CIs. If they tell the same story, the estimate is stable. If they diverge noticeably, your bandwidth is driving the result and you need to investigate.
 :::
 
@@ -562,6 +563,7 @@ rdplot(y = df$completion, x = df$score, c = cutoff,
 -   Think of it like a randomized experiment — you don't *need* controls for identification, but they can help with precision
 
 -   **Which covariates?** Use variables measured *before* the cutoff that predict the outcome
+
     -   *Safe and helpful:* family income, demographics, prior GPA, baseline test scores, lagged outcomes
     -   *Dangerous:* anything measured *after* treatment — it may itself be affected by the cutoff, which biases your estimate
 :::
@@ -671,7 +673,7 @@ plot_panel(panel_a, "a", "Coef. 47.2\n95% CI = 46.1 to 48.7")
 
 **What you're seeing:** each dot is a birth-week cohort. X-axis is week of birth relative to the Sept 2, 1933 cutoff. Y-axis is the percent who eventually received the shingles vaccine.
 
-**The jump at week 0 is ~47 percentage points** — from about 30% to about 77%. A 4-week age difference at the cutoff produced an enormous difference in treatment. This is a very strong first stage.
+**The jump at week 0 is \~47 percentage points** — from about 30% to about 77%. A 4-week age difference at the cutoff produced an enormous difference in treatment. This is a very strong first stage.
 
 ## Placebo Checks: Did Anything Else Change? {.smaller}
 
