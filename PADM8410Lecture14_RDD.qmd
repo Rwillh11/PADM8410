@@ -15,7 +15,7 @@ execute:
 ::: incremental
 -   Before we pivot to RDD, one last DiD walkthrough — this time on a live policy question
 -   **The paper:** Miller, Johnson, and Wherry (2021), "Medicaid and Mortality: New Evidence from Linked Survey and Administrative Data," *Quarterly Journal of Economics*
--   **The question:** Did the ACA's Medicaid expansion reduce mortality among near-elderly adults?
+-   **The question:** Did the ACA's Medicaid expansion reduce mortality among near-Medicare-eligible adults?
 -   **Why it matters:** One of the most consequential policy changes in decades — and a case where credible DiD evidence has shaped the policy debate
 :::
 
@@ -26,8 +26,8 @@ execute:
     -   About 24 states expanded in 2014
     -   Some expanded later (Louisiana 2016, Virginia 2019)
     -   A dozen still have never expanded
--   **Treatment group:** Near-elderly adults (55-64) in expansion states
--   **Control group:** Near-elderly adults in non-expansion states
+-   **Treatment group:** Near-Medicare-eligible adults (ages 55-64) in expansion states
+-   **Control group:** Near-Medicare-eligible adults in non-expansion states
 -   **Before:** 2010-2013 (pre-expansion)
 -   **After:** 2014 onward
 -   Same 2×2 structure as the California organ donation example — just with states and years instead of hospitals and quarters
@@ -79,7 +79,8 @@ ggplot(df_plot, aes(x = year, y = mortality,
   scale_color_manual(values = c("Expansion States"     = "#e31a1c",
                                 "Non-Expansion States" = "#1f78b4")) +
   scale_x_continuous(breaks = 2010:2017) +
-  labs(title = "Mortality for Near-Elderly Adults, by Expansion Status",
+  labs(title = "Mortality for Adults Ages 55-64, by Expansion Status",
+       subtitle = "Restricted to Medicaid-eligible adults (income below 138% FPL)",
        x = "Year", y = "Mortality (per 100,000)",
        color = "", linetype = "") +
   theme_minimal(base_size = 14)
@@ -93,7 +94,7 @@ Parallel before 2014, divergence after — the visual signature of a credible Di
 -   **Parallel pre-trends:** The two groups track each other closely before 2014 — necessary (but not sufficient) evidence the comparison is valid
 -   **No anticipation:** The 2012 Supreme Court ruling made expansion an unexpected state-by-state choice — hard to plan around in advance
 -   **Staggered adoption:** Later expanders (Louisiana 2016, Virginia 2019) complicate TWFE. The paper uses modern estimators (Callaway-Sant'Anna) to avoid the forbidden comparisons we discussed
--   **LATE interpretation:** The estimate applies to near-elderly Medicaid-eligible adults in expansion states — not the whole population
+-   **LATE interpretation:** The estimate applies to Medicaid-eligible near-Medicare-eligible adults in expansion states — not the whole population
 -   **Bottom line:** The paper estimates Medicaid expansion reduced annual mortality by \~9% in this group
 :::
 
