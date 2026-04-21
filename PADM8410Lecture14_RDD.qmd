@@ -956,7 +956,9 @@ When the rule *shifts* treatment probability but doesn't perfectly determine it,
 
 . . .
 
-$$\hat{\tau}_{fuzzy} = \frac{\text{jump in outcome}}{\text{jump in treatment}} = \frac{0.2\text{ SD}}{8\text{ students}} = 0.025\text{ SD per student}$$
+$$\hat{\tau}_{fuzzy} = \frac{\text{jump in outcome}}{\text{jump in treatment}}$$
+
+**Why "treatment" and not "treatment probability"?** When treatment is **binary** (e.g., "did they enroll in the program?"), the denominator is a probability between 0 and 1 — and you'll often see the formula written that way. When treatment is **continuous** (here: class size), the denominator is the jump in the treatment variable itself, in its own units. For Maimonides: $\frac{0.2 \text{ SD}}{8 \text{ students}} = 0.025$ SD per student.
 
 ## What We Just Did: Instrumental Variables {.smaller}
 
