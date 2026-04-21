@@ -554,19 +554,11 @@ summary(rd_fit)
 Focus on these five numbers from the summary above:
 
 ::: incremental
--   **BW est. (h):** The data-driven **optimal bandwidth** (in test-score points). `rdrobust` picks it for you — no more guessing
--   **Eff. Number of Obs.:** How many observations actually contributed to the estimate on each side — narrow bandwidths shrink the effective sample
--   **Coef. (Conventional):** The **point estimate** of the jump at the cutoff — this is your treatment effect
--   **\[ 95% C.I. \] (Robust):** The bias-corrected confidence interval — **report this one** in a paper
+-   **BW est. (h):** The data-driven **optimal bandwidth** (in test-score points). `rdrobust` picks it for you based on MSE
+-   **Eff. Number of Obs.:** How many observations actually contributed to the estimate on each side. Narrow bandwidths shrink the effective sample
+-   **Coef. (Conventional):** The **point estimate** of the jump at the cutoff: this is your treatment effect
+-   **\[ 95% C.I. \] (Robust):** The bias-corrected confidence interval
 -   **P\>\|z\|:** The p-value — is the jump statistically distinguishable from zero?
-:::
-
-. . .
-
-::: callout-tip
-## Report Both Intervals
-
-Show both the **Conventional** and **Robust** CIs. If they tell the same story, the estimate is stable. If they diverge noticeably, your bandwidth is driving the result and you need to investigate.
 :::
 
 ## The `rdplot` Visualization {.smaller}
@@ -581,7 +573,7 @@ rdplot(y = df$completion, x = df$score, c = cutoff,
        y.label = "College Completion Rate")
 ```
 
-`rdplot` bins the data and shows the local polynomial fit — a publication-ready RDD figure.
+`rdplot` bins the data and shows the local polynomial fit. This is basically a publication ready figure!
 
 ## Should You Add Controls? {.smaller}
 
@@ -592,12 +584,10 @@ rdplot(y = df$completion, x = df$score, c = cutoff,
 
 -   But adding covariates that predict the outcome can **reduce noise** and tighten confidence intervals
 
--   Think of it like a randomized experiment — you don't *need* controls for identification, but they can help with precision
-
 -   **Which covariates?** Use variables measured *before* the cutoff that predict the outcome
 
     -   *Safe and helpful:* family income, demographics, prior GPA, baseline test scores, lagged outcomes
-    -   *Dangerous:* anything measured *after* treatment — it may itself be affected by the cutoff, which biases your estimate
+    -   *Dangerous:* anything measured *after* treatment. it may itself be affected by the cutoff, which biases your estimate
 :::
 
 . . .
@@ -605,7 +595,7 @@ rdplot(y = df$completion, x = df$score, c = cutoff,
 ::: callout-note
 ## In English
 
-Controls in RDD aren't about fixing confounding (the cutoff handles that). They're about statistical power — predicting more of the outcome variance so the treatment effect estimate is more precise.
+Controls in RDD aren't about fixing confounding (the cutoff handles that). They're about statistical power: predicting more of the outcome variance so the treatment effect estimate is more precise.
 :::
 
 ## Kernels: Weighting by Distance {.smaller}
@@ -633,7 +623,7 @@ Observations closer to the cutoff get **more weight**. This is what `rdrobust` d
 
 # Part 4: Policy Examples
 
-## Example 1: The Welsh Shingles Policy {.smaller}
+## Example 1: Does a Shingles Vaccine Prevent Dementia? {.smaller}
 
 **The policy.** In September 2013, the Welsh NHS introduced a shingles vaccination program for older adults. The eligibility rule was a **sharp birth-date cutoff**: adults born on or after **September 2, 1933** were eligible; adults born before that date were deemed too old per the guidance.
 
@@ -641,14 +631,12 @@ Observations closer to the cutoff get **more weight**. This is what `rdrobust` d
 
 ::: incremental
 -   Shingles is caused by reactivation of the varicella-zoster virus — the same virus that causes chickenpox in childhood
--   Emerging hypothesis: chronic viral infections may contribute to dementia risk
--   Hard to test causally — people who get vaccinated differ from those who don't (wealthier, more health-conscious, better access to care)
+-   Emerging hypothesis: chronic viral infections may contribute to dementia risk, possibly by reducing inflammation of the brain.
+-   Hard to test causally: people who get vaccinated differ from those who don't (wealthier, more health-conscious, better access to care)
 -   The Welsh birth-date cutoff removes that confounding entirely. **You cannot manipulate your birth date.**
 :::
 
-. . .
-
-**The RDD setup:**
+## **The RDD setup:**
 
 -   **Running variable:** Week of birth relative to Sept 2, 1933
 -   **Cutoff:** Week 0 (Sept 2, 1933)
@@ -743,7 +731,7 @@ plot_panel(panel_c, "c", "Coef. -0.2\n95% CI = -0.8 to 0.4")
 
 . . .
 
-**The takeaway:** the cutoff changed vaccination rates (panel a) and *nothing else* (panels b, c). That's the RDD ideal — identification comes from the policy, not from underlying differences.
+**The takeaway:** the cutoff changed vaccination rates (panel a) and *nothing else* (panels b, c). Identification comes from the policy, not from underlying differences.
 
 ## The Punchline: Vaccines Reduce Dementia {.smaller}
 
@@ -845,19 +833,19 @@ plot_med("vis", "Doctor visits per year",
 ::: callout-tip
 ## Bridge Back to the Opener
 
-We started today with **Medicaid expansion** — a DiD design exploiting *state-level* variation in policy. Now we're looking at **Medicare at 65** — an RDD design exploiting *age-level* variation in eligibility. Same substantive question ("does insurance improve health?"), two different identification strategies. Having both in your toolkit is the point.
+We started today with **Medicaid expansion**, a DiD design exploiting *state-level* variation in policy. Now we're looking at **Medicare at 65**, an RDD design exploiting *age-level* variation in eligibility. Same substantive question ("does insurance improve health?"), two different identification strategies. Having both in your toolkit is great.
 :::
 
 ## More RDD Examples in Policy {.smaller}
 
 ::: incremental
--   **Voting age and political participation:** Turning 18 creates a sharp cutoff for eligibility — used to study whether early voting experience shapes lifelong habits
+-   **Voting age and political participation:** Turning 18 creates a sharp cutoff for eligibility: used to study whether early voting experience shapes lifelong habits
 
 -   **Drinking age and mortality:** The legal drinking age at 21 creates a sharp jump in alcohol consumption and, tragically, in traffic deaths (Carpenter & Dobkin, 2009)
 
--   **Title I funding:** Schools above a poverty threshold receive federal funding — used to study whether additional resources improve outcomes
+-   **Title I funding:** Schools above a poverty threshold receive federal funding: used to study whether additional resources improve outcomes
 
--   **Close elections:** When one candidate barely wins vs. barely loses, outcomes are as-if randomly assigned — a popular design in political science (Lee, 2008)
+-   **Close elections:** When one candidate barely wins vs. barely loses, outcomes are as-if randomly assigned: a popular design in political science (Lee, 2008)
 :::
 
 . . .
@@ -959,16 +947,16 @@ ggplot() +
 When the rule *shifts* treatment probability but doesn't perfectly determine it, fuzzy RDD combines **two jumps** at the cutoff into one effect estimate.
 
 ::: incremental
-1.  **Measure the jump in treatment at the cutoff.** For Maimonides: at enrollment = 41, actual class size drops by about 8 students on average — *not* the full 20 the rule predicts, because compliance is imperfect
+1.  **Measure the jump in treatment at the cutoff (the "first stage").** For Maimonides: at enrollment = 41, actual average class size drops by about **8 students** — *not* the full \~20 the rule predicts, because some schools don't split as required
 
-2.  **Measure the jump in the outcome at the cutoff.** Say test scores rise by 0.2 standard deviations across the same threshold
+2.  **Measure the jump in the outcome at the cutoff.** Say test scores rise by **0.2 standard deviations** across the same threshold
 
-3.  **Scale.** *If* we believe the cutoff affects outcomes **only through** class size, each 1-student change in class size explains 0.2 / 8 ≈ **0.025 SD** of test-score improvement
+3.  **Scale: outcome jump ÷ treatment jump.** *If* we believe the cutoff affects outcomes **only through** class size, each 1-student drop in class size explains 0.2 SD ÷ 8 students = **0.025 SD per student** of test-score improvement
 :::
 
 . . .
 
-$$\hat{\tau}_{fuzzy} = \frac{\text{jump in outcome at cutoff}}{\text{jump in treatment probability at cutoff}}$$
+$$\hat{\tau}_{fuzzy} = \frac{\text{jump in outcome}}{\text{jump in treatment}} = \frac{0.2\text{ SD}}{8\text{ students}} = 0.025\text{ SD per student}$$
 
 ## What We Just Did: Instrumental Variables {.smaller}
 
