@@ -8,6 +8,105 @@ execute:
   fig-align: center
 ---
 
+# One Final DiD Walkthrough
+
+## Did Medicaid Expansion Save Lives? {.smaller}
+
+::: incremental
+-   Before we pivot to RDD, one last DiD walkthrough — this time on a live policy question
+-   **The paper:** Miller, Johnson, and Wherry (2021), "Medicaid and Mortality: New Evidence from Linked Survey and Administrative Data," *Quarterly Journal of Economics*
+-   **The question:** Did the ACA's Medicaid expansion reduce mortality among near-elderly adults?
+-   **Why it matters:** One of the most consequential policy changes in decades — and a case where credible DiD evidence has shaped the policy debate
+:::
+
+## The DiD Setup {.smaller}
+
+::: incremental
+-   The ACA let states expand Medicaid starting **January 2014**
+    -   About 24 states expanded in 2014
+    -   Some expanded later (Louisiana 2016, Virginia 2019)
+    -   A dozen still have never expanded
+-   **Treatment group:** Near-elderly adults (55-64) in expansion states
+-   **Control group:** Near-elderly adults in non-expansion states
+-   **Before:** 2010-2013 (pre-expansion)
+-   **After:** 2014 onward
+-   Same 2×2 structure as the California organ donation example — just with states and years instead of hospitals and quarters
+:::
+
+## What the Data Look Like {.smaller}
+
+```{r}
+#| echo: true
+library(tidyverse)
+set.seed(30317)
+
+n_exp  <- 20   # expansion states
+n_ctrl <- 20   # non-expansion states
+years  <- 2010:2017
+
+# State-specific intercepts — centered within each group so the two
+# groups have the same average baseline (keeps pre-trends visually parallel)
+fe_exp   <- rnorm(n_exp,  0, 40); fe_exp   <- fe_exp   - mean(fe_exp)
+fe_ctrl  <- rnorm(n_ctrl, 0, 40); fe_ctrl  <- fe_ctrl  - mean(fe_ctrl)
+state_fe <- c(fe_exp, fe_ctrl)
+
+df_med <- expand_grid(
+  state_id = 1:(n_exp + n_ctrl),
+  year     = years
+) %>%
+  mutate(
+    expansion = state_id <= n_exp,
+    post      = year >= 2014,
+    trend     = 1400 - 12 * (year - 2010),     # overall downward trend
+    fe        = state_fe[state_id],
+    tx        = ifelse(expansion & post, -130, 0),  # ~130 per 100k reduction
+    mortality = fe + trend + tx + rnorm(n(), 0, 25)
+  )
+
+# Collapse to group-year averages for plotting
+df_plot <- df_med %>%
+  group_by(year, expansion) %>%
+  summarize(mortality = mean(mortality), .groups = "drop") %>%
+  mutate(group = ifelse(expansion, "Expansion States", "Non-Expansion States"))
+
+ggplot(df_plot, aes(x = year, y = mortality,
+                    color = group, linetype = group)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 2.5) +
+  geom_vline(xintercept = 2014, linetype = "dashed", color = "gray40") +
+  annotate("text", x = 2014.15, y = 1420, hjust = 0, size = 3.5,
+           color = "gray30", label = "ACA expansion begins") +
+  scale_color_manual(values = c("Expansion States"     = "#e31a1c",
+                                "Non-Expansion States" = "#1f78b4")) +
+  scale_x_continuous(breaks = 2010:2017) +
+  labs(title = "Mortality for Near-Elderly Adults, by Expansion Status",
+       x = "Year", y = "Mortality (per 100,000)",
+       color = "", linetype = "") +
+  theme_minimal(base_size = 14)
+```
+
+Parallel before 2014, divergence after — the visual signature of a credible DiD.
+
+## What Makes This Credible? {.smaller}
+
+::: incremental
+-   **Parallel pre-trends:** The two groups track each other closely before 2014 — necessary (but not sufficient) evidence the comparison is valid
+-   **No anticipation:** The 2012 Supreme Court ruling made expansion an unexpected state-by-state choice — hard to plan around in advance
+-   **Staggered adoption:** Later expanders (Louisiana 2016, Virginia 2019) complicate TWFE. The paper uses modern estimators (Callaway-Sant'Anna) to avoid the forbidden comparisons we discussed
+-   **LATE interpretation:** The estimate applies to near-elderly Medicaid-eligible adults in expansion states — not the whole population
+-   **Bottom line:** The paper estimates Medicaid expansion reduced annual mortality by \~9% in this group
+:::
+
+. . .
+
+::: callout-tip
+## The Bridge to RDD
+
+DiD works when you can find **two groups** — one treated, one not — and argue they would have trended in parallel. But what if there's no clean comparison group? What if the only thing separating treated from untreated is a *rule*, and either side of that rule looks nearly identical? That's where **Regression Discontinuity** comes in.
+:::
+
+# Introducing RDD
+
 ## The Setup
 
 ::: incremental
@@ -66,21 +165,23 @@ RDD exploits the fact that people right at the cutoff are essentially identical 
 
 # Part 1: Terminology & Assumptions
 
-## Key Terminology
+## Key Terminology {.smaller}
+
+Let's ground the core terms in one real policy: **Pell Grants** — federal need-based aid for college students. Eligibility depends on **Expected Family Contribution (EFC)**. If your EFC is below a threshold, you qualify.
 
 ::: incremental
 -   **Running Variable (aka forcing variable):** The variable that determines treatment
-
-    -   Test scores, income, age, birth date, distance from a border
+    -   *Pell example:* Expected Family Contribution (EFC)
+    -   *In general:* test scores, income, age, birth date, distance from a border
 
 -   **Cutoff (aka threshold):** The value where treatment "turns on"
+    -   *Pell example:* the max EFC for eligibility (historically around \$5,800)
+    -   *In general:* any administrative line — 138% FPL, score of 80, age 65
 
-    -   Score of 80, income at 138% FPL, age 65
-
--   **Bandwidth:** How close to the cutoff do we look? People *very* close are most comparable — but there are fewer of them
-
-    -   Narrow bandwidth = more credible, less precise
-    -   Wide bandwidth = less credible, more precise
+-   **Bandwidth:** How close to the cutoff do we look?
+    -   *Pell example:* students within \$500 of the cutoff? \$1,000? \$2,000?
+    -   Narrower = more credible (more similar students), less precise (fewer observations)
+    -   Wider = less credible, more precise
 :::
 
 ## The First Picture: Seeing the Jump {.smaller}
@@ -97,11 +198,28 @@ x      <- runif(n, 0, 1)
 y      <- 2 + 5 * x + 2 * (x >= cutoff) + rnorm(n, 0, 0.3)
 df     <- tibble(x, y)
 
+# Fit a line on each side and predict the value right at the cutoff —
+# the gap between the two is the treatment effect we'll draw.
+left_fit  <- lm(y ~ x, data = filter(df, x <  cutoff))
+right_fit <- lm(y ~ x, data = filter(df, x >= cutoff))
+y_left    <- predict(left_fit,  newdata = tibble(x = cutoff))
+y_right   <- predict(right_fit, newdata = tibble(x = cutoff))
+
 ggplot(df, aes(x = x, y = y)) +
-  geom_point(alpha = 0.4, size = 1.5) +
-  geom_smooth(data = filter(df, x < cutoff)) +
-  geom_smooth(data = filter(df, x >= cutoff)) +
-  geom_vline(xintercept = cutoff, linetype = "dashed", size = 0.8) +
+  geom_point(alpha = 0.35, size = 1.5, color = "gray40") +
+  geom_smooth(data = filter(df, x <  cutoff), method = "lm", se = FALSE,
+              color = "black", linewidth = 1.2) +
+  geom_smooth(data = filter(df, x >= cutoff), method = "lm", se = FALSE,
+              color = "black", linewidth = 1.2) +
+  geom_vline(xintercept = cutoff, linetype = "dashed", linewidth = 0.8) +
+  annotate("segment", x = cutoff, xend = cutoff,
+           y = y_left, yend = y_right,
+           color = "#6a3d9a", linewidth = 2) +
+  annotate("point", x = cutoff, y = y_left,  color = "#6a3d9a", size = 3) +
+  annotate("point", x = cutoff, y = y_right, color = "#6a3d9a", size = 3) +
+  annotate("label", x = cutoff + 0.04, y = (y_left + y_right) / 2,
+           label = "The jump\n= treatment effect",
+           color = "#6a3d9a", hjust = 0, size = 4, label.size = 0) +
   labs(title = "Regression Discontinuity: Graphical Intuition",
        x = "Running Variable (X)", y = "Outcome (Y)") +
   theme_minimal(base_size = 14)
@@ -121,6 +239,8 @@ The **jump** at the cutoff is the treatment effect. Everything else is smooth.
 -   **Continuity:** Everything *other* than treatment changes smoothly through the cutoff
 
     -   No other policies kick in at the same threshold
+
+    -   *Violation example:* Studying Medicaid's effect at 138% FPL gets complicated because SNAP, CHIP, and housing assistance can change eligibility around the same income range — multiple policies shift at once, so you can't isolate Medicaid alone
 
     -   The cutoff wasn't chosen *because* of a particular person or group
 
@@ -157,6 +277,8 @@ RDD gives you a very clean answer to a very specific question: "What is the effe
 
 # Part 2: The Graphical Recipe
 
+We'll illustrate the four-step recipe with a **merit-based college scholarship**: students scoring **above 80** on a standardized test receive a scholarship; we want to know if it raises college completion rates.
+
 ## Step 1: Plot the Raw Data {.smaller}
 
 ```{r}
@@ -164,98 +286,118 @@ RDD gives you a very clean answer to a very specific question: "What is the effe
 
 set.seed(30317)
 n      <- 500
-cutoff <- 0.5
-x      <- runif(n, 0, 1)
-y      <- 2 + 1 * x + 2 * (x >= cutoff) + rnorm(n, 0, 0.4)
-df     <- tibble(x = x, y = y,
-                 group = factor(ifelse(x < cutoff, "Control", "Treatment")))
+cutoff <- 80
+score  <- runif(n, 60, 100)
+completion <- 0.30 + 0.005 * (score - 60) +
+              0.10  * (score >= cutoff) + rnorm(n, 0, 0.04)
 
-ggplot(df, aes(x = x, y = y, color = group)) +
+df <- tibble(score, completion,
+             group = factor(ifelse(score < cutoff, "No Scholarship", "Scholarship"),
+                            levels = c("No Scholarship", "Scholarship")))
+
+ggplot(df, aes(x = score, y = completion, color = group)) +
   geom_point(alpha = 0.6, size = 2) +
-  geom_vline(xintercept = cutoff, linetype = "dashed", color = "gray40", size = 1) +
-  scale_color_manual(values = c("Control" = "#1f78b4", "Treatment" = "#e31a1c")) +
-  labs(title = "(a) Raw Data", x = "Running Variable", y = "Outcome", color = "") +
+  geom_vline(xintercept = cutoff, linetype = "dashed",
+             color = "gray40", linewidth = 1) +
+  scale_color_manual(values = c("No Scholarship" = "#1f78b4",
+                                "Scholarship"    = "#e31a1c")) +
+  labs(title = "(a) Raw Data: Merit Scholarship at Score 80",
+       x = "Test Score", y = "College Completion Rate", color = "") +
   theme_minimal(base_size = 14)
 ```
 
-## Step 2: Fit Curves on Each Side {.smaller}
+## Step 2: Fit a Line on Each Side {.smaller}
 
 ```{r}
 #| echo: true
 
-ggplot(df, aes(x = x, y = y, color = group)) +
+ggplot(df, aes(x = score, y = completion, color = group)) +
   geom_point(alpha = 0.5) +
-  geom_smooth(data = filter(df, group == "Control"),
-              method = "loess", span = 0.3, se = FALSE, size = 1, color = "black") +
-  geom_smooth(data = filter(df, group == "Treatment"),
-              method = "loess", span = 0.3, se = FALSE, size = 1, color = "black") +
+  geom_smooth(data = filter(df, group == "No Scholarship"),
+              method = "lm", se = FALSE, linewidth = 1, color = "black") +
+  geom_smooth(data = filter(df, group == "Scholarship"),
+              method = "lm", se = FALSE, linewidth = 1, color = "black") +
   geom_vline(xintercept = cutoff, linetype = "dashed", color = "gray40") +
-  scale_color_manual(values = c("Control" = "#1f78b4", "Treatment" = "#e31a1c")) +
-  labs(title = "(b) Predict Values Near the Cutoff",
-       x = "Running Variable", y = "Outcome", color = "") +
+  scale_color_manual(values = c("No Scholarship" = "#1f78b4",
+                                "Scholarship"    = "#e31a1c")) +
+  labs(title = "(b) Fit a Line on Each Side",
+       x = "Test Score", y = "College Completion Rate", color = "") +
   theme_minimal(base_size = 14)
 ```
 
-We fit a LOESS (localized regression) on each side separately. You'll also see OLS or polynomials used here.
+We fit a simple straight line on each side. You can also use LOESS or polynomials — but linear is honest, easy to interpret, and the modern `rdrobust` default.
 
 ## Step 3: Choose a Bandwidth {.smaller}
 
 ```{r}
 #| echo: true
 
-bw  <- 0.1
-df2 <- df %>% mutate(in_bw = abs(x - cutoff) <= bw)
+bw  <- 4   # 4-point window around the cutoff
+df2 <- df %>% mutate(in_bw = abs(score - cutoff) <= bw)
 
 ggplot() +
-  geom_point(data = filter(df2, !in_bw), aes(x, y), color = "gray80") +
-  geom_point(data = filter(df2, in_bw), aes(x, y, color = group), size = 2) +
-  geom_smooth(data = filter(df2, in_bw, x < cutoff),
-              aes(x, y), se = FALSE, color = "black", size = 1) +
-  geom_smooth(data = filter(df2, in_bw, x >= cutoff),
-              aes(x, y), se = FALSE, color = "black", size = 1) +
+  geom_point(data = filter(df2, !in_bw),
+             aes(score, completion), color = "gray80") +
+  geom_point(data = filter(df2, in_bw),
+             aes(score, completion, color = group), size = 2) +
+  geom_smooth(data = filter(df2, in_bw, score <  cutoff),
+              aes(score, completion), method = "lm", se = FALSE,
+              color = "black", linewidth = 1) +
+  geom_smooth(data = filter(df2, in_bw, score >= cutoff),
+              aes(score, completion), method = "lm", se = FALSE,
+              color = "black", linewidth = 1) +
   geom_vline(xintercept = c(cutoff - bw, cutoff + bw),
              linetype = "dashed", color = "gray50") +
   geom_vline(xintercept = cutoff, linetype = "solid", color = "gray40") +
-  scale_color_manual(values = c("Control" = "#1f78b4", "Treatment" = "#e31a1c")) +
-  labs(title = "(c) Pick a Bandwidth", x = "Running Variable",
-       y = "Outcome", color = NULL) +
+  scale_color_manual(values = c("No Scholarship" = "#1f78b4",
+                                "Scholarship"    = "#e31a1c")) +
+  labs(title = "(c) Pick a Bandwidth: Look Only Near the Cutoff",
+       x = "Test Score", y = "College Completion Rate", color = NULL) +
   theme_minimal(base_size = 14)
 ```
+
+We restrict to students scoring within 4 points of the cutoff — these students are most comparable.
 
 ## Step 4: Estimate the Jump {.smaller}
 
 ```{r}
 #| echo: true
 
-df3 <- df %>% filter(abs(x - cutoff) <= bw)
+df3 <- df %>% filter(abs(score - cutoff) <= bw)
 
-m <- df3 %>%
-  group_by(group) %>%
-  summarize(m_x = mean(x), m_y = mean(y))
-
-m_left  <- m$m_y[m$group == "Control"]
-m_right <- m$m_y[m$group == "Treatment"]
+# Fit a line on each side within the bandwidth, then predict at the cutoff
+left_fit  <- lm(completion ~ score, data = filter(df3, score <  cutoff))
+right_fit <- lm(completion ~ score, data = filter(df3, score >= cutoff))
+y_left    <- predict(left_fit,  newdata = tibble(score = cutoff))
+y_right   <- predict(right_fit, newdata = tibble(score = cutoff))
+jump      <- y_right - y_left
 
 ggplot() +
-  geom_point(data = df, aes(x, y), color = "gray90") +
-  geom_point(data = df3, aes(x, y, color = group), size = 2) +
+  geom_point(data = df,  aes(score, completion), color = "gray90") +
+  geom_point(data = df3, aes(score, completion, color = group), size = 2) +
+  geom_smooth(data = filter(df3, score <  cutoff),
+              aes(score, completion), method = "lm", se = FALSE,
+              color = "black", linewidth = 1) +
+  geom_smooth(data = filter(df3, score >= cutoff),
+              aes(score, completion), method = "lm", se = FALSE,
+              color = "black", linewidth = 1) +
   geom_segment(aes(x = cutoff, xend = cutoff,
-                   y = m_left, yend = m_right),
-               size = 2, color = "#6a3d9a") +
-  geom_segment(aes(x = cutoff - 0.02, xend = cutoff,
-                   y = m_left, yend = m_left),
-               size = 1.2, color = "#6a3d9a") +
-  geom_segment(aes(x = cutoff, xend = cutoff + 0.02,
-                   y = m_right, yend = m_right),
-               size = 1.2, color = "#6a3d9a") +
+                   y = y_left, yend = y_right),
+               color = "#6a3d9a", linewidth = 2) +
+  annotate("point", x = cutoff, y = y_left,  color = "#6a3d9a", size = 3) +
+  annotate("point", x = cutoff, y = y_right, color = "#6a3d9a", size = 3) +
+  annotate("label", x = cutoff + 0.5, y = (y_left + y_right) / 2,
+           label = sprintf("Estimated effect:\n+%.1f pp", jump * 100),
+           color = "#6a3d9a", hjust = 0, size = 4, label.size = 0) +
   geom_vline(xintercept = cutoff, linetype = "dashed", color = "gray50") +
-  scale_color_manual(values = c("Control" = "#1f78b4", "Treatment" = "#e31a1c")) +
-  labs(title = "(d) Estimate Jump at the Cutoff",
-       x = "Running Variable", y = "Outcome", color = "") +
+  scale_color_manual(values = c("No Scholarship" = "#1f78b4",
+                                "Scholarship"    = "#e31a1c")) +
+  labs(title = "(d) Estimate the Jump at the Cutoff",
+       x = "Test Score", y = "College Completion Rate", color = "") +
   theme_minimal(base_size = 14)
 ```
 
-The purple segment is the **estimated treatment effect** — the gap between the two sides at the cutoff.
+The purple segment is the **estimated treatment effect** — the gap between each line's predicted value *at the cutoff*.
 
 # Part 3: Bandwidth & Estimation
 
@@ -264,27 +406,32 @@ The purple segment is the **estimated treatment effect** — the gap between the
 ```{r}
 #| echo: true
 
-bw_values <- c(0.01, 0.05, 0.1, 0.2)
+bw_values <- c(1, 2, 4, 10)    # bandwidths in test-score points
 
 df_facet <- df %>%
   crossing(bw = bw_values) %>%
-  mutate(in_bw = abs(x - cutoff) <= bw)
+  mutate(in_bw = abs(score - cutoff) <= bw)
 
 ggplot() +
-  geom_point(data = filter(df_facet, !in_bw), aes(x, y), color = "gray80") +
-  geom_point(data = filter(df_facet, in_bw), aes(x, y, color = group), size = 1.5) +
-  geom_smooth(data = filter(df_facet, in_bw & x < cutoff),
-              aes(x, y), method = "lm", se = FALSE, color = "black", size = 1) +
-  geom_smooth(data = filter(df_facet, in_bw & x >= cutoff),
-              aes(x, y), method = "lm", se = FALSE, color = "black", size = 1) +
+  geom_point(data = filter(df_facet, !in_bw),
+             aes(score, completion), color = "gray80") +
+  geom_point(data = filter(df_facet, in_bw),
+             aes(score, completion, color = group), size = 1.5) +
+  geom_smooth(data = filter(df_facet, in_bw & score <  cutoff),
+              aes(score, completion), method = "lm", se = FALSE,
+              color = "black", linewidth = 1) +
+  geom_smooth(data = filter(df_facet, in_bw & score >= cutoff),
+              aes(score, completion), method = "lm", se = FALSE,
+              color = "black", linewidth = 1) +
   geom_vline(data = tibble(bw = bw_values),
              aes(xintercept = cutoff - bw), linetype = "dashed", color = "gray50") +
   geom_vline(data = tibble(bw = bw_values),
              aes(xintercept = cutoff + bw), linetype = "dashed", color = "gray50") +
   geom_vline(xintercept = cutoff, linetype = "solid", color = "gray40") +
-  scale_color_manual(values = c("Control" = "#1f78b4", "Treatment" = "#e31a1c")) +
-  labs(title = "Bandwidth Choice", x = "Running Variable",
-       y = "Outcome", color = NULL) +
+  scale_color_manual(values = c("No Scholarship" = "#1f78b4",
+                                "Scholarship"    = "#e31a1c")) +
+  labs(title = "Bandwidth Choice (in Test-Score Points)",
+       x = "Test Score", y = "College Completion Rate", color = NULL) +
   facet_wrap(~ bw, ncol = 2, labeller = label_both) +
   theme_minimal(base_size = 14)
 ```
@@ -308,26 +455,31 @@ This gives us **two separate lines** — one on each side of the cutoff. $\beta_
 ```{r}
 #| echo: true
 
-set.seed(30317)
-n       <- 500
-running <- runif(n, -3, 3)
-Y <- ifelse(running < 0, 0.1 * running, 2.5 + 0.1 * running) + rnorm(n, sd = 1)
-df_ols <- tibble(X = running, Y = Y,
-                 treated = factor(X >= 0, labels = c("Below", "Above")))
+# Apply the formula above to the scholarship data: center the running
+# variable at the cutoff, then fit the interaction regression.
+df_scholar <- df %>%
+  mutate(score_c = score - cutoff,
+         side    = factor(score >= cutoff,
+                          levels = c(FALSE, TRUE),
+                          labels = c("Below cutoff", "At/above cutoff")),
+         treated = as.integer(score >= cutoff))
 
-model <- lm(Y ~ X * treated, data = df_ols)
+rdd_model <- lm(completion ~ score_c * treated, data = df_scholar)
+round(coef(rdd_model), 3)
 
-ggplot(df_ols, aes(x = X, y = Y, color = treated)) +
-  geom_point(alpha = 0.4, size = 1.5) +
+ggplot(df_scholar, aes(x = score_c, y = completion, color = side)) +
+  geom_point(alpha = 0.35, size = 1.5) +
   geom_smooth(method = "lm", formula = y ~ x, se = FALSE, linewidth = 1) +
   geom_vline(xintercept = 0, linetype = "dashed") +
-  labs(title = "Linear RDD with a Jump at the Cutoff",
-       x = "Running Variable (centered at cutoff)",
-       y = "Outcome Y", color = "Side of Cutoff") +
+  scale_color_manual(values = c("Below cutoff"     = "#1f78b4",
+                                "At/above cutoff"  = "#e31a1c")) +
+  labs(title = "Linear RDD on the Scholarship Data",
+       x = "Test Score (centered at 80)",
+       y = "College Completion Rate", color = "Side of Cutoff") +
   theme_minimal(base_size = 14)
 ```
 
-Left line: $\beta_0 + \beta_1 X$. Right line: $(\beta_0 + \beta_2) + (\beta_1 + \beta_3) X$.
+$\beta_0$ = intercept (completion just below cutoff). $\beta_1$ = slope on the left. $\beta_2$ = **the jump** — our treatment effect. $\beta_3$ = how the slope *changes* when we cross the cutoff.
 
 ## Using `rdrobust`: The Modern Approach {.smaller}
 
@@ -342,7 +494,7 @@ library(rdrobust)
 # - Chooses the optimal bandwidth
 # - Fits local polynomial regressions
 # - Provides bias-corrected confidence intervals
-rd_result <- rdrobust(y = df$y, x = df$x, c = 0.5)
+rd_result <- rdrobust(y = df$completion, x = df$score, c = 80)
 summary(rd_result)
 ```
 
@@ -362,13 +514,26 @@ Instead of manually choosing bandwidths and functional forms, `rdrobust` uses da
 # Let's use our simulated data
 library(rdrobust)
 
-rd_fit <- rdrobust(y = df$y, x = df$x, c = cutoff)
+rd_fit <- rdrobust(y = df$completion, x = df$score, c = cutoff)
 summary(rd_fit)
 ```
 
-. . .
+## Reading the `rdrobust` Output {.smaller}
 
-Key things to look at: the **point estimate** (the jump), the **bandwidth** it chose, and the **robust confidence interval**.
+Focus on these five numbers from the summary above:
+
+::: incremental
+-   **BW est. (h):** The data-driven **optimal bandwidth** (in test-score points). `rdrobust` picks it for you — no more guessing
+-   **Eff. Number of Obs.:** How many observations actually contributed to the estimate on each side — narrow bandwidths shrink the effective sample
+-   **Coef. (Conventional):** The **point estimate** of the jump at the cutoff — this is your treatment effect
+-   **\[ 95% C.I. \] (Robust):** The bias-corrected confidence interval — **report this one** in a paper
+-   **P\>\|z\|:** The p-value — is the jump statistically distinguishable from zero?
+:::
+
+::: callout-tip
+## Report Both Intervals
+Show both the **Conventional** and **Robust** CIs. If they tell the same story, the estimate is stable. If they diverge noticeably, your bandwidth is driving the result and you need to investigate.
+:::
 
 ## The `rdplot` Visualization {.smaller}
 
@@ -376,10 +541,10 @@ Key things to look at: the **point estimate** (the jump), the **bandwidth** it c
 #| echo: true
 
 # rdrobust comes with a companion plotting function
-rdplot(y = df$y, x = df$x, c = cutoff,
+rdplot(y = df$completion, x = df$score, c = cutoff,
        title = "RD Plot with Automatic Binning",
-       x.label = "Running Variable",
-       y.label = "Outcome")
+       x.label = "Test Score",
+       y.label = "College Completion Rate")
 ```
 
 `rdplot` bins the data and shows the local polynomial fit — a publication-ready RDD figure.
@@ -394,6 +559,10 @@ rdplot(y = df$y, x = df$x, c = cutoff,
 -   But adding covariates that predict the outcome can **reduce noise** and tighten confidence intervals
 
 -   Think of it like a randomized experiment — you don't *need* controls for identification, but they can help with precision
+
+-   **Which covariates?** Use variables measured *before* the cutoff that predict the outcome
+    -   *Safe and helpful:* family income, demographics, prior GPA, baseline test scores, lagged outcomes
+    -   *Dangerous:* anything measured *after* treatment — it may itself be affected by the cutoff, which biases your estimate
 :::
 
 . . .
@@ -411,16 +580,17 @@ An alternative to sharp bandwidth cutoffs: **weight observations** by how close 
 ```{r}
 #| echo: true
 
-h <- 1
+h <- 10   # bandwidth = 10 test-score points
 x_kern <- seq(-h, h, length.out = 500)
 w <- pmax(1 - abs(x_kern) / h, 0)
 
 ggplot(tibble(x = x_kern, weight = w), aes(x = x, y = weight)) +
   geom_area(fill = "grey80") +
-  geom_line(size = 1.2) +
+  geom_line(linewidth = 1.2) +
   geom_vline(xintercept = c(-h, h), linetype = "dashed") +
   labs(title = "Triangular Kernel Weight Function",
-       x = "Distance from Cutoff", y = "Weight") +
+       subtitle = "Bandwidth h = 10 test-score points around the cutoff",
+       x = "Distance from Cutoff (test-score points)", y = "Weight") +
   theme_minimal(base_size = 14)
 ```
 
@@ -462,19 +632,27 @@ panel_c <- tibble(
 )
 
 plot_panel <- function(data, panel_label, coef_text) {
+  data <- mutate(data,
+                 side = factor(ifelse(week < 0, "Born before cutoff",
+                                      "Born after cutoff"),
+                               levels = c("Born before cutoff",
+                                          "Born after cutoff")))
   ggplot(data, aes(x = week, y = y)) +
-    geom_point(color = "grey30", alpha = 0.8) +
-    geom_smooth(data = filter(data, week < 0), method = "lm",
+    geom_point(aes(color = side), alpha = 0.85) +
+    geom_smooth(data = filter(data, week <  0), method = "lm",
                 se = FALSE, color = "black") +
     geom_smooth(data = filter(data, week >= 0), method = "lm",
                 se = FALSE, color = "black") +
-    geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+    geom_vline(xintercept = 0, linetype = "dashed", color = "gray40") +
+    scale_color_manual(values = c("Born before cutoff" = "#1f78b4",
+                                  "Born after cutoff"  = "#e31a1c")) +
     labs(title = paste0("Panel ", panel_label),
          x = "Week of birth (relative to Sep 2 1933)",
          y = unique(data$outcome)) +
     annotate("text", x = -120, y = max(data$y) - 2,
              label = coef_text, hjust = 0, size = 3.2) +
-    theme_minimal(base_size = 11)
+    theme_minimal(base_size = 11) +
+    theme(legend.position = "none")
 }
 
 p_a <- plot_panel(panel_a, "a", "Coef. 47.2\n95% CI = 46.1 to 48.7")
@@ -510,68 +688,98 @@ y <- ifelse(weeks < 0,
             18 - 0.025 * weeks + rnorm(n, 0, 0.4),
             18 - 0.025 * weeks - 3 + rnorm(n, 0, 0.4))
 
-ggplot(tibble(week = weeks, y = y), aes(x = week, y = y)) +
-  geom_point(color = "gray30", size = 2) +
-  geom_smooth(data = tibble(week = weeks[weeks < 0], y = y[weeks < 0]),
-              aes(x = week, y = y), method = "lm", se = FALSE, color = "black") +
-  geom_smooth(data = tibble(week = weeks[weeks >= 0], y = y[weeks >= 0]),
-              aes(x = week, y = y), method = "lm", se = FALSE, color = "black") +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "darkred") +
-  annotate("text", x = 100, y = 20.5, hjust = 0, size = 3.5, color = "darkred",
-           label = "Effect of eligibility: -2.7pp\n95% CI = -4 to -1.5\nP = 0.022") +
+df_dem <- tibble(week = weeks, y = y,
+                 side = factor(ifelse(weeks < 0, "Born before cutoff",
+                                      "Born after cutoff"),
+                               levels = c("Born before cutoff",
+                                          "Born after cutoff")))
+
+ggplot(df_dem, aes(x = week, y = y)) +
+  geom_point(aes(color = side), size = 2) +
+  geom_smooth(data = filter(df_dem, week <  0),
+              method = "lm", se = FALSE, color = "black") +
+  geom_smooth(data = filter(df_dem, week >= 0),
+              method = "lm", se = FALSE, color = "black") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray40") +
+  scale_color_manual(values = c("Born before cutoff" = "#1f78b4",
+                                "Born after cutoff"  = "#e31a1c")) +
+  annotate("text", x = 100, y = 20.5, hjust = 0, size = 3.5, color = "gray30",
+           label = "Effect of eligibility: -2.7 pp\n95% CI = -4 to -1.5\nP = 0.022") +
   labs(title = "Effect of Shingles Vaccine Eligibility on Dementia",
        x = "Week of birth (relative to Sep 2 1933)",
-       y = "New dementia diagnosis over 7 years (%)") +
-  theme_minimal(base_size = 12)
+       y = "New dementia diagnosis over 7 years (%)",
+       color = NULL) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
 ```
 
 When the jump is this clear, you almost don't need statistics. That's the beauty of a good RDD.
 
 ## Example 2: Medicare at Age 65 {.smaller}
 
+Card, Dobkin, and Maestas (2008) used the 65th-birthday cutoff to study the effect of near-universal health insurance.
+
+```{r}
+#| echo: false
+
+library(patchwork)
+set.seed(30317)
+
+age_y <- seq(-5, 5, by = 0.25)   # age in years relative to 65
+
+# Panel A: insurance coverage rate (%)
+cov <- ifelse(age_y < 0, 82 + 0.8 * age_y, 97 + 0.05 * age_y) +
+       rnorm(length(age_y), 0, 1)
+
+# Panel B: doctor visits per year
+vis <- ifelse(age_y < 0, 4.0 + 0.04 * age_y, 5.2 + 0.04 * age_y) +
+       rnorm(length(age_y), 0, 0.15)
+
+df_med <- tibble(age_y, cov, vis,
+                 side = factor(ifelse(age_y < 0, "Under 65", "65 and over"),
+                               levels = c("Under 65", "65 and over")))
+
+plot_med <- function(yvar, ylab, title) {
+  ggplot(df_med, aes(x = age_y, y = .data[[yvar]])) +
+    geom_point(aes(color = side), size = 1.8, alpha = 0.85) +
+    geom_smooth(data = filter(df_med, age_y <  0),
+                method = "lm", se = FALSE, color = "black") +
+    geom_smooth(data = filter(df_med, age_y >= 0),
+                method = "lm", se = FALSE, color = "black") +
+    geom_vline(xintercept = 0, linetype = "dashed", color = "gray40") +
+    scale_color_manual(values = c("Under 65"    = "#1f78b4",
+                                  "65 and over" = "#e31a1c")) +
+    labs(title = title,
+         x = "Age (years, relative to 65th birthday)",
+         y = ylab) +
+    theme_minimal(base_size = 11) +
+    theme(legend.position = "none")
+}
+
+plot_med("cov", "Insurance coverage (%)",
+         "(a) First stage: Coverage jumps at 65") +
+plot_med("vis", "Doctor visits per year",
+         "(b) Outcome: Healthcare use jumps")
+```
+
+## Reading the Medicare Panels {.smaller}
+
 ::: incremental
--   In the US, most people become eligible for **Medicare at age 65** — a sharp cutoff
-
--   Card, Dobkin, and Maestas (2008) used this to study the effect of health insurance on health care utilization
-
--   The running variable is **age** (measured precisely), and the cutoff is the 65th birthday
-
--   Key finding: gaining Medicare coverage leads to a **sharp increase** in hospitalizations and doctor visits, especially for conditions that were previously going untreated
-
--   Why it works: you can't manipulate your age, and nothing *else* changes abruptly at exactly 65
-:::
-
-. . .
-
-::: callout-note
-## Why This Example Is Great for MPAs
-
-Medicare eligibility is a textbook "administrative cutoff." This paper shows how a simple rule — "you get coverage at 65" — creates a natural experiment that reveals the causal effect of health insurance.
-:::
-
-## Example 3: Maimonides' Rule and Class Size {.smaller}
-
-::: incremental
--   Israeli schools follow a rule (attributed to Maimonides): **maximum 40 students per class**
-
--   A school with 40 students has 1 class of 40. A school with 41 students splits into 2 classes (\~20 each).
-
--   Angrist and Lavy (1999) used this cutoff: schools with enrollment *just above* the threshold have much smaller classes
-
--   The running variable is **total enrollment**, the cutoff is every multiple of 40
-
--   Key finding: smaller classes **improve test scores**, especially for disadvantaged students
+-   **Panel (a) — First stage:** Coverage jumps from \~82% to \~97% at the 65th birthday. Eligibility is sharp, and take-up is nearly universal
+-   **Panel (b) — Outcome:** Doctor visits per year rise from \~4 to \~5.2 at 65 — newly-insured people use more healthcare
+-   **Why this is credible:** you cannot manipulate your age, and nothing else changes abruptly at exactly 65. The cutoff is truly arbitrary
+-   **LATE interpretation:** effect applies to people *right at* 65. We cannot learn the effect of Medicare on 40-year-olds from this design
 :::
 
 . . .
 
 ::: callout-tip
-## The Pattern
+## Bridge Back to the Opener
 
-Notice the pattern across these examples: an **administrative rule** creates a cutoff → people just above and below are essentially the same → comparing their outcomes reveals the causal effect. Look for these rules in your policy area!
+We started today with **Medicaid expansion** — a DiD design exploiting *state-level* variation in policy. Now we're looking at **Medicare at 65** — an RDD design exploiting *age-level* variation in eligibility. Same substantive question ("does insurance improve health?"), two different identification strategies. Having both in your toolkit is the point.
 :::
 
-## More RDD Examples in Policy
+## More RDD Examples in Policy {.smaller}
 
 ::: incremental
 -   **Voting age and political participation:** Turning 18 creates a sharp cutoff for eligibility — used to study whether early voting experience shapes lifelong habits
@@ -583,6 +791,14 @@ Notice the pattern across these examples: an **administrative rule** creates a c
 -   **Close elections:** When one candidate barely wins vs. barely loses, outcomes are as-if randomly assigned — a popular design in political science (Lee, 2008)
 :::
 
+. . .
+
+::: callout-tip
+## The Pattern
+
+Notice the pattern across these examples: an **administrative rule** creates a cutoff → people just above and below are essentially the same → comparing their outcomes reveals the causal effect. Look for these rules in your policy area!
+:::
+
 # Part 5: Sharp vs. Fuzzy RDD
 
 ## Sharp RDD: Perfect Compliance {.smaller}
@@ -592,14 +808,15 @@ Notice the pattern across these examples: an **administrative rule** creates a c
 
 library(scales)
 
-cutoff <- 0.5
+# Local cutoff just for these illustrative diagrams
+c_demo <- 0.5
 x_grid <- seq(0, 1, length.out = 500)
 
-df_sharp <- tibble(x = x_grid, p = ifelse(x_grid < cutoff, 0, 1))
+df_sharp <- tibble(x = x_grid, p = ifelse(x_grid < c_demo, 0, 1))
 
 ggplot(df_sharp, aes(x = x, y = p)) +
-  geom_line(size = 1.5, color = "black") +
-  geom_vline(xintercept = cutoff, linetype = "dashed", color = "gray40") +
+  geom_line(linewidth = 1.5, color = "black") +
+  geom_vline(xintercept = c_demo, linetype = "dashed", color = "gray40") +
   scale_y_continuous(labels = percent_format(accuracy = 1L),
                      breaks = seq(0, 1, by = 0.25)) +
   labs(title = "(a) Sharp Design: Treatment Probability",
@@ -616,12 +833,12 @@ In a **sharp** design, the cutoff perfectly determines treatment: 0% below, 100%
 
 df_fuzzy <- tibble(
   x = x_grid,
-  p = ifelse(x_grid < cutoff, 0.15 + 0.2 * x_grid, 0.55 + 0.2 * x_grid)
+  p = ifelse(x_grid < c_demo, 0.15 + 0.2 * x_grid, 0.55 + 0.2 * x_grid)
 )
 
 ggplot(df_fuzzy, aes(x = x, y = p)) +
-  geom_line(size = 1.5, color = "black") +
-  geom_vline(xintercept = cutoff, linetype = "dashed", color = "gray40") +
+  geom_line(linewidth = 1.5, color = "black") +
+  geom_vline(xintercept = c_demo, linetype = "dashed", color = "gray40") +
   scale_y_continuous(labels = percent_format(accuracy = 1L),
                      breaks = seq(0, 1, by = 0.25)) +
   labs(title = "(b) Fuzzy Design: Treatment Probability",
@@ -630,6 +847,43 @@ ggplot(df_fuzzy, aes(x = x, y = p)) +
 ```
 
 In a **fuzzy** design, the cutoff causes a **jump** in the probability of treatment — but it's not 0-to-100%.
+
+## Fuzzy RDD in the Wild: Maimonides' Rule {.smaller}
+
+Angrist and Lavy (1999): Israeli schools follow a rule attributed to Maimonides — **no more than 40 students per class**. A school with 41 students *should* split into two classes of \~20.
+
+```{r}
+#| echo: false
+
+set.seed(30317)
+
+n_schools <- 500
+enroll    <- sample(20:140, n_schools, replace = TRUE)
+predicted <- enroll / ceiling(enroll / 40)
+
+# Fuzzy compliance: 30% of schools have larger classes than the rule dictates
+noncompliant <- rbinom(n_schools, 1, 0.30)
+upward_dev   <- noncompliant * runif(n_schools, 4, 12)
+actual       <- predicted + upward_dev + rnorm(n_schools, 0, 1.2)
+
+df_maim   <- tibble(enroll, actual)
+rule_grid <- tibble(enroll = 20:140,
+                    predicted = (20:140) / ceiling((20:140) / 40))
+
+ggplot() +
+  geom_point(data = df_maim, aes(x = enroll, y = actual),
+             alpha = 0.3, color = "gray30", size = 1.4) +
+  geom_line(data = rule_grid, aes(x = enroll, y = predicted),
+            color = "#6a3d9a", linewidth = 1.3) +
+  geom_vline(xintercept = c(40.5, 80.5, 120.5),
+             linetype = "dashed", color = "gray50") +
+  labs(title = "Maimonides' Rule: Predicted vs. Actual Class Size",
+       subtitle = "Purple line = rule-based prediction. Gray points = actual class sizes.",
+       x = "School Enrollment", y = "Class Size") +
+  theme_minimal(base_size = 12)
+```
+
+**Schools don't perfectly comply.** Angrist and Lavy use the **predicted** class size (from the rule) as an **instrument** for the **actual** class size. Their key finding: smaller classes improve test scores, especially for disadvantaged students.
 
 ## Understanding Fuzzy RDD {.smaller}
 
@@ -691,16 +945,31 @@ If the cutoff **perfectly determines** treatment → Sharp RDD. If the cutoff **
 ```{r}
 #| echo: true
 
-# Visual check: histogram of the running variable
-ggplot(df, aes(x = x)) +
+set.seed(30317)
+
+# Build a side-by-side comparison: clean vs. manipulated scores.
+n_bunch       <- 80   # ~16% of students "cheated" into the 80-82 range
+bunched_score <- c(
+  runif(500 - n_bunch, 60, 100),  # baseline uniform
+  runif(n_bunch,        80, 82)   # concentrated spike just above cutoff
+)
+
+df_density <- bind_rows(
+  tibble(score = df$score,      condition = "Clean: no manipulation"),
+  tibble(score = bunched_score, condition = "Manipulated: bunching above cutoff")
+)
+
+ggplot(df_density, aes(x = score)) +
   geom_histogram(bins = 40, fill = "gray70", color = "white") +
-  geom_vline(xintercept = cutoff, linetype = "dashed", color = "red", size = 1) +
-  labs(title = "Density of the Running Variable Near the Cutoff",
-       x = "Running Variable", y = "Count") +
-  theme_minimal(base_size = 14)
+  geom_vline(xintercept = cutoff, linetype = "dashed",
+             color = "red", linewidth = 1) +
+  facet_wrap(~ condition) +
+  labs(title = "What Manipulation Looks Like",
+       x = "Test Score", y = "Count") +
+  theme_minimal(base_size = 13)
 ```
 
-We want the histogram to look **smooth** through the cutoff — no suspicious spikes.
+**Left:** smooth density through the cutoff — what we want. **Right:** a clear pile-up just above 80 — a red flag that students may have manipulated their scores to qualify.
 
 ## Formal Manipulation Test {.smaller}
 
@@ -710,7 +979,7 @@ We want the histogram to look **smooth** through the cutoff — no suspicious sp
 # The rddensity package provides a formal test
 library(rddensity)
 
-density_test <- rddensity(X = df$x, c = cutoff)
+density_test <- rddensity(X = df$score, c = cutoff)
 summary(density_test)
 ```
 
@@ -728,23 +997,84 @@ A non-significant p-value means we **fail to reject** the null of no manipulatio
 -   **Donut hole test:** Remove observations *very* close to the cutoff and re-estimate. If the result changes dramatically, those boundary observations may be problematic.
 :::
 
+## Placebo Cutoffs in Action {.smaller}
+
+```{r}
+#| echo: true
+
+# Run rdrobust at real and fake cutoffs; only the real one should show an effect
+placebo_cutoffs <- c(70, 75, 80, 85, 90)   # 80 is the real cutoff
+
+placebo_results <- map_dfr(placebo_cutoffs, function(c_val) {
+  rd <- rdrobust(y = df$completion, x = df$score, c = c_val)
+  tibble(cutoff   = c_val,
+         is_real  = c_val == 80,
+         estimate = rd$coef[1],
+         ci_lower = rd$ci[1, 1],
+         ci_upper = rd$ci[1, 2])
+})
+
+ggplot(placebo_results, aes(x = cutoff, y = estimate, color = is_real)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.6) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+  scale_color_manual(values = c(`TRUE` = "#e31a1c", `FALSE` = "gray40"),
+                     labels = c(`TRUE` = "Real cutoff", `FALSE` = "Placebo")) +
+  labs(title = "RDD Estimates at Real vs. Placebo Cutoffs",
+       x = "Cutoff Value (Test Score)",
+       y = "RDD Estimate (completion rate)", color = NULL) +
+  theme_minimal(base_size = 13)
+```
+
+Only the cutoff at 80 should show a real effect. Placebo cutoffs should be indistinguishable from zero — that's what we see.
+
+## The Donut Hole Test {.smaller}
+
+```{r}
+#| echo: true
+
+donut_values <- c(0, 0.5, 1, 2)   # donut radius in test-score points
+
+donut_results <- map_dfr(donut_values, function(d) {
+  keep <- abs(df$score - cutoff) >= d
+  rd <- rdrobust(y = df$completion[keep], x = df$score[keep], c = cutoff)
+  tibble(donut    = d,
+         estimate = rd$coef[1],
+         ci_lower = rd$ci[1, 1],
+         ci_upper = rd$ci[1, 2])
+})
+
+ggplot(donut_results, aes(x = donut, y = estimate)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.08) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+  labs(title = "Donut Hole Test: Stability When Near-Cutoff Points Are Excluded",
+       x = "Donut Radius (test-score points excluded on each side)",
+       y = "RDD Estimate (completion rate)") +
+  theme_minimal(base_size = 13)
+```
+
+If the estimate is **stable** as we exclude observations closer to the cutoff, that's reassuring. Wild swings would suggest those boundary observations are driving — or contaminating — the result.
+
 ## Covariate Balance Check {.smaller}
 
 ```{r}
 #| echo: true
 
-# Simulate a pre-determined covariate — should NOT jump at the cutoff
+# Simulate a pre-determined covariate (family income, in $000s)
+# — should NOT jump at the cutoff if the RDD is credible
 set.seed(30317)
-df$pre_score <- 50 + 3 * df$x + rnorm(nrow(df), 0, 2)  # Smoothly related to x
+df$family_income <- 30 + 0.4 * df$score + rnorm(nrow(df), 0, 5)
 
-ggplot(df, aes(x = x, y = pre_score, color = group)) +
+ggplot(df, aes(x = score, y = family_income, color = group)) +
   geom_point(alpha = 0.4) +
   geom_smooth(method = "loess", se = FALSE) +
   geom_vline(xintercept = cutoff, linetype = "dashed") +
-  labs(title = "Covariate Balance: Pre-Treatment Score",
+  labs(title = "Covariate Balance: Family Income by Test Score",
        subtitle = "No jump at the cutoff = good news for the RDD",
-       x = "Running Variable", y = "Pre-Treatment Score") +
-  scale_color_manual(values = c("Control" = "#1f78b4", "Treatment" = "#e31a1c")) +
+       x = "Test Score", y = "Family Income ($000s)") +
+  scale_color_manual(values = c("No Scholarship" = "#1f78b4",
+                                "Scholarship"    = "#e31a1c")) +
   theme_minimal(base_size = 14)
 ```
 
@@ -758,22 +1088,23 @@ Covariates should pass smoothly through the cutoff. A jump here would be a red f
 # Check if the estimate is stable across bandwidth choices
 library(rdrobust)
 
-bandwidths <- c(0.05, 0.08, 0.1, 0.15, 0.2, 0.25)
+bandwidths <- c(2, 3, 5, 7, 10, 15)   # in test-score points
 
 sensitivity <- map_dfr(bandwidths, function(h) {
-  rd <- rdrobust(y = df$y, x = df$x, c = cutoff, h = h)
+  rd <- rdrobust(y = df$completion, x = df$score, c = cutoff, h = h)
   tibble(bandwidth = h,
-         estimate = rd$coef[1],
-         ci_lower = rd$ci[1, 1],
-         ci_upper = rd$ci[1, 2])
+         estimate  = rd$coef[1],
+         ci_lower  = rd$ci[1, 1],
+         ci_upper  = rd$ci[1, 2])
 })
 
 ggplot(sensitivity, aes(x = bandwidth, y = estimate)) +
   geom_point(size = 3) +
-  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.01) +
+  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.3) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
   labs(title = "Sensitivity to Bandwidth Choice",
-       x = "Bandwidth", y = "RD Estimate") +
+       x = "Bandwidth (test-score points)",
+       y = "RD Estimate (completion rate)") +
   theme_minimal(base_size = 14)
 ```
 
@@ -781,63 +1112,74 @@ If the estimate is **stable** across bandwidths, that's reassuring. Wild swings 
 
 # Part 7: Practical Advice
 
-## A Checklist for Credible RDD Designs
+## Checklist + Common Pitfalls {.smaller}
+
+**Before you trust an RDD — yours or someone else's:**
 
 ::: incremental
-1.  Is the running variable **precisely measured** and **difficult to manipulate**?
-2.  Does the **density test** show no bunching at the cutoff?
-3.  Are **covariates balanced** at the cutoff?
-4.  Is the estimate **robust** to different bandwidths and functional forms?
-5.  Do **placebo cutoffs** show null effects?
-6.  Is the design **sharp or fuzzy**? If fuzzy, is the first stage strong?
+1.  Running variable is **precisely measured** and hard to manipulate
+2.  **Density** is smooth through the cutoff (no bunching)
+3.  **Covariates balance** at the cutoff
+4.  Estimate is **robust** to different bandwidths
+5.  **Placebo cutoffs** show null effects
+6.  If **fuzzy**, first stage is strong
 :::
 
-## Common Pitfalls
+. . .
+
+**Pitfalls to avoid:**
 
 ::: incremental
--   **Using too wide a bandwidth** — people far from the cutoff may not be comparable
-
--   **Overfitting with high-order polynomials** — can create fake jumps. Gelman and Imbens (2019) argue against polynomials above quadratic.
-
--   **Ignoring the LATE interpretation** — your estimate applies to people at the cutoff, not the whole population
-
--   **Not showing the plot** — RDD is one of the most visual methods in causal inference. Always show the scatter plot with fitted lines.
-
--   **Assuming sharp when it's fuzzy** — if compliance isn't perfect, ignoring this biases your estimate toward zero
+-   Too-wide bandwidth — people far from the cutoff aren't comparable
+-   High-order polynomials — can manufacture fake jumps (Gelman & Imbens 2019)
+-   Forgetting **LATE** — your estimate applies at the cutoff, not everywhere
+-   Not showing the plot — RDD is visual; the picture *is* the evidence
+-   Assuming sharp when it's fuzzy — biases the estimate toward zero
 :::
 
-## Readings
+## Readings {.smaller}
 
-::: incremental
--   **Huntington-Klein, *The Effect*, Ch. 20** — Very intuitive treatment of RDD with great examples. Freely available online.
-
--   **Cunningham, *Causal Inference: The Mixtape*, Ch. 6** — Detailed RDD chapter with R code. Also freely available.
-
--   **Cattaneo, Idrobo, and Titiunik (2020)** — *A Practical Introduction to Regression Discontinuity Designs*. The definitive applied guide.
-
--   **Lee and Lemieux (2010)** — "Regression Discontinuity Designs in Economics." The classic review article.
-:::
+-   **Huntington-Klein, *The Effect*, Ch. 20** — intuitive treatment with great examples (free online)
+-   **Cunningham, *Causal Inference: The Mixtape*, Ch. 6** — detailed chapter with R code (free online)
+-   **Cattaneo, Idrobo, and Titiunik (2020)** — *A Practical Introduction to Regression Discontinuity Designs*. The definitive applied guide
+-   **Lee and Lemieux (2010)** — "Regression Discontinuity Designs in Economics." The classic review
 
 # Wrapping Up
 
-## What We Covered Today
+## What We Covered Today {.smaller}
 
 ::: incremental
-1.  **The RDD idea** — cutoffs create local randomization
-2.  **The graphical recipe** — plot, fit, bandwidth, estimate the jump
-3.  **Estimation** — from simple OLS to `rdrobust` with optimal bandwidth selection
-4.  **Policy examples** — shingles/dementia, Medicare at 65, Maimonides' Rule, close elections
-5.  **Sharp vs. fuzzy** — perfect compliance vs. IV-style estimation
-6.  **Validity checks** — manipulation tests, covariate balance, placebo cutoffs, bandwidth sensitivity
-7.  **Practical advice** — a checklist and common pitfalls
+1.  **One last DiD walkthrough** — Medicaid expansion and mortality
+2.  **The RDD idea** — cutoffs as local randomization
+3.  **The graphical recipe** — plot, fit, bandwidth, estimate the jump
+4.  **Estimation** — from OLS to `rdrobust` with optimal bandwidth selection
+5.  **Policy examples** — shingles/dementia, Medicare at 65
+6.  **Sharp vs. fuzzy** — with Maimonides' Rule as the fuzzy example
+7.  **Validity checks** — manipulation, placebo cutoffs, donut holes, bandwidth sensitivity
 :::
 
-## What's Next
+# Doing Quant Work as an MPA
+
+## Four Habits That Separate Good Analysis from Statistical Theater {.smaller}
 
 ::: incremental
--   **Instrumental Variables** — when you can't find a cutoff, but you can find an external source of variation
+1.  **Start with the question, not the method.** A simple t-test on the right comparison beats a fancy model on the wrong one. Design follows the question — not the other way around
 
--   **Combining methods** — many modern policy evaluations use multiple identification strategies to triangulate
+2.  **You'll mostly be a consumer, not a producer.** Most of your career you'll read, commission, and push back on analyses. Learn to ask: *"What's the comparison? How do you know they're comparable? Who does this estimate apply to?"*
+
+3.  **Show the picture.** Every method we covered has a visual signature — parallel pre-trends for DiD, a jump at the cutoff for RDD, balanced baselines for experiments. If the plot doesn't tell the story, be suspicious of the coefficient that does
+
+4.  **Be honest about the limits.** Every estimate has assumptions. Every result applies to a specific group. Saying "we can't tell from this data" is often more useful — and more credible — than overselling a small effect
+:::
+
+## What This Course Was Really About
+
+::: callout-tip
+## The Real Lesson
+
+We spent the semester on methods — OLS, fixed effects, DiD, RDD, experiments. The real lesson is **mental discipline**: being precise about *what question you're answering*, *what assumptions you're making*, and *what your result does and doesn't mean*.
+
+You don't need to be the person who runs every analysis. You do need to be the person who knows **what to ask, what to trust, and what to reject**. That's how quantitative work actually shapes policy — and it's what makes you valuable.
 :::
 
 ## For Your Capstone
@@ -845,5 +1187,7 @@ If the estimate is **stable** across bandwidths, that's reassuring. Wild swings 
 ::: callout-tip
 ## Think About This Now
 
-Does your policy area have **eligibility thresholds**, **age cutoffs**, **geographic boundaries**, or **test score requirements**? If so, you may have a natural RDD waiting to be discovered. The key ingredients are: a running variable you can measure, a cutoff that changes treatment status, and the ability to argue that people just above and below are comparable. Even if you don't run the analysis yourself, knowing how to *read* RDD papers critically is a valuable skill.
+Does your policy area have **eligibility thresholds**, **age cutoffs**, **geographic boundaries**, or **test score requirements**? If so, you may have a natural RDD waiting to be discovered. The key ingredients: a running variable you can measure, a cutoff that changes treatment status, and an argument that people just above and below are comparable.
+
+Even if you don't run the analysis yourself, knowing how to *read* RDD (and DiD, and IV, and experiments) critically is a career-long skill.
 :::
