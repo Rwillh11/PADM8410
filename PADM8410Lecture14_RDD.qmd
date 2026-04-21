@@ -444,12 +444,12 @@ We can estimate the jump with OLS. Let's walk through each piece:
 $$Y = \beta_{0} + \beta_{1}(\text{Running} - c) + \beta_{2}\text{Treated} + \beta_{3}(\text{Running} - c) \times \text{Treated} + \epsilon$$
 
 ::: incremental
--   **$\text{Running} - c$** is the running variable, **centered at the cutoff**. So 0 = "right at the cutoff," negative = below, positive = above. Centering makes the intercept interpretable as "outcome at the cutoff" instead of "outcome at zero score"
--   **$\text{Treated}$** is a 0/1 indicator: 1 if above the cutoff, 0 if below
--   **$\beta_0$** = outcome *at the cutoff* on the just-below side
--   **$\beta_1$** = slope on the left side (how outcome rises or falls with the running variable)
--   **$\beta_2$** = **the jump at the cutoff → this is the treatment effect**
--   **$\beta_3$** × (Running − c) × Treated lets the two sides have **different slopes**. Without it, we'd force the left and right lines to tilt in exactly the same way, which is often too restrictive
+-   $\text{Running} - c$ is the running variable, **centered at the cutoff**. So 0 = "right at the cutoff," negative = below, positive = above.
+-   $\text{Treated}$ is a 0/1 indicator: 1 if above the cutoff, 0 if below
+-   $\beta_0$ = outcome *at the cutoff* on the just-below side
+-   $\beta_1$ = slope on the left side
+-   $\beta_2$ = **the jump at the cutoff → this is the treatment effect**
+-   $\beta_3$ × (Running − c) × Treated lets the two sides have **different slopes**. Without it, we'd force the left and right lines to tilt in exactly the same way, which is too restrictive
 :::
 
 . . .
@@ -525,6 +525,8 @@ The tool picks a bandwidth by balancing **two concerns that pull in opposite dir
 -   **Too narrow a window** → you don't have enough observations. Your estimate gets *noisy*
 :::
 
+. . .
+
 The "best" bandwidth minimizes a single quantity called **mean squared error (MSE)** — which combines bias and noise into one number. Think of it as finding the right **zoom level**: close enough to the cutoff that comparisons are credible, far enough out that you have enough data to see the jump.
 
 . . .
@@ -532,7 +534,7 @@ The "best" bandwidth minimizes a single quantity called **mean squared error (MS
 ::: callout-tip
 ## You're Not Locked In
 
-The default bandwidth is a sensible *starting point*, not a final answer. Always run the **sensitivity check** (Part 6) — if the estimate is stable across a range of bandwidths, the result is robust. If it swings wildly, the data is telling you something.
+The default bandwidth is a sensible *starting point*, not a final answer. Always run the **sensitivity check** (Part 6): if the estimate is stable across a range of bandwidths, the result is robust. If it swings wildly, the data is telling you something.
 :::
 
 ## `rdrobust` in Action {.smaller}
@@ -644,6 +646,8 @@ Observations closer to the cutoff get **more weight**. This is what `rdrobust` d
 -   The Welsh birth-date cutoff removes that confounding entirely. **You cannot manipulate your birth date.**
 :::
 
+. . .
+
 **The RDD setup:**
 
 -   **Running variable:** Week of birth relative to Sept 2, 1933
@@ -736,6 +740,8 @@ plot_panel(panel_c, "c", "Coef. -0.2\n95% CI = -0.8 to 0.4")
 -   **Panel (b):** Prior shingles diagnoses. Flat across the cutoff (coef ≈ 0.1). Groups had similar shingles histories.
 -   **Panel (c):** Prior dementia diagnoses. Smooth downward trend (older people → more dementia), but **no jump** at the cutoff. Groups were comparable.
 :::
+
+. . .
 
 **The takeaway:** the cutoff changed vaccination rates (panel a) and *nothing else* (panels b, c). That's the RDD ideal — identification comes from the policy, not from underlying differences.
 
@@ -960,6 +966,8 @@ When the rule *shifts* treatment probability but doesn't perfectly determine it,
 3.  **Scale.** *If* we believe the cutoff affects outcomes **only through** class size, each 1-student change in class size explains 0.2 / 8 ≈ **0.025 SD** of test-score improvement
 :::
 
+. . .
+
 $$\hat{\tau}_{fuzzy} = \frac{\text{jump in outcome at cutoff}}{\text{jump in treatment probability at cutoff}}$$
 
 ## What We Just Did: Instrumental Variables {.smaller}
@@ -974,6 +982,8 @@ This is **instrumental variables (IV)** in action — a causal-inference techniq
 3.  The instrument affects the outcome **only through treatment** — the strong assumption we unpack next
 :::
 
+. . .
+
 **Why fuzzy RDD is a relatively well-behaved form of IV:**
 
 ::: incremental
@@ -981,6 +991,8 @@ This is **instrumental variables (IV)** in action — a causal-inference techniq
 -   Assignment at the cutoff is nearly random *by construction*
 -   "Only through" is easier to argue about a narrow threshold than for an instrument coming from somewhere else in the world
 :::
+
+. . .
 
 *We won't cover standalone IV in this course — it's a whole separate methodology, and usually more controversial than its fuzzy-RDD cousin.*
 
